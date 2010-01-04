@@ -5,9 +5,10 @@ using namespace std;
 
 bool Done = false;
 FILE* p_Output;
+float rxsize = 0;
 void ReliableRxCallback(unsigned char* buffer, unsigned int length, const sockaddr_in * const sender_addr, const u32 sender_addr_len)
 {
-
+	rxsize += (float)length;
     if(length == 1 && buffer[0] == 0xff)
     {
         Done = true;
@@ -29,6 +30,18 @@ int main(int argc, char *argv[])
 
         p_Output = fopen("output.txt", "w");
         NetworkCoding::NCSocket socket(htons(local_port), 500, 500, ReliableRxCallback);
+		std::thread bwchk = std::thread([](){
+			while(Done == false)
+			{
+				std::this_thread::sleep_for(std::chrono::seconds(1));
+				printf("%5.5f Mb/s\n", rxsize/(1000.*1000.));
+				fflush(stdout);
+				rxsize = 0;
+			}
+			printf("%5.5f Mb/s\n", rxsize/(1000.*1000.));
+			fflush(stdout);
+		});
+		bwchk.detach();
         while(Done == false)
         {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
