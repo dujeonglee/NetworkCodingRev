@@ -18,7 +18,8 @@ public:
     static void PutFreeBlock(ReceptionBlock*);
 public:
     u08 m_Rank;
-    u08 m_Acknowledged;
+    u08 m_FullRank;
+    u08 m_Delivered;
     std::vector < DataStructures::PacketBuffer > m_Buffer;
 };
 
@@ -27,15 +28,12 @@ class ReceptionSession
 public:
     enum ActionType: u08
     {
-        QUEUE_ON_NEW_BLOCK,
-        QUEUE_ON_EXISTING_BLOCK,
-        ACK,
-        DISCARD
+        QUEUE,
+        ACK
     };
 
-    s32 m_MinBlockSequence;
-    s32 m_MaxBlockSequence;
     avltree< u16, ReceptionBlock* > m_Blocks;
+    u16 m_MinBlockSequenceNumber;
     ReceptionSession();
     ActionType Action(Header::Data* s);
 };

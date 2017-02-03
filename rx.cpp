@@ -1,7 +1,7 @@
 #include "rx.h"
 
 using namespace NetworkCoding;
-/* All RX operation is run on a single thread, which means we do not need locks. */
+
 std::queue<ReceptionBlock*> ReceptionBlock::m_Pool;
 ReceptionBlock *ReceptionBlock::GetFreeBlock()
 {
@@ -11,7 +11,7 @@ ReceptionBlock *ReceptionBlock::GetFreeBlock()
         freeblock = m_Pool.front();
         m_Pool.pop();
         freeblock->m_Rank = 0;
-        freeblock->m_Acknowledged = 0;
+        freeblock->m_Delivered = 0;
         return freeblock;
     }
     else
@@ -25,7 +25,7 @@ ReceptionBlock *ReceptionBlock::GetFreeBlock()
             return nullptr;
         }
         freeblock->m_Rank = 0;
-        freeblock->m_Acknowledged = 0;
+        freeblock->m_Delivered = 0;
         return freeblock;
     }
 }
@@ -50,52 +50,27 @@ ReceptionSession::ReceptionSession()
 
 ReceptionSession::ActionType ReceptionSession::Action(Header::Data* s)
 {
-    s32 modifier = 0;
-    if(m_MinBlockSequence > m_MaxBlockSequence)
+    // Update Minimum Block Sequence Number
+    for(u16 i=  0 ; i < Parameter::MAX_CONCURRENCY ; i++)
     {
-        while(!((m_MinBlockSequence + modifier) < (m_MaxBlockSequence + modifier)) &&
-              !((m_MaxBlockSequence < 0xffff - Parameter::MAX_CONCURRENCY)))
+        if(m_MinBlockSequenceNumber+i == s->m_MinBlockSequenceNumber)
         {
-            modifier--;
+            m_MinBlockSequenceNumber = s->m_MinBlockSequenceNumber;
+            break;
         }
     }
-    else
+    bool Enqueue = false;
+    for(u16 i=  0 ; i < Parameter::MAX_CONCURRENCY ; i++)
     {
-        while(!(m_MinBlockSequence > Parameter::MAX_CONCURRENCY))
+        if(m_MinBlockSequenceNumber+i == s->m_CurrentBlockSequenceNumber)
         {
-            modifier++;
+            Enqueue = true;
+            break;
         }
     }
 
-    const u16 MODIFIED_MIN_SEQ = m_MinBlockSequence + modifier;
-    const u16 MODIFIED_CUR_SEQ = s->m_CurrentBlockSequenceNumber + modifier;
-    const u16 MODIFIED_MAX_SEQ = m_MaxBlockSequence + modifier;
-    if(MODIFIED_CUR_SEQ < MODIFIED_MIN_SEQ)
-    {
-        if(MODIFIED_CUR_SEQ >= (m_MaxBlockSequence - Parameter::MAX_CONCURRENCY))
-        {
-            return ReceptionSession::ACK;
-        }
-        else
-        {
-            return ReceptionSession::DISCARD;
-        }
-    }
-    else if(MODIFIED_CUR_SEQ >= MODIFIED_MIN_SEQ && MODIFIED_CUR_SEQ <= MODIFIED_MAX_SEQ)
-    {
-        return ReceptionSession::QUEUE_ON_EXISTING_BLOCK;
-    }
-    else
-    {
-        if(MODIFIED_CUR_SEQ <= (m_MinBlockSequence + Parameter::MAX_CONCURRENCY))
-        {
-            return ReceptionSession::QUEUE_ON_NEW_BLOCK;
-        }
-        else
-        {
-            return ReceptionSession::DISCARD;
-        }
-    }
+    return (Enqueue?ReceptionSession::ActionType::QUEUE :
+                    ReceptionSession::ActionType::ACK);
 }
 
 Reception::Reception(s32 Socket) : c_Socket(Socket)
@@ -118,38 +93,24 @@ void Reception::RxHandler(u08* buffer, u16 size, const sockaddr_in * const sende
         case Header::Common::HeaderType::DATA:
         {
             ReceptionSession** session;
-            {// 1. If there is no associated session, we create new one.
-                const DataStructures::IPv4PortKey key = {sender_addr->sin_addr.s_addr, sender_addr->sin_port};
-                session = m_Sessions.find(key);
-                if(session == nullptr)
-                {
-                    ReceptionSession* NewSession = nullptr;
-                    try
-                    {
-                        NewSession = new ReceptionSession();
-                    }
-                    catch(const std::bad_alloc& ex)
-                    {
-                        std::cout<<ex.what();
-                        return;
-                    }
-                    if(m_Sessions.insert(key, NewSession) == false)
-                    {
-                        delete NewSession;
-                        return;
-                    }
-                    session = &NewSession;
-                }
+            // 1. If there is no associated session, we drop the packet.
+            const DataStructures::IPv4PortKey key = {sender_addr->sin_addr.s_addr, sender_addr->sin_port};
+            session = m_Sessions.find(key);
+            if(session == nullptr)
+            {
+                return;
             }
 
+            const Header::Data* DataHeader = reinterpret_cast< Header::Data* >(buffer);
+            // 1. Check if the block sequence number is valid.
+            ReceptionBlock* block = nullptr;
+            const ReceptionSession::ActionType ActionForThisPacket = (*session)->Action(DataHeader);
+            switch(ActionForThisPacket)
             {
-                Header::Data* DataHeader = reinterpret_cast< Header::Data* >(buffer);
-                // 1. Check if the block sequence number is valid.
-                ReceptionBlock* block = nullptr;
-                const ReceptionSession::ActionType ActionForThisPacket = (*session)->Action(DataHeader);
-                switch(ActionForThisPacket)
+                case ReceptionSession::ActionType::QUEUE:
                 {
-                    case ReceptionSession::ActionType::QUEUE_ON_NEW_BLOCK:
+                    ReceptionBlock** tmp = (*session)->m_Blocks.find(DataHeader->m_CurrentBlockSequenceNumber);
+                    if(tmp == nullptr)
                     {
                         block = ReceptionBlock::GetFreeBlock();
                         if(block == nullptr)
@@ -162,70 +123,81 @@ void Reception::RxHandler(u08* buffer, u16 size, const sockaddr_in * const sende
                             return;
                         }
                     }
-                    break;
-
-                    case ReceptionSession::ActionType::QUEUE_ON_EXISTING_BLOCK:
+                    else
                     {
-                        ReceptionBlock** tmp = (*session)->m_Blocks.find(DataHeader->m_CurrentBlockSequenceNumber);
-                        if(tmp == nullptr)
-                        {
-                            return;
-                        }
                         block = (*tmp);
                     }
-                    break;
-
-                    case ReceptionSession::ActionType::ACK:
-                    case ReceptionSession::ActionType::DISCARD:
+                    if(block)
                     {
-                        // Send Ack;
-                        return;
-                    }
-                    break;
-                }
-                if(block)
-                {
-                    // 3. If original packet
-                    if(DataHeader->m_Flags & Header::Data::DataHeaderFlag::FLAGS_ORIGINAL)
-                    {
-                        if(block->m_Buffer.size() < DataHeader->m_ExpectedRank)
+                        if(DataHeader->m_ExpectedRank > block->m_Buffer.size())
                         {
                             try
                             {
                                 block->m_Buffer.resize(DataHeader->m_ExpectedRank);
                             }
-                            catch(const std::exception& ex)
+                            catch(const std::bad_alloc& ex)
                             {
                                 std::cout<<ex.what();
                                 return;
                             }
                         }
-                        memcpy(block->m_Buffer[DataHeader->m_ExpectedRank].buffer, buffer, size);
-                        block->m_Rank++;
-                        if(DataHeader->m_CurrentBlockSequenceNumber == (*session)->m_MinBlockSequence && DataHeader->m_ExpectedRank == block->m_Rank)
+                        // 3. If original packet
+                        if(DataHeader->m_Flags & Header::Data::DataHeaderFlag::FLAGS_ORIGINAL)
                         {
-                            // Rx callback
+                            if(block->m_Buffer.size() < DataHeader->m_ExpectedRank)
+                            {
+                                try
+                                {
+                                    block->m_Buffer.resize(DataHeader->m_ExpectedRank);
+                                }
+                                catch(const std::exception& ex)
+                                {
+                                    std::cout<<ex.what();
+                                    return;
+                                }
+                            }
+                            memcpy(block->m_Buffer[DataHeader->m_ExpectedRank].buffer, buffer, size);
+                            block->m_Rank++;
+                            if(DataHeader->m_CurrentBlockSequenceNumber == (*session)->m_MinBlockSequenceNumber &&
+                                    DataHeader->m_ExpectedRank == block->m_Rank)
+                            {
+                                block->m_Delivered++;
+                                // Rx callback
+                            }
+                            if((DataHeader->m_ExpectedRank == block->m_Rank) &&
+                                    (DataHeader->m_Flags & Header::Data::DataHeaderFlag::FLAGS_END_OF_BLK))
+                            {
+                                Header::DataAck ack;
+                                ack.m_Sequence = DataHeader->m_CurrentBlockSequenceNumber;
+                                ack.m_AckAddress = DataHeader->m_AckAddress;
+                                ack.m_Losses = 0;
+                                sendto(c_Socket, &ack, sizeof(ack), 0, (sockaddr*)&sender_addr, sender_addr_len);
+                            }
                         }
-                        if((DataHeader->m_ExpectedRank == block->m_Rank) && (DataHeader->m_Flags & Header::Data::DataHeaderFlag::FLAGS_END_OF_BLK))
+                        // 4. If encoding packet
+                        else
                         {
-                            Header::DataAck ack;
-                            ack.m_Sequence = DataHeader->m_CurrentBlockSequenceNumber;
-                            ack.m_AckAddress = DataHeader->m_AckAddress;
-                            ack.m_Losses = 0;
-                            sendto(c_Socket, &ack, sizeof(ack), 0, (sockaddr*)&sender_addr, sender_addr_len);
-                            block->m_Acknowledged = true;
-                            (*session)->m_MinBlockSequence++;
+                            // 4.1 If it is independent packet then store the packet.
+                            // 4.2 if all packets are collected to decode
+                            // 4.3. forward the packets to local clients.
                         }
+                        // Check next block is fully decoded.
                     }
-                    // 4. If encoding packet
-                    else
-                    {
-                        // 4.1 If it is independent packet then store the packet.
-                        // 4.2 if all packets are collected to decode
-                        // 4.3. forward the packets to local clients.
-                    }
-                    // Check next block is fully decoded.
                 }
+                break;
+
+                case ReceptionSession::ActionType::ACK:
+                {
+                    // Send Ack;
+                    Header::DataAck ack;
+                    ack.m_Sequence = DataHeader->m_CurrentBlockSequenceNumber;
+                    ack.m_AckAddress = DataHeader->m_AckAddress;
+                    ack.m_Losses = 0;
+                    sendto(c_Socket, &ack, sizeof(ack), 0, (sockaddr*)&sender_addr, sender_addr_len);
+                    block->m_Acknowledged = true;
+                    return;
+                }
+                break;
             }
         }
         break;
@@ -257,8 +229,8 @@ void Reception::RxHandler(u08* buffer, u16 size, const sockaddr_in * const sende
                     session = &NewSession;
                 }
             }
-            (*session)->m_MinBlockSequence = SyncHeader->m_Sequence;
-            (*session)->m_MaxBlockSequence = (*session)->m_MinBlockSequence + Parameter::MAX_CONCURRENCY;
+            (*session)->m_Blocks.clear();
+            (*session)->m_MinBlockSequenceNumber = SyncHeader->m_Sequence;
             sendto(c_Socket, buffer, sizeof(Header::Sync), 0, (sockaddr*)&sender_addr, sender_addr_len);
         }
         break;

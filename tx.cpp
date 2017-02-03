@@ -235,6 +235,7 @@ TransmissionSession::TransmissionSession(s32 Socket, u32 IPv4, u16 Port, u08 Con
     {
         m_AckList[i] = true;
     }
+    m_RetransmissionThreadPool.resize(Parameter::MAX_CONCURRENCY);
     ChangeSessionParameter(Concurrency, TransmissionMode, BlockSize, RetransmissionRedundancy, RetransmissionInterval);
 }
 

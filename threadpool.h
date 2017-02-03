@@ -155,6 +155,7 @@ public:
                 }
             }
         }
+        std::cout<<_worker_queue.size()<<" threads\n";
     }
 
     void destroy()
