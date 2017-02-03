@@ -4,33 +4,34 @@ using namespace NetworkCoding;
 
 ////////////////////////////////////////////////////////////
 /////////////// TransmissionBlock
-/*OK*/
-TransmissionBlock::TransmissionBlock(TransmissionSession* const Session) : p_Session(Session)
-{
-    m_BlockSize = TransmissionSession::INVALID_BLOCK_SIZE;
-}
+/*
+ * Create TransmissionBlock.
+ */
+TransmissionBlock::TransmissionBlock(TransmissionSession* const Session) : p_Session(Session){}
 
-/*OK*/
-void TransmissionBlock::Init()
+/*
+ * Initialize Transmission Block.
+ * 1. It copy session parameters.
+ * 2. It increases m_MaxBlockSequenceNumber by 1 when intiailisation is successful.
+ * 3. When we cannot allocate buffer space as much as p_Session->m_BlockSize,
+ *    this function returns false and does not increase m_MaxBlockSequenceNumber.
+ */
+bool TransmissionBlock::Init()
 {
-    // Copy session parameters from TransmissionSession.
-    // Caution: Once parameters (e.g., block size, transmission mode, and etc...)
-    // are intiailized in this function, one must not change them.
-    {
-        std::unique_lock< std::mutex > lock(p_Session->m_Lock);
-        m_BlockSize = p_Session->m_BlockSize;
-        m_TransmissionMode = p_Session->m_TransmissionMode;
-        m_BlockSequenceNumber = p_Session->m_MaxBlockSequenceNumber++;
-        p_Session->m_AckList[m_BlockSequenceNumber%Parameter::MAX_CONCURRENCY] = false;
-        m_RetransmissionRedundancy = p_Session->m_RetransmissionRedundancy;
-        m_RetransmissionInterval = p_Session->m_RetransmissionInterval;
-        m_LargestOriginalPacketSize = 0;
-        m_TransmissionCount = 0;
-    }
+    // 1. Acquire session lock.
+    std::unique_lock< std::mutex > lock(p_Session->m_Lock);
 
-    // Resize buffer.
-    // Caution: If m_OriginalPacketBuffer.size() == 0 after Init() function is called
-    // it means that memory allocation is failed.
+    // 2. Copy session parameters.
+    m_BlockSize = p_Session->m_BlockSize;
+    m_TransmissionMode = p_Session->m_TransmissionMode;
+    m_BlockSequenceNumber = p_Session->m_MaxBlockSequenceNumber++;
+    p_Session->m_AckList[m_BlockSequenceNumber%(Parameter::MAX_CONCURRENCY*2)] = false;
+    m_RetransmissionRedundancy = p_Session->m_RetransmissionRedundancy;
+    m_RetransmissionInterval = p_Session->m_RetransmissionInterval;
+    m_LargestOriginalPacketSize = 0;
+    m_TransmissionCount = 0;
+
+    // 3. Resize the packet buffer.
     if(m_OriginalPacketBuffer.size() != (size_t)m_BlockSize)
     {
         const u08 OldSize = (u08)m_OriginalPacketBuffer.size();
@@ -40,25 +41,33 @@ void TransmissionBlock::Init()
         }
         catch(const std::bad_alloc& ex)
         {
-            std::unique_lock< std::mutex > lock(p_Session->m_Lock);
             p_Session->m_BlockSize = OldSize;
             m_BlockSize = OldSize;
             m_OriginalPacketBuffer.resize(OldSize);
             std::cout<<ex.what();
         }
     }
+    if(m_BlockSize != TransmissionSession::INVALID_BLOCK_SIZE)
+    {
+        // Even though memory allocation is failed, if buffer size is non-zero we can transmit packets.
+        return true;
+    }
+    else
+    {
+        p_Session->m_AckList[m_BlockSequenceNumber%(Parameter::MAX_CONCURRENCY*2)] = true;
+        p_Session->m_MaxBlockSequenceNumber--;
+        return false;
+    }
 }
 
-/*OK*/
-void TransmissionBlock::Deinit()
-{
-    // It simply indicates that this instance is not properly initialized.
-    m_BlockSize = TransmissionSession::INVALID_BLOCK_SIZE;
-}
+/*
+ * Transmit a packet.
 
+ */
 u16 TransmissionBlock::Send(u32 IPv4, u16 Port, u08* buffer, u16 buffersize, bool reqack)
 {
     std::unique_lock< std::mutex > lock(m_Lock);
+    const u08 AckIndex = m_BlockSequenceNumber%(Parameter::MAX_CONCURRENCY*2);
     if(m_TransmissionCount < m_BlockSize)
     {
         // Original
@@ -70,7 +79,7 @@ u16 TransmissionBlock::Send(u32 IPv4, u16 Port, u08* buffer, u16 buffersize, boo
         DataHeader->m_MaxBlockSequenceNumber = p_Session->m_MaxBlockSequenceNumber.load();
         DataHeader->m_ExpectedRank = m_TransmissionCount + 1;
         DataHeader->m_MaximumRank = m_BlockSize;
-        DataHeader->m_AckAddress = (laddr)(&(p_Session->m_AckList[m_BlockSequenceNumber%Parameter::MAX_CONCURRENCY]));
+        DataHeader->m_AckAddress = (laddr)(&(p_Session->m_AckList[AckIndex]));
 #ifdef ENVIRONMENT32
         DataHeader->m_Reserved = 0;
 #endif
@@ -130,6 +139,12 @@ void TransmissionBlock::Retransmission()
         (TxCnt < m_RetransmissionRedundancy) && (p_Session->m_AckList[AckIndex] == false) ;
         (p_Session->m_TransmissionMode == TransmissionSession::TRANSMISSION_MODE::RELIABLE_TRANSMISSION_MODE ? TxCnt = 0 : TxCnt++))
     {
+        if(p_Session->m_IsConnected.load() == false)
+        {
+            p_Session->m_TransmissionBlockPool.push_back(this);
+            p_Session->m_Condition.notify_one();
+            return;
+        }
         if((clock() - LastTransmissionTime) / (CLOCKS_PER_SEC) * 1000 > m_RetransmissionInterval)
         {
             if(m_TransmissionCount == 1)
@@ -141,7 +156,7 @@ void TransmissionBlock::Retransmission()
                 DataHeader->m_MaxBlockSequenceNumber = p_Session->m_MaxBlockSequenceNumber.load();
                 DataHeader->m_ExpectedRank = m_BlockSize;
                 DataHeader->m_MaximumRank = m_BlockSize;
-                DataHeader->m_AckAddress = (laddr)(&(p_Session->m_AckList[DataHeader->m_CurrentBlockSequenceNumber%Parameter::MAX_CONCURRENCY]));
+                DataHeader->m_AckAddress = (laddr)(&(p_Session->m_AckList[AckIndex]));
 #ifdef ENVIRONMENT32
                 DataHeader->m_Reserved = 0;
 #endif
@@ -166,7 +181,7 @@ void TransmissionBlock::Retransmission()
                 RemedyHeader->m_MaxBlockSequenceNumber = p_Session->m_MaxBlockSequenceNumber.load();
                 RemedyHeader->m_ExpectedRank = m_BlockSize;
                 RemedyHeader->m_MaximumRank = m_BlockSize;
-                RemedyHeader->m_AckAddress = (laddr)(&(p_Session->m_AckList[m_BlockSequenceNumber%Parameter::MAX_CONCURRENCY]));
+                RemedyHeader->m_AckAddress = (laddr)(&(p_Session->m_AckList[AckIndex]));
 #ifdef ENVIRONMENT32
                 RemedyHeader->m_Reserved = 0;
 #endif
@@ -194,7 +209,7 @@ void TransmissionBlock::Retransmission()
         // Caution: Overflow should be dealt carefully.
         for(u16 i = p_Session->m_MinBlockSequenceNumber ; i != p_Session->m_MaxBlockSequenceNumber ; i++)
         {
-            if(p_Session->m_AckList[i%Parameter::MAX_CONCURRENCY] == true)
+            if(p_Session->m_AckList[i%(Parameter::MAX_CONCURRENCY*2)] == true)
             {
                 p_Session->m_MinBlockSequenceNumber++;
             }
@@ -318,8 +333,7 @@ void TransmissionSession::ChangeSessionParameter(const u08 Concurrency, const TR
 
 ////////////////////////////////////////////////////////////
 /////////////// Transmission
-Transmission::Transmission(s32 Socket) : c_Socket(Socket)
-{}
+Transmission::Transmission(s32 Socket) : c_Socket(Socket){}
 
 Transmission::~Transmission()
 {
@@ -331,46 +345,54 @@ bool Transmission::Connect(u32 IPv4, u16 Port, u08 Concurrency, TransmissionSess
 {
     std::unique_lock< std::mutex > lock(m_Lock);
 
-    const Others::IPv4PortKey key = {IPv4, Port};
+    const DataStructures::IPv4PortKey key = {IPv4, Port};
     TransmissionSession** session = m_Sessions.find(key);
     TransmissionSession* newsession = nullptr;
     if(session != nullptr)
     {
-        return false;
+        newsession = (*session);
     }
-    try
+    else
     {
-        newsession = new TransmissionSession(c_Socket, IPv4, Port, Concurrency, TransmissionMode, BlockSize, RetransmissionRedundancy, RetransmissionInterval);
-    }
-    catch(const std::bad_alloc& ex)
-    {
-        std::cout<<ex.what();
-        throw ex;
-    }
-    try
-    {
-        m_Sessions.insert(key, newsession);
-    }
-    catch(const std::bad_alloc& ex)
-    {
-        delete newsession;
-        std::cout<<ex.what();
-        throw ex;
-    }
-    if(newsession->m_BlockSize == 0 || newsession->m_Concurrency == 0)
-    {
-        delete newsession;
-        m_Sessions.remove(key);
+        try
+        {
+            newsession = new TransmissionSession(c_Socket, IPv4, Port, Concurrency, TransmissionMode, BlockSize, RetransmissionRedundancy, RetransmissionInterval);
+        }
+        catch(const std::bad_alloc& ex)
+        {
+            std::cout<<ex.what();
+            return false;
+        }
+        try
+        {
+            m_Sessions.insert(key, newsession);
+        }
+        catch(const std::bad_alloc& ex)
+        {
+            delete newsession;
+            std::cout<<ex.what();
+            return false;
+        }
+        if(newsession->m_BlockSize == 0 || newsession->m_Concurrency == 0)
+        {
+            delete newsession;
+            m_Sessions.remove(key);
+            return false;
+        }
     }
     {
         Header::Sync sync;
         sockaddr_in RemoteAddress = {0};
 
+        newsession->m_MinBlockSequenceNumber = newsession->m_MaxBlockSequenceNumber.load();
         newsession->m_IsConnected = false;
+        /* Connect function abort all on-going transmissions. Wait until all retransmission tasks are finished. */
+        /* Receiver must purge all packets in the buffer when receiving SYNC message. */
+        while(newsession->m_RetransmissionThreadPool.tasks() > 0);
 
         sync.m_Type = Header::Common::HeaderType::SYNC;
         sync.m_Sequence = newsession->m_MaxBlockSequenceNumber;
-        sync.m_SessionAddress = (laddr)&newsession;
+        sync.m_SessionAddress = (laddr)newsession;
 #ifdef ENVIRONMENT32
         sync.m_Reserved = 0;
 #endif
@@ -399,9 +421,13 @@ u16 Transmission::Send(u32 IPv4, u16 Port, u08* buffer, u16 buffersize, bool req
     TransmissionBlock* TxBlock = nullptr;
     {// 1. Find session with ip address and port
         std::unique_lock< std::mutex > lock(m_Lock);
-        const Others::IPv4PortKey key = {IPv4, Port};
+        const DataStructures::IPv4PortKey key = {IPv4, Port};
         session = m_Sessions.find(key);
         if(session == nullptr)
+        {
+            return 0;
+        }
+        if((*session)->m_IsConnected == false)
         {
             return 0;
         }
@@ -418,9 +444,15 @@ u16 Transmission::Send(u32 IPv4, u16 Port, u08* buffer, u16 buffersize, bool req
             }
             (*session)->m_CurrentTransmissionBlock = (*session)->m_TransmissionBlockPool.back();
             (*session)->m_TransmissionBlockPool.pop_back();
-            (*session)->m_CurrentTransmissionBlock.load()->Init();
+            if((*session)->m_CurrentTransmissionBlock->Init() == false)
+            {
+                // Init is failed. One cannot send packet as not eneough buffer. Send is failed.
+                (*session)->m_TransmissionBlockPool.push_back((*session)->m_CurrentTransmissionBlock);
+                (*session)->m_CurrentTransmissionBlock = nullptr;
+                return 0;
+            }
         }
-        TxBlock = (*session)->m_CurrentTransmissionBlock.load();
+        TxBlock = (*session)->m_CurrentTransmissionBlock;
     }
     // TxBlock must not be nullptr;
     return TxBlock->Send(IPv4, Port, buffer, buffersize, reqack);

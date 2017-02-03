@@ -15,7 +15,7 @@
 #include <mutex>
 #include <condition_variable>
 
-//// Others
+//// DataStructures
 #include <exception>
 #include <new>
 #include <stdexcept>
@@ -124,7 +124,7 @@ namespace Parameter
 const u08 MAX_CONCURRENCY = 64;
 }
 
-namespace Others{
+namespace DataStructures{
 class IPv4PortKey
 {
 public:

@@ -19,7 +19,7 @@ public:
 public:
     u08 m_Rank;
     u08 m_Acknowledged;
-    std::vector < Others::PacketBuffer > m_Buffer;
+    std::vector < DataStructures::PacketBuffer > m_Buffer;
 };
 
 class ReceptionSession
@@ -49,7 +49,7 @@ public:
     ~Reception();
 public:
     std::mutex m_Lock;
-    avltree<Others::IPv4PortKey, ReceptionSession*> m_Sessions;
+    avltree<DataStructures::IPv4PortKey, ReceptionSession*> m_Sessions;
 public:
     void RxHandler(u08* buffer, u16 size, const sockaddr_in * const sender_addr, const u32 sender_addr_len);
 };

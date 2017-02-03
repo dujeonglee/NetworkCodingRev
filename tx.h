@@ -9,10 +9,6 @@ class TransmissionBlock;
 class TransmissionSession;
 class Transmission;
 
-/**
- * @brief The TransmissionBlock class
- * Maintain
- */
 class TransmissionBlock
 {
 public:
@@ -26,8 +22,8 @@ public:
     u08 m_TransmissionCount;
     std::mutex m_Lock;
 
-    Others::PacketBuffer m_RemedyPacketBuffer;
-    std::vector< Others::PacketBuffer > m_OriginalPacketBuffer;
+    DataStructures::PacketBuffer m_RemedyPacketBuffer;
+    std::vector< DataStructures::PacketBuffer > m_OriginalPacketBuffer;
 
     TransmissionBlock(TransmissionSession* const);
     TransmissionBlock() = delete;
@@ -38,8 +34,7 @@ public:
     TransmissionBlock& operator=(const TransmissionBlock&) = delete;
     TransmissionBlock& operator=(TransmissionBlock&&) = delete;
 
-    void Init();
-    void Deinit();
+    bool Init();
     u16 Send(u32 IPv4, u16 Port, u08* buffer, u16 buffersize, bool reqack);
     void Retransmission();
 };
@@ -50,7 +45,7 @@ public:
     const s32 c_Socket;
     const u32 c_IPv4;
     const u16 c_Port;
-    volatile bool m_IsConnected;
+    volatile std::atomic<bool> m_IsConnected;
     std::atomic<u16> m_MinBlockSequenceNumber;
     std::atomic<u16> m_MaxBlockSequenceNumber;
     volatile std::atomic<bool> m_AckList[Parameter::MAX_CONCURRENCY*2];
@@ -76,7 +71,7 @@ public:
     u08 m_BlockSize;
     ThreadPool m_RetransmissionThreadPool;
     std::vector< TransmissionBlock* > m_TransmissionBlockPool;
-    std::atomic< TransmissionBlock* > m_CurrentTransmissionBlock;
+    TransmissionBlock* m_CurrentTransmissionBlock;
 
     std::mutex m_Lock;
     std::condition_variable m_Condition;
@@ -101,7 +96,7 @@ class Transmission
 {
 private:
     const s32 c_Socket;
-    avltree< Others::IPv4PortKey , TransmissionSession* > m_Sessions;
+    avltree< DataStructures::IPv4PortKey , TransmissionSession* > m_Sessions;
     std::mutex m_Lock;
 public:
     Transmission(s32 Socket);

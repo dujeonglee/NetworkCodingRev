@@ -119,7 +119,7 @@ void Reception::RxHandler(u08* buffer, u16 size, const sockaddr_in * const sende
         {
             ReceptionSession** session;
             {// 1. If there is no associated session, we create new one.
-                const Others::IPv4PortKey key = {sender_addr->sin_addr.s_addr, sender_addr->sin_port};
+                const DataStructures::IPv4PortKey key = {sender_addr->sin_addr.s_addr, sender_addr->sin_port};
                 session = m_Sessions.find(key);
                 if(session == nullptr)
                 {
@@ -231,34 +231,36 @@ void Reception::RxHandler(u08* buffer, u16 size, const sockaddr_in * const sende
         break;
 
         case Header::Common::HeaderType::SYNC:
-        Header::Sync* SyncHeader = reinterpret_cast< Header::Sync* >(buffer);
-        ReceptionSession** session;
-        {// 1. If there is no associated session, we create new one.
-            const Others::IPv4PortKey key = {sender_addr->sin_addr.s_addr, sender_addr->sin_port};
-            session = m_Sessions.find(key);
-            if(session == nullptr)
-            {
-                ReceptionSession* NewSession = nullptr;
-                try
+        {
+            ReceptionSession** session;
+            Header::Sync* SyncHeader = reinterpret_cast< Header::Sync* >(buffer);
+            {// 1. If there is no associated session, we create new one.
+                const DataStructures::IPv4PortKey key = {sender_addr->sin_addr.s_addr, sender_addr->sin_port};
+                session = m_Sessions.find(key);
+                if(session == nullptr)
                 {
-                    NewSession = new ReceptionSession();
+                    ReceptionSession* NewSession = nullptr;
+                    try
+                    {
+                        NewSession = new ReceptionSession();
+                    }
+                    catch(const std::bad_alloc& ex)
+                    {
+                        std::cout<<ex.what();
+                        return;
+                    }
+                    if(m_Sessions.insert(key, NewSession) == false)
+                    {
+                        delete NewSession;
+                        return;
+                    }
+                    session = &NewSession;
                 }
-                catch(const std::bad_alloc& ex)
-                {
-                    std::cout<<ex.what();
-                    return;
-                }
-                if(m_Sessions.insert(key, NewSession) == false)
-                {
-                    delete NewSession;
-                    return;
-                }
-                session = &NewSession;
             }
+            (*session)->m_MinBlockSequence = SyncHeader->m_Sequence;
+            (*session)->m_MaxBlockSequence = (*session)->m_MinBlockSequence + Parameter::MAX_CONCURRENCY;
+            sendto(c_Socket, buffer, sizeof(Header::Sync), 0, (sockaddr*)&sender_addr, sender_addr_len);
         }
-        (*session)->m_MinBlockSequence = SyncHeader->m_Sequence;
-        (*session)->m_MaxBlockSequence = (*session)->m_MinBlockSequence + Parameter::MAX_CONCURRENCY;
-        sendto(c_Socket, buffer, sizeof(Header::Sync), 0, (sockaddr*)&sender_addr, sender_addr_len);
         break;
 
         default:
