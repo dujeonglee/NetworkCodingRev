@@ -19,7 +19,6 @@ public:
 public:
     u08 m_Rank;
     u08 m_FullRank;
-    u08 m_Delivered;
     std::vector < DataStructures::PacketBuffer > m_Buffer;
 };
 
@@ -33,9 +32,9 @@ public:
     };
 
     avltree< u16, ReceptionBlock* > m_Blocks;
-    u16 m_MinBlockSequenceNumber;
+    u16 m_CurrentBlockSequenceNumber;
     ReceptionSession();
-    ActionType Action(Header::Data* s);
+    const ActionType Action(const Header::Data * const s);
 };
 
 class Reception
@@ -48,6 +47,7 @@ public:
 public:
     std::mutex m_Lock;
     avltree<DataStructures::IPv4PortKey, ReceptionSession*> m_Sessions;
+    ThreadPool<1,4> m_RxCallbackThreads;
 public:
     void RxHandler(u08* buffer, u16 size, const sockaddr_in * const sender_addr, const u32 sender_addr_len);
 };

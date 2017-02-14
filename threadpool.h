@@ -8,8 +8,9 @@
 #include <mutex>		// std::mutex, std::unique_lock
 #include <thread>		// std::thread
 #include <queue>                // std::queue
+#include <vector>                // std::vector
 
-
+template <unsigned long PRIORITY_LEVEL, unsigned long INITIAL_THREADS>
 class ThreadPool
 {
     class WorkerThread
@@ -26,7 +27,18 @@ class ThreadPool
         std::atomic<STATE> _state;
         bool _should_wakeup()
         {
-            return  ((!_pool->_task_queue.empty()) || (_state != STATE::RUNNING));
+            for(unsigned long i = 0 ; i < PRIORITY_LEVEL ; i++)
+            {
+                if(!_pool->_task_queue[i].empty())
+                {
+                    return true;
+                }
+            }
+            if(_state != STATE::RUNNING)
+            {
+                return true;
+            }
+            return false;
         }
 
     public:
@@ -44,14 +56,19 @@ class ThreadPool
                         {
                             return;
                         }
-                        if((this->_state == STATE::COMPLETE_ALL_TASK_AND_DESTROY) && (_pool->_task_queue.empty()))
+                        if((this->_state == STATE::COMPLETE_ALL_TASK_AND_DESTROY) && (_pool->_total_tasks == 0))
                         {
                             return;
                         }
-                        if(!_pool->_task_queue.empty())
+                        for(unsigned long priority = 0 ; priority < PRIORITY_LEVEL ; priority++)
                         {
-                            task = std::move(_pool->_task_queue.front());
-                            _pool->_task_queue.pop();
+                            if(!_pool->_task_queue[priority].empty())
+                            {
+                                task = std::move(_pool->_task_queue[priority].front());
+                                _pool->_task_queue[priority].pop();
+                                _pool->_total_tasks--;
+                                break;
+                            }
                         }
                     }
                     if(task != nullptr)
@@ -80,14 +97,22 @@ private:
     std::queue < std::unique_ptr< WorkerThread > > _worker_queue;
     std::mutex _worker_queue_lock;
 
-    std::queue < std::function<void()> > _task_queue;
+    std::vector< std::queue < std::function<void()> > > _task_queue;
+    unsigned long _total_tasks;
     std::mutex _task_queue_lock;
     std::condition_variable _condition;
 public:
     ThreadPool()
     {
-        std::unique_lock<std::mutex> lock(_worker_queue_lock);
-        for(unsigned i = 0 ; i < std::thread::hardware_concurrency() ; i++)
+        try
+        {
+            _task_queue.resize((PRIORITY_LEVEL>1?PRIORITY_LEVEL:1));
+        }
+        catch(std::bad_alloc& ex)
+        {
+            std::cout<<ex.what()<<std::endl;
+        }
+        for(unsigned int i = 0 ; i < (INITIAL_THREADS>1?INITIAL_THREADS:1) ; i++)
         {
             try
             {
@@ -99,25 +124,9 @@ public:
                 break;
             }
         }
-        std::cout<<_worker_queue.size()<<" threads\n";
-    }
-
-    ThreadPool(size_t size)
-    {
-        std::unique_lock<std::mutex> lock(_worker_queue_lock);
-        for(size_t i = 0 ; i < size ; i++)
-        {
-            try
-            {
-                _worker_queue.emplace(new WorkerThread(this));
-            }
-            catch(const std::bad_alloc &ex)
-            {
-                std::cout<<ex.what()<<std::endl;
-                break;
-            }
-        }
-        std::cout<<_worker_queue.size()<<" threads\n";
+        std::cout<<_worker_queue.size()<<" threads with ";
+        std::cout<<_task_queue.size()<<" priorities\n";
+        _total_tasks = 0;
     }
 
     ~ThreadPool()
@@ -155,7 +164,6 @@ public:
                 }
             }
         }
-        std::cout<<_worker_queue.size()<<" threads\n";
     }
 
     void destroy()
@@ -168,7 +176,7 @@ public:
         }
     }
 
-    void enqueue(std::function<void()> task)
+    void enqueue(std::function<void()> task, const unsigned long priority = 0)
     {
         {
             std::unique_lock<std::mutex> lock(_worker_queue_lock);
@@ -179,15 +187,33 @@ public:
         }
         {
             std::unique_lock<std::mutex> lock(_task_queue_lock);
-            _task_queue.push(task);
+            try
+            {
+                _task_queue[priority].push(task);
+                _total_tasks++;
+                _condition.notify_one();
+            }
+            catch(std::bad_alloc& ex)
+            {
+                std::cout<<ex.what()<<std::endl;
+            }
         }
-        _condition.notify_one();
     }
 
     size_t tasks()
     {
         std::unique_lock<std::mutex> lock(_task_queue_lock);
-        return _task_queue.size();
+        return _total_tasks;
+    }
+
+    size_t tasks(const unsigned long priority)
+    {
+        if(priority < PRIORITY_LEVEL)
+        {
+            std::unique_lock<std::mutex> lock(_task_queue_lock);
+            return _task_queue[priority].size();
+        }
+        return 0;
     }
 };
 

@@ -15,13 +15,12 @@ TransmissionBlock::TransmissionBlock(TransmissionSession* const Session) : p_Ses
  * 2. It increases m_MaxBlockSequenceNumber by 1 when intiailisation is successful.
  * 3. When we cannot allocate buffer space as much as p_Session->m_BlockSize,
  *    this function returns false and does not increase m_MaxBlockSequenceNumber.
+ * This function is called with the session lock. We do not need to acquire the session lock
  */
 bool TransmissionBlock::Init()
 {
-    // 1. Acquire session lock.
-    std::unique_lock< std::mutex > lock(p_Session->m_Lock);
-
-    // 2. Copy session parameters.
+    // 1. Copy session parameters.
+    std::unique_lock<std::mutex> lock(m_Lock);
     m_BlockSize = p_Session->m_BlockSize;
     m_TransmissionMode = p_Session->m_TransmissionMode;
     m_BlockSequenceNumber = p_Session->m_MaxBlockSequenceNumber++;
@@ -31,7 +30,7 @@ bool TransmissionBlock::Init()
     m_LargestOriginalPacketSize = 0;
     m_TransmissionCount = 0;
 
-    // 3. Resize the packet buffer.
+    // 2. Resize the packet buffer.
     if(m_OriginalPacketBuffer.size() != (size_t)m_BlockSize)
     {
         const u08 OldSize = (u08)m_OriginalPacketBuffer.size();
@@ -62,12 +61,14 @@ bool TransmissionBlock::Init()
 
 /*
  * Transmit a packet.
-
+ * This function is called with the session lock.
+ * Therefore, we do not need to acquire the session lock.
  */
-u16 TransmissionBlock::Send(u32 IPv4, u16 Port, u08* buffer, u16 buffersize, bool reqack)
+u16 TransmissionBlock::Send(u08* buffer, u16 buffersize, bool reqack)
 {
     std::unique_lock< std::mutex > lock(m_Lock);
     const u08 AckIndex = m_BlockSequenceNumber%(Parameter::MAX_CONCURRENCY*2);
+    bool TriggerRetransmission = false;
     if(m_TransmissionCount < m_BlockSize)
     {
         // Original
@@ -84,10 +85,12 @@ u16 TransmissionBlock::Send(u32 IPv4, u16 Port, u08* buffer, u16 buffersize, boo
         DataHeader->m_Reserved = 0;
 #endif
         DataHeader->m_Flags = Header::Data::FLAGS_ORIGINAL;
-        if(m_TransmissionCount == (m_BlockSize - 1) || reqack)
+        DataHeader->m_TxCount = m_TransmissionCount + 1;
+        if(reqack)
         {
             //Note: Header::Data::FLAGS_END_OF_BLK asks ack from the client
             DataHeader->m_Flags |= Header::Data::FLAGS_END_OF_BLK;
+            TriggerRetransmission = true;
         }
         DataHeader->m_PayloadSize = buffersize;
         if(m_LargestOriginalPacketSize < buffersize)
@@ -114,20 +117,19 @@ u16 TransmissionBlock::Send(u32 IPv4, u16 Port, u08* buffer, u16 buffersize, boo
         sendto(p_Session->c_Socket, m_OriginalPacketBuffer[m_TransmissionCount].buffer, DataHeader->m_TotalSize, 0, (sockaddr*)&RemoteAddress, sizeof(RemoteAddress));
         m_TransmissionCount++;
     }
-    if(m_TransmissionCount == m_BlockSize || reqack)
+    if(TriggerRetransmission)
     {
         // Start retransmission
-        std::unique_lock< std::mutex > lock(p_Session->m_Lock);
         p_Session->m_RetransmissionThreadPool.enqueue([=](){Retransmission();});
-        p_Session->m_CurrentTransmissionBlock = nullptr;
     }
     return buffersize;
 }
 
-
+/* OK */
 void TransmissionBlock::Retransmission()
 {
     const u08 AckIndex = m_BlockSequenceNumber%(Parameter::MAX_CONCURRENCY*2);
+    u08 NumberOfRetransmissions = 0;
 
     sockaddr_in RemoteAddress = {0};
     RemoteAddress.sin_family = AF_INET;
@@ -139,14 +141,15 @@ void TransmissionBlock::Retransmission()
         (TxCnt < m_RetransmissionRedundancy) && (p_Session->m_AckList[AckIndex] == false) ;
         (p_Session->m_TransmissionMode == TransmissionSession::TRANSMISSION_MODE::RELIABLE_TRANSMISSION_MODE ? TxCnt = 0 : TxCnt++))
     {
-        if(p_Session->m_IsConnected.load() == false)
+        if(p_Session->m_IsConnected == false)
         {
             p_Session->m_TransmissionBlockPool.push_back(this);
             p_Session->m_Condition.notify_one();
             return;
         }
-        if((clock() - LastTransmissionTime) / (CLOCKS_PER_SEC) * 1000 > m_RetransmissionInterval)
+        if((clock() - LastTransmissionTime) / (CLOCKS_PER_SEC) * 1000 > m_RetransmissionInterval)// This one should be replaced with std::now();
         {
+            NumberOfRetransmissions++;
             if(m_TransmissionCount == 1)
             {
                 Header::Data* DataHeader = reinterpret_cast<Header::Data*>(m_OriginalPacketBuffer[0].buffer);
@@ -161,6 +164,7 @@ void TransmissionBlock::Retransmission()
                 DataHeader->m_Reserved = 0;
 #endif
                 DataHeader->m_Flags = Header::Data::FLAGS_ORIGINAL | Header::Data::FLAGS_END_OF_BLK;
+                DataHeader->m_TxCount = ((u16)(m_TransmissionCount + NumberOfRetransmissions) > 0xff?0xff:m_TransmissionCount + NumberOfRetransmissions);
                 sendto(p_Session->c_Socket, m_OriginalPacketBuffer[0].buffer, DataHeader->m_TotalSize, 0, (sockaddr*)&RemoteAddress, sizeof(RemoteAddress));
             }
             else
@@ -186,7 +190,7 @@ void TransmissionBlock::Retransmission()
                 RemedyHeader->m_Reserved = 0;
 #endif
                 RemedyHeader->m_Flags = Header::Data::FLAGS_END_OF_BLK;
-
+                RemedyHeader->m_TxCount = ((u16)(m_TransmissionCount + NumberOfRetransmissions) > 0xff?0xff:m_TransmissionCount + NumberOfRetransmissions);
                 u08* RemedyBuffer = reinterpret_cast<u08*>(m_RemedyPacketBuffer.buffer);
                 for(unsigned char CodingOffset = Header::Data::CODING_OFFSET ; CodingOffset < m_LargestOriginalPacketSize ; CodingOffset++)
                 {
@@ -334,14 +338,17 @@ void TransmissionSession::ChangeSessionParameter(const u08 Concurrency, const TR
 
 ////////////////////////////////////////////////////////////
 /////////////// Transmission
+/* OK */
 Transmission::Transmission(s32 Socket) : c_Socket(Socket){}
 
+/* OK */
 Transmission::~Transmission()
 {
     m_Sessions.perform_for_all_data([](TransmissionSession*& session ){delete session;});
     m_Sessions.clear();
 }
 
+/* OK */
 bool Transmission::Connect(u32 IPv4, u16 Port, u08 Concurrency, TransmissionSession::TRANSMISSION_MODE TransmissionMode, TransmissionSession::BLOCK_SIZE BlockSize, u16 RetransmissionRedundancy, u16 RetransmissionInterval)
 {
     std::unique_lock< std::mutex > lock(m_Lock);
@@ -416,27 +423,36 @@ bool Transmission::Connect(u32 IPv4, u16 Port, u08 Concurrency, TransmissionSess
     return false;
 }
 
+/* OK */
 u16 Transmission::Send(u32 IPv4, u16 Port, u08* buffer, u16 buffersize, bool reqack)
 {
     TransmissionSession** session = nullptr;
     TransmissionBlock* TxBlock = nullptr;
-    {// 1. Find session with ip address and port
+    {
+        // 1. Acquire transmssion lock
         std::unique_lock< std::mutex > lock(m_Lock);
+
+        // 2. and find session with ip address and port.
         const DataStructures::IPv4PortKey key = {IPv4, Port};
         session = m_Sessions.find(key);
+
+        // 3. If there is no such a session
         if(session == nullptr)
         {
             return 0;
         }
+        // 4. or the session is not connected yet, this function immediately returns.
         if((*session)->m_IsConnected == false)
         {
             return 0;
         }
     }
 
-    {// 2. Get a transmission block from a block pool.
+    {
+        // 5. Acquire session lock
         std::unique_lock< std::mutex > lock((*session)->m_Lock);
 
+        // 6. and get current transmission block.
         if((*session)->m_CurrentTransmissionBlock == nullptr)
         {
             while((*session)->m_TransmissionBlockPool.size() == 0)
@@ -454,12 +470,16 @@ u16 Transmission::Send(u32 IPv4, u16 Port, u08* buffer, u16 buffersize, bool req
             }
         }
         TxBlock = (*session)->m_CurrentTransmissionBlock;
+        if(TxBlock->m_TransmissionCount == (TxBlock->m_BlockSize - 1))
+        {
+            (*session)->m_CurrentTransmissionBlock = nullptr;
+            reqack = (reqack || true);// For readability.
+        }
     }
-    // TxBlock must not be nullptr;
-    return TxBlock->Send(IPv4, Port, buffer, buffersize, reqack);
+    return TxBlock->Send(buffer, buffersize, reqack);
 }
 
-
+/* OK */
 void Transmission::RxHandler(u08* buffer, u16 size, const sockaddr_in * const sender_addr, const u32 sender_addr_len)
 {
     Header::Common* CommonHeader = reinterpret_cast< Header::Common* >(buffer);

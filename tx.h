@@ -35,7 +35,7 @@ public:
     TransmissionBlock& operator=(TransmissionBlock&&) = delete;
 
     bool Init();
-    u16 Send(u32 IPv4, u16 Port, u08* buffer, u16 buffersize, bool reqack);
+    u16 Send(u08* buffer, u16 buffersize, bool reqack);
     void Retransmission();
 };
 
@@ -45,10 +45,10 @@ public:
     const s32 c_Socket;
     const u32 c_IPv4;
     const u16 c_Port;
-    volatile std::atomic<bool> m_IsConnected;
+    std::atomic<bool> m_IsConnected;
     std::atomic<u16> m_MinBlockSequenceNumber;
     std::atomic<u16> m_MaxBlockSequenceNumber;
-    volatile std::atomic<bool> m_AckList[Parameter::MAX_CONCURRENCY*2];
+    std::atomic<bool> m_AckList[Parameter::MAX_CONCURRENCY*2];
     u08 m_Concurrency;
     u16 m_RetransmissionRedundancy;
     u16 m_RetransmissionInterval;
@@ -69,7 +69,7 @@ public:
         BLOCK_SIZE_64 = 64
     };
     u08 m_BlockSize;
-    ThreadPool m_RetransmissionThreadPool;
+    ThreadPool<1/* Number of priority levels */, 4/* Number of threads */> m_RetransmissionThreadPool;
     std::vector< TransmissionBlock* > m_TransmissionBlockPool;
     TransmissionBlock* m_CurrentTransmissionBlock;
 

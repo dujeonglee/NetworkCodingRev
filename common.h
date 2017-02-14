@@ -26,7 +26,7 @@
 #include <time.h>
 
 // C++ Library Header
-#include "threadpool.h"
+#include "ThreadPool.h"
 #include "avltree.h"
 #include "finite_field.h"
 
@@ -87,6 +87,7 @@ struct Data : Common
         FLAGS_ORIGINAL = 0x1,
         FLAGS_END_OF_BLK = 0x2
     };
+    u08 m_TxCount;
     // ^^^ This part is not encoded ^^^ //
     u16 m_PayloadSize;
     u08 m_LastIndicator;

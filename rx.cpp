@@ -11,7 +11,6 @@ ReceptionBlock *ReceptionBlock::GetFreeBlock()
         freeblock = m_Pool.front();
         m_Pool.pop();
         freeblock->m_Rank = 0;
-        freeblock->m_Delivered = 0;
         return freeblock;
     }
     else
@@ -25,7 +24,6 @@ ReceptionBlock *ReceptionBlock::GetFreeBlock()
             return nullptr;
         }
         freeblock->m_Rank = 0;
-        freeblock->m_Delivered = 0;
         return freeblock;
     }
 }
@@ -44,33 +42,24 @@ void ReceptionBlock::PutFreeBlock(ReceptionBlock* block)
 
 ReceptionSession::ReceptionSession()
 {
-    m_MinBlockSequence = 0;
-    m_MaxBlockSequence = Parameter::MAX_CONCURRENCY;
+    m_CurrentBlockSequenceNumber = 0;
 }
 
-ReceptionSession::ActionType ReceptionSession::Action(Header::Data* s)
+const ReceptionSession::ActionType ReceptionSession::Action(const Header::Data* const s)
 {
-    // Update Minimum Block Sequence Number
     for(u16 i=  0 ; i < Parameter::MAX_CONCURRENCY ; i++)
     {
-        if(m_MinBlockSequenceNumber+i == s->m_MinBlockSequenceNumber)
+        if(m_CurrentBlockSequenceNumber + i == s->m_CurrentBlockSequenceNumber)
         {
-            m_MinBlockSequenceNumber = s->m_MinBlockSequenceNumber;
-            break;
+            ReceptionBlock** const block = m_Blocks.find(m_CurrentBlockSequenceNumber + i);
+            if((*block)->m_FullRank == (*block)->m_Rank)
+            {
+                return ReceptionSession::ActionType::ACK;
+            }
+            return ReceptionSession::ActionType::QUEUE;
         }
     }
-    bool Enqueue = false;
-    for(u16 i=  0 ; i < Parameter::MAX_CONCURRENCY ; i++)
-    {
-        if(m_MinBlockSequenceNumber+i == s->m_CurrentBlockSequenceNumber)
-        {
-            Enqueue = true;
-            break;
-        }
-    }
-
-    return (Enqueue?ReceptionSession::ActionType::QUEUE :
-                    ReceptionSession::ActionType::ACK);
+    return ReceptionSession::ActionType::ACK;
 }
 
 Reception::Reception(s32 Socket) : c_Socket(Socket)
@@ -142,45 +131,11 @@ void Reception::RxHandler(u08* buffer, u16 size, const sockaddr_in * const sende
                             }
                         }
                         // 3. If original packet
-                        if(DataHeader->m_Flags & Header::Data::DataHeaderFlag::FLAGS_ORIGINAL)
-                        {
-                            if(block->m_Buffer.size() < DataHeader->m_ExpectedRank)
-                            {
-                                try
-                                {
-                                    block->m_Buffer.resize(DataHeader->m_ExpectedRank);
-                                }
-                                catch(const std::exception& ex)
-                                {
-                                    std::cout<<ex.what();
-                                    return;
-                                }
-                            }
-                            memcpy(block->m_Buffer[DataHeader->m_ExpectedRank].buffer, buffer, size);
-                            block->m_Rank++;
-                            if(DataHeader->m_CurrentBlockSequenceNumber == (*session)->m_MinBlockSequenceNumber &&
-                                    DataHeader->m_ExpectedRank == block->m_Rank)
-                            {
-                                block->m_Delivered++;
-                                // Rx callback
-                            }
-                            if((DataHeader->m_ExpectedRank == block->m_Rank) &&
-                                    (DataHeader->m_Flags & Header::Data::DataHeaderFlag::FLAGS_END_OF_BLK))
-                            {
-                                Header::DataAck ack;
-                                ack.m_Sequence = DataHeader->m_CurrentBlockSequenceNumber;
-                                ack.m_AckAddress = DataHeader->m_AckAddress;
-                                ack.m_Losses = 0;
-                                sendto(c_Socket, &ack, sizeof(ack), 0, (sockaddr*)&sender_addr, sender_addr_len);
-                            }
-                        }
+
                         // 4. If encoding packet
-                        else
-                        {
                             // 4.1 If it is independent packet then store the packet.
                             // 4.2 if all packets are collected to decode
                             // 4.3. forward the packets to local clients.
-                        }
                         // Check next block is fully decoded.
                     }
                 }
@@ -192,9 +147,8 @@ void Reception::RxHandler(u08* buffer, u16 size, const sockaddr_in * const sende
                     Header::DataAck ack;
                     ack.m_Sequence = DataHeader->m_CurrentBlockSequenceNumber;
                     ack.m_AckAddress = DataHeader->m_AckAddress;
-                    ack.m_Losses = 0;
+                    ack.m_Losses = DataHeader->m_TxCount; /* It is bidirectional packet loss including ack loss. */
                     sendto(c_Socket, &ack, sizeof(ack), 0, (sockaddr*)&sender_addr, sender_addr_len);
-                    block->m_Acknowledged = true;
                     return;
                 }
                 break;
@@ -230,7 +184,7 @@ void Reception::RxHandler(u08* buffer, u16 size, const sockaddr_in * const sende
                 }
             }
             (*session)->m_Blocks.clear();
-            (*session)->m_MinBlockSequenceNumber = SyncHeader->m_Sequence;
+            (*session)->m_CurrentBlockSequenceNumber = SyncHeader->m_Sequence;
             sendto(c_Socket, buffer, sizeof(Header::Sync), 0, (sockaddr*)&sender_addr, sender_addr_len);
         }
         break;
