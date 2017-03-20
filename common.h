@@ -23,11 +23,15 @@
 // C Standard Library
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <unistd.h>
 #include <time.h>
+#include <stddef.h>
+#include <arpa/inet.h>
 
 // C++ Library Header
-#include "ThreadPool.h"
-#include "avltree.h"
+#include "basiclibrary/threadpool/ThreadPool.h"
+#include "basiclibrary/avltree/AVLTree.h"
+#include "basiclibrary/singleshottimer/SingleShotTimer.h"
 #include "finite_field.h"
 
 
@@ -88,15 +92,15 @@ struct Data : Common
         FLAGS_END_OF_BLK = 0x2
     };
     u08 m_TxCount;
+    enum OffSets : u08
+    {
+        CodingOffset = (1+2+2+2+2+1+1+4+4+1+1)
+    };
     // ^^^ This part is not encoded ^^^ //
     u16 m_PayloadSize;
     u08 m_LastIndicator;
     u08 m_Codes[1];
     // ^^^ This part is encoded ^^^ //
-    enum : u16
-    {
-        CODING_OFFSET = 17
-    };
 }__attribute__((packed, may_alias));
 
 struct DataAck : Common
@@ -122,7 +126,24 @@ struct Sync : Common
 
 namespace Parameter
 {
-const u08 MAX_CONCURRENCY = 64;
+const u08 MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION = 64;
+const u16 MAXIMUM_BUFFER_SIZE = 1500;
+enum TRANSMISSION_MODE: u08
+{
+    RELIABLE_TRANSMISSION_MODE = 0,
+    BEST_EFFORT_TRANSMISSION_MODE
+};
+enum BLOCK_SIZE: u08
+{
+    INVALID_BLOCK_SIZE = 0,
+    BLOCK_SIZE_02 = 2,
+    BLOCK_SIZE_04 = 4,
+    BLOCK_SIZE_08 = 8,
+    BLOCK_SIZE_16 = 16,
+    BLOCK_SIZE_32 = 32,
+    BLOCK_SIZE_64 = 64
+};
+const u08 MAX_BLOCK_SIZE = BLOCK_SIZE_64;
 }
 
 namespace DataStructures{

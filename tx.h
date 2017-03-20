@@ -13,20 +13,20 @@ class TransmissionBlock
 {
 public:
     TransmissionSession* const p_Session;
-    u08 m_BlockSize;
-    u08 m_TransmissionMode;
-    u16 m_BlockSequenceNumber;
-    u16 m_RetransmissionRedundancy;
-    u16 m_RetransmissionInterval;
+    const u08 m_BlockSize;
+    const u08 m_TransmissionMode;
+    const u16 m_BlockSequenceNumber;
+    const u16 m_RetransmissionRedundancy;
+    const u16 m_RetransmissionInterval;
     u16 m_LargestOriginalPacketSize;
     u08 m_TransmissionCount;
-    std::mutex m_Lock;
+    SingleShotTimer<1> m_Timer;
 
-    DataStructures::PacketBuffer m_RemedyPacketBuffer;
-    std::vector< DataStructures::PacketBuffer > m_OriginalPacketBuffer;
+    u08 m_RemedyPacketBuffer[Parameter::MAXIMUM_BUFFER_SIZE];
+    std::vector< std::unique_ptr< u08[] > > m_OriginalPacketBuffer;
 
-    TransmissionBlock(TransmissionSession* const);
     TransmissionBlock() = delete;
+    TransmissionBlock(TransmissionSession* p_session);
     TransmissionBlock(const TransmissionBlock&) = delete;
     TransmissionBlock(TransmissionSession&&) = delete;
     ~TransmissionBlock() = default;
@@ -34,9 +34,13 @@ public:
     TransmissionBlock& operator=(const TransmissionBlock&) = delete;
     TransmissionBlock& operator=(TransmissionBlock&&) = delete;
 
-    bool Init();
-    u16 Send(u08* buffer, u16 buffersize, bool reqack);
+    const u16 AckIndex();
+    const bool IsAcked();
+    bool Send(u08 *buffer, u16 buffersize, bool reqack);
     void Retransmission();
+
+    static void PRINT(Header::Data* data);
+    static void PRINT(Header::DataAck* ack);
 };
 
 class TransmissionSession
@@ -48,35 +52,18 @@ public:
     std::atomic<bool> m_IsConnected;
     std::atomic<u16> m_MinBlockSequenceNumber;
     std::atomic<u16> m_MaxBlockSequenceNumber;
-    std::atomic<bool> m_AckList[Parameter::MAX_CONCURRENCY*2];
-    u08 m_Concurrency;
+    std::atomic<bool> m_AckList[Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION*2];
     u16 m_RetransmissionRedundancy;
     u16 m_RetransmissionInterval;
-    enum TRANSMISSION_MODE: u08
-    {
-        RELIABLE_TRANSMISSION_MODE = 0,
-        BEST_EFFORT_TRANSMISSION_MODE
-    };
     u08 m_TransmissionMode;
-    enum BLOCK_SIZE: u08
-    {
-        INVALID_BLOCK_SIZE = 0,
-        BLOCK_SIZE_02 = 2,
-        BLOCK_SIZE_04 = 4,
-        BLOCK_SIZE_08 = 8,
-        BLOCK_SIZE_16 = 16,
-        BLOCK_SIZE_32 = 32,
-        BLOCK_SIZE_64 = 64
-    };
     u08 m_BlockSize;
-    ThreadPool<1/* Number of priority levels */, 4/* Number of threads */> m_RetransmissionThreadPool;
-    std::vector< TransmissionBlock* > m_TransmissionBlockPool;
-    TransmissionBlock* m_CurrentTransmissionBlock;
+    ThreadPool<1, 1> m_TaskQueue;
+    TransmissionBlock* p_TransmissionBlock;
 
-    std::mutex m_Lock;
-    std::condition_variable m_Condition;
-
-    TransmissionSession(s32 Socket, u32 IPv4, u16 Port, u08 Concurrency, TRANSMISSION_MODE TransmissionMode, BLOCK_SIZE BlockSize, u16 RetransmissionRedundancy, u16 RetransmissionInterval);
+    TransmissionSession(s32 Socket, u32 IPv4, u16 Port,
+                        Parameter::TRANSMISSION_MODE TransmissionMode = Parameter::TRANSMISSION_MODE::RELIABLE_TRANSMISSION_MODE,
+                        Parameter::BLOCK_SIZE BlockSize = Parameter::BLOCK_SIZE::BLOCK_SIZE_04,
+                        u16 RetransmissionRedundancy = 0, u16 RetransmissionInterval = 10);
     TransmissionSession() = delete;
     TransmissionSession(const TransmissionSession&) = delete;
     TransmissionSession(TransmissionSession&&) = delete;
@@ -84,26 +71,25 @@ public:
     TransmissionSession& operator=(const TransmissionSession&) = delete;
     TransmissionSession& operator=(TransmissionSession&&) = delete;
 
-    void ChangeConcurrency(const u08 Concurrency);
-    void ChangeTransmissionMode(const TRANSMISSION_MODE TransmissionMode);
-    void ChangeBlockSize(const BLOCK_SIZE BlockSize);
+    void ChangeTransmissionMode(const Parameter::TRANSMISSION_MODE TransmissionMode);
+    void ChangeBlockSize(const Parameter::BLOCK_SIZE BlockSize);
     void ChangeRetransmissionRedundancy(const u16 RetransmissionRedundancy);
     void ChangeRetransmissionInterval(const u16 RetransmissionInterval);
-    void ChangeSessionParameter(const u08 Concurrency, const TRANSMISSION_MODE TransmissionMode, const BLOCK_SIZE BlockSize, const u16 RetransmissionRedundancy, const u16 RetransmissionInterval);
+    void ChangeSessionParameter(const Parameter::TRANSMISSION_MODE TransmissionMode, const Parameter::BLOCK_SIZE BlockSize, const u16 RetransmissionRedundancy, const u16 RetransmissionInterval);
 };
 
 class Transmission
 {
 private:
     const s32 c_Socket;
-    avltree< DataStructures::IPv4PortKey , TransmissionSession* > m_Sessions;
+    AVLTree< DataStructures::IPv4PortKey , TransmissionSession* > m_Sessions;
     std::mutex m_Lock;
 public:
     Transmission(s32 Socket);
     ~Transmission();
 public:
-    bool Connect(u32 IPv4, u16 Port, u08 Concurrency, TransmissionSession::TRANSMISSION_MODE TransmissionMode, TransmissionSession::BLOCK_SIZE BlockSize, u16 RetransmissionRedundancy, u16 RetransmissionInterval);
-    u16 Send(u32 IPv4, u16 Port, u08* buffer, u16 buffersize, bool reqack);
+    bool Connect(u32 IPv4, u16 Port, Parameter::TRANSMISSION_MODE TransmissionMode, Parameter::BLOCK_SIZE BlockSize, u16 RetransmissionRedundancy, u16 RetransmissionInterval);
+    bool Send(u32 IPv4, u16 Port, u08* buffer, u16 buffersize, bool reqack);
 public:
     void RxHandler(u08* buffer, u16 size, const sockaddr_in * const sender_addr, const u32 sender_addr_len);
 };
