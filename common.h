@@ -152,12 +152,7 @@ class IPv4PortKey
 public:
     u32 m_IPv4;
     u16 m_Port;
-};
-
-struct PacketBuffer
-{
-    unsigned char buffer[1500];
-}__attribute__((packed, may_alias));
+}__attribute__((packed));
 }// namespace Parameter
 
 }// namespace NetworkCoding
