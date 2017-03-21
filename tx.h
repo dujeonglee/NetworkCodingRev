@@ -20,16 +20,15 @@ public:
     const u16 m_RetransmissionInterval;
     u16 m_LargestOriginalPacketSize;
     u08 m_TransmissionCount;
-    SingleShotTimer<1> m_Timer;
 
     u08 m_RemedyPacketBuffer[Parameter::MAXIMUM_BUFFER_SIZE];
     std::vector< std::unique_ptr< u08[] > > m_OriginalPacketBuffer;
 
     TransmissionBlock() = delete;
-    TransmissionBlock(TransmissionSession* p_session);
     TransmissionBlock(const TransmissionBlock&) = delete;
     TransmissionBlock(TransmissionSession&&) = delete;
-    ~TransmissionBlock() = default;
+    TransmissionBlock(TransmissionSession* p_session);
+    ~TransmissionBlock();
 
     TransmissionBlock& operator=(const TransmissionBlock&) = delete;
     TransmissionBlock& operator=(TransmissionBlock&&) = delete;
@@ -57,6 +56,7 @@ public:
     u16 m_RetransmissionInterval;
     u08 m_TransmissionMode;
     u08 m_BlockSize;
+    SingleShotTimer<1> m_Timer;
     ThreadPool<1, 1> m_TaskQueue;
     TransmissionBlock* p_TransmissionBlock;
 
@@ -90,6 +90,7 @@ public:
 public:
     bool Connect(u32 IPv4, u16 Port, Parameter::TRANSMISSION_MODE TransmissionMode, Parameter::BLOCK_SIZE BlockSize, u16 RetransmissionRedundancy, u16 RetransmissionInterval);
     bool Send(u32 IPv4, u16 Port, u08* buffer, u16 buffersize, bool reqack);
+    bool Disconnect(u32 IPv4, u16 Port);
 public:
     void RxHandler(u08* buffer, u16 size, const sockaddr_in * const sender_addr, const u32 sender_addr_len);
 };

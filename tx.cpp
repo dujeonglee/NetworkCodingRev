@@ -20,6 +20,13 @@ TransmissionBlock::TransmissionBlock(TransmissionSession *p_session) :
     p_Session->m_AckList[AckIndex()] = false;
 }
 
+TransmissionBlock::~TransmissionBlock()
+{
+    p_Session->m_AckList[AckIndex()] = true;
+    m_OriginalPacketBuffer.clear();
+}
+
+
 const u16 TransmissionBlock::AckIndex()
 {
     return m_BlockSequenceNumber%(Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION*2);
@@ -33,6 +40,10 @@ const bool TransmissionBlock::IsAcked()
 bool TransmissionBlock::Send(u08* buffer, u16 buffersize, bool reqack)
 {
     std::cout<<__PRETTY_FUNCTION__<<std::endl;
+    if(p_Session->m_IsConnected == false)
+    {
+        return false;
+    }
     // 2. Allocate memory for packet buffer.
     try
     {
@@ -91,7 +102,7 @@ bool TransmissionBlock::Send(u08* buffer, u16 buffersize, bool reqack)
     if((m_TransmissionCount == m_BlockSize) || reqack == true)
     {
         p_Session->p_TransmissionBlock = nullptr;
-        m_Timer.ScheduleTask(m_RetransmissionInterval, [this](){Retransmission();}, nullptr);
+        p_Session->m_Timer.ScheduleTask(m_RetransmissionInterval, [this](){Retransmission();}, nullptr);
     }
     return true;
 }
@@ -99,6 +110,10 @@ bool TransmissionBlock::Send(u08* buffer, u16 buffersize, bool reqack)
 void TransmissionBlock::Retransmission()
 {
     std::cout<<__PRETTY_FUNCTION__<<std::endl;
+    if(p_Session->m_IsConnected == false)
+    {
+        return;
+    }
     const u08 c_AckIndex = AckIndex();
     if(m_TransmissionMode == Parameter::BEST_EFFORT_TRANSMISSION_MODE)
     {
@@ -182,7 +197,7 @@ void TransmissionBlock::Retransmission()
         }
         sendto(p_Session->c_Socket, m_RemedyPacketBuffer, RemedyHeader->m_TotalSize, 0, (sockaddr*)&RemoteAddress, sizeof(RemoteAddress));
     }
-    m_Timer.ScheduleTask(m_RetransmissionInterval, [this](){this->Retransmission();}, nullptr);
+    p_Session->m_Timer.ScheduleTask(m_RetransmissionInterval, [this](){this->Retransmission();}, nullptr);
 }
 
 void TransmissionBlock::PRINT(Header::Data* data)
@@ -228,13 +243,13 @@ TransmissionSession::TransmissionSession(s32 Socket, u32 IPv4, u16 Port, Paramet
 /*OK*/
 TransmissionSession::~TransmissionSession()
 {
-    m_TaskQueue.destroy();
+    m_TaskQueue.DestroyAllWorkers();
 }
 
 /*OK*/
 void TransmissionSession::ChangeTransmissionMode(const Parameter::TRANSMISSION_MODE TransmissionMode)
 {
-    m_TaskQueue.enqueue([this, TransmissionMode]()
+    m_TaskQueue.Enqueue([this, TransmissionMode]()
     {
         m_TransmissionMode = TransmissionMode;
     });
@@ -243,7 +258,7 @@ void TransmissionSession::ChangeTransmissionMode(const Parameter::TRANSMISSION_M
 /*OK*/
 void TransmissionSession::ChangeBlockSize(const Parameter::BLOCK_SIZE BlockSize)
 {
-    m_TaskQueue.enqueue([this, BlockSize]()
+    m_TaskQueue.Enqueue([this, BlockSize]()
     {
         m_BlockSize = BlockSize;
     });
@@ -252,7 +267,7 @@ void TransmissionSession::ChangeBlockSize(const Parameter::BLOCK_SIZE BlockSize)
 /*OK*/
 void TransmissionSession::ChangeRetransmissionRedundancy(const u16 RetransmissionRedundancy)
 {
-    m_TaskQueue.enqueue([this, RetransmissionRedundancy]()
+    m_TaskQueue.Enqueue([this, RetransmissionRedundancy]()
     {
         m_RetransmissionRedundancy = RetransmissionRedundancy;
     });
@@ -261,7 +276,7 @@ void TransmissionSession::ChangeRetransmissionRedundancy(const u16 Retransmissio
 /*OK*/
 void TransmissionSession::ChangeRetransmissionInterval(const u16 RetransmissionInterval)
 {
-    m_TaskQueue.enqueue([this, RetransmissionInterval]()
+    m_TaskQueue.Enqueue([this, RetransmissionInterval]()
     {
         m_RetransmissionInterval = RetransmissionInterval;
     });
@@ -270,7 +285,7 @@ void TransmissionSession::ChangeRetransmissionInterval(const u16 RetransmissionI
 /*OK*/
 void TransmissionSession::ChangeSessionParameter(const Parameter::TRANSMISSION_MODE TransmissionMode, const Parameter::BLOCK_SIZE BlockSize, const u16 RetransmissionRedundancy, const u16 RetransmissionInterval)
 {
-    m_TaskQueue.enqueue([this, TransmissionMode, BlockSize, RetransmissionRedundancy, RetransmissionInterval]()
+    m_TaskQueue.Enqueue([this, TransmissionMode, BlockSize, RetransmissionRedundancy, RetransmissionInterval]()
     {
         m_TransmissionMode = TransmissionMode;
         m_BlockSize = BlockSize;
@@ -314,14 +329,8 @@ bool Transmission::Connect(u32 IPv4, u16 Port, Parameter::TRANSMISSION_MODE Tran
             std::cout<<ex.what();
             return false;
         }
-        try
+        if(m_Sessions.Insert(key, newsession) == false)
         {
-            m_Sessions.Insert(key, newsession);
-        }
-        catch(const std::bad_alloc& ex)
-        {
-            delete newsession;
-            std::cout<<ex.what();
             return false;
         }
         if(newsession->m_BlockSize == Parameter::BLOCK_SIZE::INVALID_BLOCK_SIZE)
@@ -341,7 +350,6 @@ bool Transmission::Send(u32 IPv4, u16 Port, u08* buffer, u16 buffersize, bool re
     TransmissionSession* p_session = nullptr;
     {
         std::unique_lock< std::mutex > lock(m_Lock);
-
         const DataStructures::IPv4PortKey key = {IPv4, Port};
         TransmissionSession** const pp_session = m_Sessions.GetPtr(key);
         if(pp_session)
@@ -361,7 +369,7 @@ bool Transmission::Send(u32 IPv4, u16 Port, u08* buffer, u16 buffersize, bool re
     volatile std::atomic<bool> TransmissionIsCompleted(false);
     volatile std::atomic<bool> TransmissionResult(false);
 
-    const bool TransmissionIsScheduled = p_session->m_TaskQueue.enqueue([buffer, buffersize, reqack, p_session, &TransmissionIsCompleted, &TransmissionResult](){
+    const bool TransmissionIsScheduled = p_session->m_TaskQueue.Enqueue([buffer, buffersize, reqack, p_session, &TransmissionIsCompleted, &TransmissionResult](){
         // 1. Get Transmission Block
         if(p_session->p_TransmissionBlock == nullptr)
         {
@@ -399,6 +407,24 @@ bool Transmission::Send(u32 IPv4, u16 Port, u08* buffer, u16 buffersize, bool re
         std::this_thread::sleep_for (std::chrono::milliseconds(0));
     }
     return TransmissionResult;
+}
+
+bool Transmission::Disconnect(u32 IPv4, u16 Port)
+{
+    std::unique_lock< std::mutex > lock(m_Lock);
+
+    const DataStructures::IPv4PortKey key = {IPv4, Port};
+    TransmissionSession** const pp_session = m_Sessions.GetPtr(key);
+    if(pp_session == nullptr)
+    {
+        return false;
+    }
+    TransmissionSession* const p_session = (*pp_session);
+    p_session->m_TaskQueue.Enqueue([p_session](){
+        p_session->m_Timer.CancelAll();
+        p_session->m_TaskQueue.PurgeAllTasks();
+    });
+    return true;
 }
 
 /* OK */
