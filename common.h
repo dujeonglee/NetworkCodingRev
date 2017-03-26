@@ -14,6 +14,7 @@
 #include <atomic>
 #include <mutex>
 #include <condition_variable>
+#include <functional>
 
 //// DataStructures
 #include <exception>

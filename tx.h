@@ -88,7 +88,7 @@ public:
     Transmission(s32 Socket);
     ~Transmission();
 public:
-    bool Connect(u32 IPv4, u16 Port, Parameter::TRANSMISSION_MODE TransmissionMode, Parameter::BLOCK_SIZE BlockSize, u16 RetransmissionRedundancy, u16 RetransmissionInterval);
+    bool Connect(u32 IPv4, u16 Port, u32 ConnectionTimeout, Parameter::TRANSMISSION_MODE TransmissionMode, Parameter::BLOCK_SIZE BlockSize, u16 RetransmissionRedundancy, u16 RetransmissionInterval);
     bool Send(u32 IPv4, u16 Port, u08* buffer, u16 buffersize, bool reqack);
     bool Disconnect(u32 IPv4, u16 Port);
 public:

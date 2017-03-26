@@ -15,7 +15,7 @@ $(TARGET) : $(OBJECTS)
 	$(CPP) -o $@  $^ -pg $(LIBRARY)
 
 .cpp.o : $(SOURCES) 
-	$(CPP) $(SOURCES) $(CPPFLAGS) -DTIMERINFOPOOLING -DNONPRIMITIVE_KEY $(INCLUDES) $(LIBRARY)
+	$(CPP) $(SOURCES) $(CPPFLAGS) -DNONPRIMITIVE_KEY $(INCLUDES) $(LIBRARY)
 
 ./basiclibrary/.git/config : 
 	git clone https://github.com/dujeonglee/basiclibrary.git

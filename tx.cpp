@@ -97,19 +97,19 @@ bool TransmissionBlock::Send(u08* buffer, u16 buffersize, bool reqack)
     RemoteAddress.sin_family = AF_INET;
     RemoteAddress.sin_addr.s_addr = p_Session->c_IPv4;
     RemoteAddress.sin_port = p_Session->c_Port;
+    PRINT((Header::Data*)m_OriginalPacketBuffer[m_TransmissionCount].get());
     sendto(p_Session->c_Socket, m_OriginalPacketBuffer[m_TransmissionCount++].get(), DataHeader->m_TotalSize, 0, (sockaddr*)&RemoteAddress, sizeof(RemoteAddress));
 
     if((m_TransmissionCount == m_BlockSize) || reqack == true)
     {
         p_Session->p_TransmissionBlock = nullptr;
-        p_Session->m_Timer.ScheduleTask(m_RetransmissionInterval, [this](){Retransmission();}, nullptr);
+        p_Session->m_Timer.ScheduleTask(m_RetransmissionInterval, [this](){Retransmission();});
     }
     return true;
 }
 
 void TransmissionBlock::Retransmission()
 {
-    std::cout<<__PRETTY_FUNCTION__<<std::endl;
     if(p_Session->m_IsConnected == false)
     {
         return;
@@ -147,6 +147,7 @@ void TransmissionBlock::Retransmission()
     if(m_OriginalPacketBuffer.size() == 1)
     {
         Header::Data* DataHeader = reinterpret_cast<Header::Data*>(m_OriginalPacketBuffer[0].get());
+        DataHeader->m_Type = Header::Common::HeaderType::DATA;
         /* Must be the same *///DataHeader->m_TotalSize = sizeof(Header::Data) + (m_BlockSize-1) + m_LargestOriginalPacketSize;
         DataHeader->m_MinBlockSequenceNumber = p_Session->m_MinBlockSequenceNumber.load();
         /* Must be the same *///DataHeader->m_CurrentBlockSequenceNumber = m_BlockSequenceNumber;
@@ -159,6 +160,7 @@ void TransmissionBlock::Retransmission()
 #endif
         DataHeader->m_Flags = Header::Data::FLAGS_ORIGINAL | Header::Data::FLAGS_END_OF_BLK;
         DataHeader->m_TxCount = m_TransmissionCount++;
+        PRINT((Header::Data*)m_OriginalPacketBuffer[0].get());
         sendto(p_Session->c_Socket, m_OriginalPacketBuffer[0].get(), DataHeader->m_TotalSize, 0, (sockaddr*)&RemoteAddress, sizeof(RemoteAddress));
     }
     else
@@ -172,6 +174,7 @@ void TransmissionBlock::Retransmission()
         }
 
         RandomCoefficients.resize(m_BlockSize, (rand()%255)+1);
+        RemedyHeader->m_Type = Header::Common::HeaderType::DATA;
         RemedyHeader->m_TotalSize = sizeof(Header::Data) + (m_BlockSize-1) + m_LargestOriginalPacketSize;
         RemedyHeader->m_MinBlockSequenceNumber = p_Session->m_MinBlockSequenceNumber.load();
         RemedyHeader->m_CurrentBlockSequenceNumber = m_BlockSequenceNumber;
@@ -195,25 +198,34 @@ void TransmissionBlock::Retransmission()
                 m_RemedyPacketBuffer[CodingOffset] ^= FiniteField::instance()->mul(OriginalBuffer[CodingOffset], RandomCoefficients[PacketIndex]);
             }
         }
+        PRINT((Header::Data*)m_RemedyPacketBuffer);
         sendto(p_Session->c_Socket, m_RemedyPacketBuffer, RemedyHeader->m_TotalSize, 0, (sockaddr*)&RemoteAddress, sizeof(RemoteAddress));
+        std::cout<<__PRETTY_FUNCTION__<<std::endl;
     }
-    p_Session->m_Timer.ScheduleTask(m_RetransmissionInterval, [this](){this->Retransmission();}, nullptr);
+    p_Session->m_Timer.ScheduleTask(m_RetransmissionInterval, [this](){this->Retransmission();});
 }
 
 void TransmissionBlock::PRINT(Header::Data* data)
 {
-    //printf("[Type %hhu]\
-            [TotalSize %hu]\
-            [MinSeq. %hu]\
-            [CurSeq. %hu]\
-            [MaxSeq. %hu]\
-            [Exp.Rank %hhu]\
-            [Max.Rank %hhu]\
-            [Addr %p]\
-            [Flags %hhx]\
-            [TxCnt %hhu]\
-            [Payload %hu]\
-            [LastInd. %hhu]", data->Type, );
+    printf("[Type %hhu][TotalSize %hu][MinSeq. %hu][CurSeq. %hu][MaxSeq. %hu][Exp.Rank %hhu][Max.Rank %hhu][Addr %ld][Flags %hhx][TxCnt %hhu][Payload %hu][LastInd. %hhu]",
+            data->m_Type,
+            data->m_TotalSize,
+            data->m_MinBlockSequenceNumber,
+            data->m_CurrentBlockSequenceNumber,
+            data->m_MaxBlockSequenceNumber,
+            data->m_ExpectedRank,
+            data->m_MaximumRank,
+            data->m_AckAddress,
+            data->m_Flags,
+            data->m_TxCount,
+            data->m_PayloadSize,
+            data->m_LastIndicator);
+    printf("[Code ");
+    for(u08 i = 0 ; i < data->m_MaximumRank ; i++)
+    {
+        printf(" %3hhu ", data->m_Codes[i]);
+    }
+    printf("]\n");
 }
 
 void TransmissionBlock::PRINT(Header::DataAck* ack)
@@ -243,7 +255,8 @@ TransmissionSession::TransmissionSession(s32 Socket, u32 IPv4, u16 Port, Paramet
 /*OK*/
 TransmissionSession::~TransmissionSession()
 {
-    m_TaskQueue.DestroyAllWorkers();
+    m_Timer.Stop();
+    m_TaskQueue.Stop();
 }
 
 /*OK*/
@@ -307,7 +320,7 @@ Transmission::~Transmission()
 }
 
 /* OK */
-bool Transmission::Connect(u32 IPv4, u16 Port, Parameter::TRANSMISSION_MODE TransmissionMode, Parameter::BLOCK_SIZE BlockSize, u16 RetransmissionRedundancy, u16 RetransmissionInterval)
+bool Transmission::Connect(u32 IPv4, u16 Port, u32 ConnectionTimeout, Parameter::TRANSMISSION_MODE TransmissionMode, Parameter::BLOCK_SIZE BlockSize, u16 RetransmissionRedundancy, u16 RetransmissionInterval)
 {
     std::unique_lock< std::mutex > lock(m_Lock);
 
@@ -340,8 +353,28 @@ bool Transmission::Connect(u32 IPv4, u16 Port, Parameter::TRANSMISSION_MODE Tran
             return false;
         }
     }
-    newsession->m_IsConnected = true;
-    return true;
+    Header::Sync SyncPacket;
+    SyncPacket.m_Type = Header::Common::HeaderType::SYNC;
+    SyncPacket.m_Sequence = newsession->m_MaxBlockSequenceNumber;
+    SyncPacket.m_SessionAddress = (laddr)newsession;
+#ifdef ENVIRONMENT32
+    SyncPacket.m_Reserved = 0;
+#endif
+
+    sockaddr_in RemoteAddress = {0};
+    RemoteAddress.sin_family = AF_INET;
+    RemoteAddress.sin_addr.s_addr = newsession->c_IPv4;
+    RemoteAddress.sin_port = newsession->c_Port;
+    if(sendto(c_Socket, (u08*)&SyncPacket, sizeof(SyncPacket), 0, (sockaddr*)&RemoteAddress, sizeof(RemoteAddress)) != sizeof(SyncPacket))
+    {
+        return false;
+    }
+    while(!newsession->m_IsConnected && ConnectionTimeout > 0)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        ConnectionTimeout--;
+    }
+    return ConnectionTimeout > 0;
 }
 
 /* OK */
@@ -366,8 +399,8 @@ bool Transmission::Send(u32 IPv4, u16 Port, u08* buffer, u16 buffersize, bool re
         return false;
     }
 
-    volatile std::atomic<bool> TransmissionIsCompleted(false);
-    volatile std::atomic<bool> TransmissionResult(false);
+    std::atomic<bool> TransmissionIsCompleted(false);
+    std::atomic<bool> TransmissionResult(false);
 
     const bool TransmissionIsScheduled = p_session->m_TaskQueue.Enqueue([buffer, buffersize, reqack, p_session, &TransmissionIsCompleted, &TransmissionResult](){
         // 1. Get Transmission Block
@@ -385,7 +418,6 @@ bool Transmission::Send(u32 IPv4, u16 Port, u08* buffer, u16 buffersize, bool re
             }
         }
         TransmissionBlock* const block = p_session->p_TransmissionBlock;
-
         if(block->Send(buffer, buffersize, reqack) == false)
         {
             TransmissionResult = false;
@@ -421,8 +453,9 @@ bool Transmission::Disconnect(u32 IPv4, u16 Port)
     }
     TransmissionSession* const p_session = (*pp_session);
     p_session->m_TaskQueue.Enqueue([p_session](){
-        p_session->m_Timer.CancelAll();
-        p_session->m_TaskQueue.PurgeAllTasks();
+        p_session->m_Timer.Stop();
+        p_session->m_TaskQueue.Stop();
+        p_session->m_IsConnected = false;
     });
     return true;
 }

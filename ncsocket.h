@@ -2,16 +2,17 @@
 #define _NCSOCKET_H_
 
 #include "tx.h"
+#include "rx.h"
+#include <sys/select.h>
 
 namespace NetworkCoding
 {
-template <u16 PORT, u32 RXTIMEOUT, u32 TXTIMEOUT>
 class NCSocket{
 public:
     NCSocket() = delete;
     NCSocket(const NCSocket&) = delete;
     NCSocket(NCSocket&&) = delete;
-    NCSocket(std::function <void (unsigned char* buffer, unsigned int length, sockaddr_in addr)> rx)
+    NCSocket(const u16 PORT, const long int RXTIMEOUT, const long int TXTIMEOUT, const std::function <void (u08* buffer, u16 length, sockaddr_in addr)> rx)
     {
         m_State = INIT_FAILURE;
         m_Socket = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -26,14 +27,14 @@ public:
             m_Socket = -1;
             return;
         }
-        const timeval tx_to = {TXTIMEOUT/1000, TXTIMEOUT%1000};
+        const timeval tx_to = {TXTIMEOUT/1000, (TXTIMEOUT%1000)*1000};
         if(setsockopt(m_Socket, SOL_SOCKET, SO_SNDTIMEO, &tx_to, sizeof(tx_to)) == -1)
         {
             close(m_Socket);
             m_Socket = -1;
             return;
         }
-        const timeval rx_to = {RXTIMEOUT/1000, RXTIMEOUT%1000};
+        const timeval rx_to = {RXTIMEOUT/1000, (RXTIMEOUT%1000)*1000};
         if(setsockopt(m_Socket, SOL_SOCKET, SO_RCVTIMEO, &rx_to, sizeof(rx_to)) == -1)
         {
             close(m_Socket);
@@ -54,11 +55,23 @@ public:
 
         try
         {
+            m_Rx = new Reception(m_Socket, rx);
+        }
+        catch(const std::bad_alloc& ex)
+        {
+            std::cout<<ex.what()<<std::endl;
+            close(m_Socket);
+            m_Socket = -1;
+            return;
+        }
+        try
+        {
             m_Tx = new Transmission(m_Socket);
         }
         catch(const std::bad_alloc& ex)
         {
             std::cout<<ex.what()<<std::endl;
+            delete m_Rx;
             close(m_Socket);
             m_Socket = -1;
             return;
@@ -67,37 +80,48 @@ public:
         m_RxThreadIsRunning = true;
         try
         {
-            m_RxThread = new std::thread([this](){
+            m_RxThread = new std::thread([this, RXTIMEOUT](){
                 u08 rxbuffer[Parameter::MAXIMUM_BUFFER_SIZE];
                 while(m_RxThreadIsRunning)
                 {
                     sockaddr_in sender_addr = {0,};
                     int sender_addr_length = sizeof(sockaddr_in);
-                    const int ret = recvfrom(m_Socket, rxbuffer, sizeof(rxbuffer), 0, (sockaddr*)&sender_addr, &sender_addr_length);
-                    if(ret <= 0)
+                    fd_set ReadFD;
+                    FD_ZERO(&ReadFD);
+                    FD_SET(m_Socket, &ReadFD);
+                    const int MaxFD = m_Socket;
+                    timeval rx_to = {RXTIMEOUT/1000, (RXTIMEOUT%1000)*1000};
+                    const int state = select(MaxFD + 1 , &ReadFD, NULL, NULL, &rx_to);
+                    if(state == 1 && FD_ISSET(m_Socket, &ReadFD))
                     {
-                        continue;
+                        const int ret = recvfrom(m_Socket, rxbuffer, sizeof(rxbuffer), 0, (sockaddr*)&sender_addr, &sender_addr_length);
+                        if(ret <= 0)
+                        {
+                            continue;
+                        }
+                        m_Rx->RxHandler(rxbuffer, (u16)ret, &sender_addr, sender_addr_length);
+                        m_Tx->RxHandler(rxbuffer, (u16)ret, &sender_addr, sender_addr_length);
                     }
-                    m_Tx->RxHandler(rxbuffer, (u16)ret, &sender_addr, sender_addr_length);
                 }
             });
         }
         catch(const std::bad_alloc& ex)
         {
             std::cout<<ex.what()<<std::endl;
+            delete m_Tx;
+            delete m_Rx;
             close(m_Socket);
             m_Socket = -1;
-            delete m_Tx;
             return;
         }
-        m_RxCallback = rx;
         m_State = INIT_SUCCESS;
     }
 
     ~NCSocket()
     {
         m_RxThreadIsRunning = false;
-        m_RxThread->join();
+        if(m_RxThread->joinable())
+            m_RxThread->join();
         delete m_Tx;
     }
 
@@ -110,21 +134,21 @@ private:
     };
     STATE m_State;
     int m_Socket;
+    Reception* m_Rx;
     Transmission* m_Tx;
     std::thread* m_RxThread;
     bool m_RxThreadIsRunning;
-    std::function <void (u08* buffer, u16 length, sockaddr_in addr)> m_RxCallback;
 public:
-    bool OpenSession(unsigned int ip, unsigned short int port, Parameter::TRANSMISSION_MODE TransmissionMode, Parameter::BLOCK_SIZE BlockSize, u16 RetransmissionRedundancy, u16 RetransmissionInterval)
+    bool Connect(u32 ip, u16 port, u32 timeout, Parameter::TRANSMISSION_MODE TransmissionMode, Parameter::BLOCK_SIZE BlockSize, u16 RetransmissionRedundancy, u16 RetransmissionInterval)
     {
         if(m_State == INIT_FAILURE)
         {
             return false;
         }
-        return m_Tx->Connect(ip, port, TransmissionMode, BlockSize, RetransmissionRedundancy, RetransmissionInterval);
+        return m_Tx->Connect(ip, port, timeout, TransmissionMode, BlockSize, RetransmissionRedundancy, RetransmissionInterval);
     }
 
-    void CloseSession(unsigned int ip, unsigned short int port)
+    void Disconnect(u32 ip, u16 port)
     {
         if(m_State == INIT_FAILURE)
         {
