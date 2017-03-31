@@ -11,10 +11,11 @@ TransmissionBlock::TransmissionBlock(TransmissionSession *p_session) :
     p_Session(p_session),
     m_BlockSize(p_session->m_BlockSize),
     m_TransmissionMode(p_session->m_TransmissionMode),
-    m_BlockSequenceNumber(p_session->m_MaxBlockSequenceNumber++),
+    m_BlockSequenceNumber(p_session->m_MaxBlockSequenceNumber.fetch_add(1, std::memory_order_relaxed)),
     m_RetransmissionRedundancy(p_session->m_RetransmissionRedundancy),
     m_RetransmissionInterval(p_session->m_RetransmissionInterval)
 {
+    p_Session->m_ConcurrentRetransmissions++;
     m_LargestOriginalPacketSize = 0;
     m_TransmissionCount = 0;
     p_Session->m_AckList[AckIndex()] = false;
@@ -24,6 +25,7 @@ TransmissionBlock::~TransmissionBlock()
 {
     p_Session->m_AckList[AckIndex()] = true;
     m_OriginalPacketBuffer.clear();
+    p_Session->m_ConcurrentRetransmissions--;
 }
 
 
@@ -39,7 +41,6 @@ const bool TransmissionBlock::IsAcked()
 
 bool TransmissionBlock::Send(u08* buffer, u16 buffersize, bool reqack)
 {
-    std::cout<<__PRETTY_FUNCTION__<<std::endl;
     if(p_Session->m_IsConnected == false)
     {
         return false;
@@ -97,13 +98,16 @@ bool TransmissionBlock::Send(u08* buffer, u16 buffersize, bool reqack)
     RemoteAddress.sin_family = AF_INET;
     RemoteAddress.sin_addr.s_addr = p_Session->c_IPv4;
     RemoteAddress.sin_port = p_Session->c_Port;
-    PRINT((Header::Data*)m_OriginalPacketBuffer[m_TransmissionCount].get());
     sendto(p_Session->c_Socket, m_OriginalPacketBuffer[m_TransmissionCount++].get(), DataHeader->m_TotalSize, 0, (sockaddr*)&RemoteAddress, sizeof(RemoteAddress));
 
     if((m_TransmissionCount == m_BlockSize) || reqack == true)
     {
         p_Session->p_TransmissionBlock = nullptr;
-        p_Session->m_Timer.ScheduleTask(m_RetransmissionInterval, [this](){Retransmission();});
+        p_Session->m_Timer.ScheduleTask(m_RetransmissionInterval, [this](){
+            p_Session->m_TaskQueue.Enqueue([this](){
+                Retransmission();
+            }, (p_Session->m_MinBlockSequenceNumber == m_BlockSequenceNumber?0:1));
+        });
     }
     return true;
 }
@@ -124,17 +128,15 @@ void TransmissionBlock::Retransmission()
     }
     if(IsAcked() == true)
     {
+        for(u16 i = p_Session->m_MinBlockSequenceNumber ; i != p_Session->m_MaxBlockSequenceNumber ; i++)
         {
-            for(u16 i = p_Session->m_MinBlockSequenceNumber ; i != p_Session->m_MaxBlockSequenceNumber ; i++)
+            if(p_Session->m_AckList[i%(Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION*2)] == true)
             {
-                if(p_Session->m_AckList[i%(Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION*2)] == true)
-                {
-                    p_Session->m_MinBlockSequenceNumber++;
-                }
-                else
-                {
-                    break;
-                }
+                p_Session->m_MinBlockSequenceNumber++;
+            }
+            else
+            {
+                break;
             }
         }
         delete this;
@@ -160,7 +162,6 @@ void TransmissionBlock::Retransmission()
 #endif
         DataHeader->m_Flags = Header::Data::FLAGS_ORIGINAL | Header::Data::FLAGS_END_OF_BLK;
         DataHeader->m_TxCount = m_TransmissionCount++;
-        PRINT((Header::Data*)m_OriginalPacketBuffer[0].get());
         sendto(p_Session->c_Socket, m_OriginalPacketBuffer[0].get(), DataHeader->m_TotalSize, 0, (sockaddr*)&RemoteAddress, sizeof(RemoteAddress));
     }
     else
@@ -179,8 +180,8 @@ void TransmissionBlock::Retransmission()
         RemedyHeader->m_MinBlockSequenceNumber = p_Session->m_MinBlockSequenceNumber.load();
         RemedyHeader->m_CurrentBlockSequenceNumber = m_BlockSequenceNumber;
         RemedyHeader->m_MaxBlockSequenceNumber = p_Session->m_MaxBlockSequenceNumber.load();
-        RemedyHeader->m_ExpectedRank = m_BlockSize;
-        RemedyHeader->m_MaximumRank = m_BlockSize;
+        RemedyHeader->m_ExpectedRank = m_OriginalPacketBuffer.size();
+        RemedyHeader->m_MaximumRank = m_OriginalPacketBuffer.size();
         RemedyHeader->m_AckAddress = (laddr)(&(p_Session->m_AckList[c_AckIndex]));
 #ifdef ENVIRONMENT32
         RemedyHeader->m_Reserved = 0;
@@ -198,40 +199,14 @@ void TransmissionBlock::Retransmission()
                 m_RemedyPacketBuffer[CodingOffset] ^= FiniteField::instance()->mul(OriginalBuffer[CodingOffset], RandomCoefficients[PacketIndex]);
             }
         }
-        PRINT((Header::Data*)m_RemedyPacketBuffer);
         sendto(p_Session->c_Socket, m_RemedyPacketBuffer, RemedyHeader->m_TotalSize, 0, (sockaddr*)&RemoteAddress, sizeof(RemoteAddress));
-        std::cout<<__PRETTY_FUNCTION__<<std::endl;
     }
-    p_Session->m_Timer.ScheduleTask(m_RetransmissionInterval, [this](){this->Retransmission();});
+    p_Session->m_Timer.ScheduleTask(m_RetransmissionInterval, [this](){
+        p_Session->m_TaskQueue.Enqueue([this](){
+            Retransmission();
+        }, (p_Session->m_MinBlockSequenceNumber == m_BlockSequenceNumber?0:1));
+    });
 }
-
-void TransmissionBlock::PRINT(Header::Data* data)
-{
-    printf("[Type %hhu][TotalSize %hu][MinSeq. %hu][CurSeq. %hu][MaxSeq. %hu][Exp.Rank %hhu][Max.Rank %hhu][Addr %ld][Flags %hhx][TxCnt %hhu][Payload %hu][LastInd. %hhu]",
-            data->m_Type,
-            data->m_TotalSize,
-            data->m_MinBlockSequenceNumber,
-            data->m_CurrentBlockSequenceNumber,
-            data->m_MaxBlockSequenceNumber,
-            data->m_ExpectedRank,
-            data->m_MaximumRank,
-            data->m_AckAddress,
-            data->m_Flags,
-            data->m_TxCount,
-            data->m_PayloadSize,
-            data->m_LastIndicator);
-    printf("[Code ");
-    for(u08 i = 0 ; i < data->m_MaximumRank ; i++)
-    {
-        printf(" %3hhu ", data->m_Codes[i]);
-    }
-    printf("]\n");
-}
-
-void TransmissionBlock::PRINT(Header::DataAck* ack)
-{
-}
-
 
 ////////////////////////////////////////////////////////////
 /////////////// TransmissionSession
@@ -249,6 +224,7 @@ TransmissionSession::TransmissionSession(s32 Socket, u32 IPv4, u16 Port, Paramet
     {
         m_AckList[i] = true;
     }
+    m_ConcurrentRetransmissions = 0;
 }
 
 
@@ -401,7 +377,7 @@ bool Transmission::Send(u32 IPv4, u16 Port, u08* buffer, u16 buffersize, bool re
 
     std::atomic<bool> TransmissionIsCompleted(false);
     std::atomic<bool> TransmissionResult(false);
-
+    while(p_session->m_ConcurrentRetransmissions >= Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION);
     const bool TransmissionIsScheduled = p_session->m_TaskQueue.Enqueue([buffer, buffersize, reqack, p_session, &TransmissionIsCompleted, &TransmissionResult](){
         // 1. Get Transmission Block
         if(p_session->p_TransmissionBlock == nullptr)
@@ -469,8 +445,16 @@ void Transmission::RxHandler(u08* buffer, u16 size, const sockaddr_in * const se
         case Header::Common::HeaderType::DATA_ACK:
         {
             const Header::DataAck* Ack = reinterpret_cast< Header::DataAck* >(buffer);
-            std::atomic<bool>* const AckAddress = reinterpret_cast< std::atomic<bool>* >(Ack->m_AckAddress);
-            (*AckAddress) = true;
+            const DataStructures::IPv4PortKey key = {sender_addr->sin_addr.s_addr, sender_addr->sin_port};
+            std::unique_lock< std::mutex > lock(m_Lock);
+            TransmissionSession** const pp_session = m_Sessions.GetPtr(key);
+            if(pp_session)
+            {
+                std::atomic<bool>* const AckAddress = reinterpret_cast< std::atomic<bool>* >(Ack->m_AckAddress);
+                (*pp_session)->m_TaskQueue.Enqueue([AckAddress](){
+                    (*AckAddress) = true;
+                }, 0);
+            }
         }
         break;
 

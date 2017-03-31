@@ -12,7 +12,7 @@ public:
     NCSocket() = delete;
     NCSocket(const NCSocket&) = delete;
     NCSocket(NCSocket&&) = delete;
-    NCSocket(const u16 PORT, const long int RXTIMEOUT, const long int TXTIMEOUT, const std::function <void (u08* buffer, u16 length, sockaddr_in addr)> rx)
+    NCSocket(const u16 PORT, const long int RXTIMEOUT, const long int TXTIMEOUT, const std::function <void (u08* buffer, u16 length, const sockaddr_in * const sender_addr, const u32 sender_addr_len)> rx)
     {
         m_State = INIT_FAILURE;
         m_Socket = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);

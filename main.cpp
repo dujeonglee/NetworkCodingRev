@@ -2,7 +2,7 @@
 #include "ncsocket.h"
 using namespace std;
 
-void RxCallback(unsigned char* buffer, unsigned int length, sockaddr_in addr)
+void RxCallback(unsigned char* buffer, unsigned int length, const sockaddr_in * const sender_addr, const u32 sender_addr_len)
 {
 
 }
@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
                           NetworkCoding::Parameter::RELIABLE_TRANSMISSION_MODE,
                           NetworkCoding::Parameter::BLOCK_SIZE_04,
                           0,
-                          1000) == false)
+                          5) == false)
         {
             std::cout<<"Failed\n";
             return -1;
@@ -28,45 +28,42 @@ int main(int argc, char *argv[])
             std::cout<<"Connected\n";
         }
     }
-#if 1
-    u08 buffer[1024] = {0};
+    while(1)
     {
-        std::cout<<"Send1\n";
-        const bool result = socket1.Send(inet_addr("127.0.0.1"),
-                                        htons(1005),buffer, sizeof(buffer), false);
-        if(!result)
+        u08 buffer[1024] = {0};
         {
-            std::cout<<"Send failed\n";
+            const bool result = socket1.Send(inet_addr("127.0.0.1"),
+                                            htons(1005),buffer, sizeof(buffer), false);
+            if(!result)
+            {
+                std::cout<<"Send failed\n";
+            }
         }
-    }
-    {
-        std::cout<<"Send2\n";
-        const bool result = socket1.Send(inet_addr("127.0.0.1"),
-                                        htons(1005),buffer, sizeof(buffer), false);
-        if(!result)
         {
-            std::cout<<"Send failed\n";
+            const bool result = socket1.Send(inet_addr("127.0.0.1"),
+                                            htons(1005),buffer, sizeof(buffer), false);
+            if(!result)
+            {
+                std::cout<<"Send failed\n";
+            }
         }
-    }
-    {
-        std::cout<<"Send3\n";
-        const bool result = socket1.Send(inet_addr("127.0.0.1"),
-                                        htons(1005),buffer, sizeof(buffer), false);
-        if(!result)
         {
-            std::cout<<"Send failed\n";
+            const bool result = socket1.Send(inet_addr("127.0.0.1"),
+                                            htons(1005),buffer, sizeof(buffer), false);
+            if(!result)
+            {
+                std::cout<<"Send failed\n";
+            }
         }
-    }
-    {
-        std::cout<<"Send4\n";
-        const bool result = socket1.Send(inet_addr("127.0.0.1"),
-                                        htons(1005),buffer, sizeof(buffer), false);
-        if(!result)
         {
-            std::cout<<"Send failed\n";
+            const bool result = socket1.Send(inet_addr("127.0.0.1"),
+                                            htons(1005),buffer, sizeof(buffer), false);
+            if(!result)
+            {
+                std::cout<<"Send failed\n";
+            }
         }
+        std::this_thread::sleep_for (std::chrono::milliseconds(1));
     }
-#endif
-    while(1);
     return 0;
 }

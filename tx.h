@@ -37,9 +37,6 @@ public:
     const bool IsAcked();
     bool Send(u08 *buffer, u16 buffersize, bool reqack);
     void Retransmission();
-
-    static void PRINT(Header::Data* data);
-    static void PRINT(Header::DataAck* ack);
 };
 
 class TransmissionSession
@@ -56,9 +53,10 @@ public:
     u16 m_RetransmissionInterval;
     u08 m_TransmissionMode;
     u08 m_BlockSize;
-    SingleShotTimer<1> m_Timer;
-    ThreadPool<1, 1> m_TaskQueue;
+    SingleShotTimer<1, 1> m_Timer;
+    ThreadPool<2, 1> m_TaskQueue;
     TransmissionBlock* p_TransmissionBlock;
+    std::atomic<unsigned long> m_ConcurrentRetransmissions;
 
     TransmissionSession(s32 Socket, u32 IPv4, u16 Port,
                         Parameter::TRANSMISSION_MODE TransmissionMode = Parameter::TRANSMISSION_MODE::RELIABLE_TRANSMISSION_MODE,
