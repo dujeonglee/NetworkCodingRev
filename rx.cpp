@@ -45,6 +45,7 @@ ReceptionBlock::~ReceptionBlock()
 void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const sender_addr, const u32 sender_addr_len)
 {
     Header::Data* const DataHeader = reinterpret_cast <Header::Data*>(buffer);
+    // Check if the packet is innovative....
     if((DataHeader->m_Flags & Header::Data::DataHeaderFlag::FLAGS_END_OF_BLK) && m_PacketBuffer.size() == DataHeader->m_ExpectedRank)
     {
         Header::DataAck ack;
@@ -80,13 +81,30 @@ void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const 
                     break;
                 }
             }
-            c_Reception->m_RxCallback(buffer, length, sender_addr, sender_addr_len);
+            const u32 buffer_index = DataHeader->m_ExpectedRank;
+            const sockaddr_in addr = (*sender_addr);
+            const u32 addr_length = sizeof(addr);
+            c_Session->m_RxTaskQueue.Enqueue([this, buffer_index, length, addr, addr_length](){
+                c_Reception->m_RxCallback(m_PacketBuffer[buffer_index].get(), length, &addr, addr_length);
+            });
         }
     }
     if((DataHeader->m_ExpectedRank == m_PacketBuffer.size()) && (DataHeader->m_Flags & Header::Data::DataHeaderFlag::FLAGS_END_OF_BLK))
     {
         // Decoding.
-        std::cout<<"Decoding...\n";
+        if(!(DataHeader->m_Flags & Header::Data::DataHeaderFlag::FLAGS_ORIGINAL))
+        {
+            printf("=============\n");
+            for(u16 i = 0 ; i < m_PacketBuffer.size() ; i++)
+            {
+                Header::Data* const hdr = reinterpret_cast <Header::Data*>(m_PacketBuffer[i].get());
+                for(u16 i = 0 ; i < m_PacketBuffer.size() ; i++)
+                {
+                    printf(" %3hhu ", hdr->m_Codes[i]);
+                }
+                printf("\n");
+            }
+        }
         Header::DataAck ack;
         ack.m_Type = Header::Common::HeaderType::DATA_ACK;
         ack.m_Sequence = DataHeader->m_CurrentBlockSequenceNumber;

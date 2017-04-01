@@ -106,7 +106,7 @@ bool TransmissionBlock::Send(u08* buffer, u16 buffersize, bool reqack)
         p_Session->m_Timer.ScheduleTask(m_RetransmissionInterval, [this](){
             p_Session->m_TaskQueue.Enqueue([this](){
                 Retransmission();
-            }, (p_Session->m_MinBlockSequenceNumber == m_BlockSequenceNumber?0:1));
+            }, (p_Session->m_MinBlockSequenceNumber == m_BlockSequenceNumber?TransmissionSession::MIDDLE_PRIORITY:TransmissionSession::LOW_PRIORITY));
         });
     }
     return true;
@@ -204,7 +204,7 @@ void TransmissionBlock::Retransmission()
     p_Session->m_Timer.ScheduleTask(m_RetransmissionInterval, [this](){
         p_Session->m_TaskQueue.Enqueue([this](){
             Retransmission();
-        }, (p_Session->m_MinBlockSequenceNumber == m_BlockSequenceNumber?0:1));
+        }, (p_Session->m_MinBlockSequenceNumber == m_BlockSequenceNumber?TransmissionSession::MIDDLE_PRIORITY:TransmissionSession::LOW_PRIORITY));
     });
 }
 
@@ -402,7 +402,7 @@ bool Transmission::Send(u32 IPv4, u16 Port, u08* buffer, u16 buffersize, bool re
         }
         TransmissionResult = true;
         TransmissionIsCompleted = true;
-    });
+    }, TransmissionSession::MIDDLE_PRIORITY);
 
     if(TransmissionIsScheduled == false)
     {
@@ -432,7 +432,7 @@ bool Transmission::Disconnect(u32 IPv4, u16 Port)
         p_session->m_Timer.Stop();
         p_session->m_TaskQueue.Stop();
         p_session->m_IsConnected = false;
-    });
+    }, TransmissionSession::HIGH_PRIORITY);
     return true;
 }
 
@@ -453,7 +453,7 @@ void Transmission::RxHandler(u08* buffer, u16 size, const sockaddr_in * const se
                 std::atomic<bool>* const AckAddress = reinterpret_cast< std::atomic<bool>* >(Ack->m_AckAddress);
                 (*pp_session)->m_TaskQueue.Enqueue([AckAddress](){
                     (*AckAddress) = true;
-                }, 0);
+                }, TransmissionSession::HIGH_PRIORITY);
             }
         }
         break;

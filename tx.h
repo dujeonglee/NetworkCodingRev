@@ -54,7 +54,15 @@ public:
     u08 m_TransmissionMode;
     u08 m_BlockSize;
     SingleShotTimer<1, 1> m_Timer;
-    ThreadPool<2, 1> m_TaskQueue;
+    enum TaskPriority
+    {
+        HIGH_PRIORITY = 0,
+        MIDDLE_PRIORITY,
+        LOW_PRIORITY,
+        PRIORITY_LEVELS
+    };
+
+    ThreadPool<TaskPriority::PRIORITY_LEVELS, 1> m_TaskQueue;
     TransmissionBlock* p_TransmissionBlock;
     std::atomic<unsigned long> m_ConcurrentRetransmissions;
 
