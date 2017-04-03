@@ -71,7 +71,7 @@ bool TransmissionBlock::Send(u08* buffer, u16 buffersize, bool reqack)
 #endif
     DataHeader->m_Flags = Header::Data::FLAGS_ORIGINAL;
     DataHeader->m_TxCount = m_TransmissionCount + 1;
-    if(reqack)
+    if(reqack || DataHeader->m_ExpectedRank == m_BlockSize)
     {
         //Note: Header::Data::FLAGS_END_OF_BLK asks ack from the client
         DataHeader->m_Flags |= Header::Data::FLAGS_END_OF_BLK;

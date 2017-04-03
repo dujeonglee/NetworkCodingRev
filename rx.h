@@ -15,8 +15,10 @@ private:
     Reception* const c_Reception;
     ReceptionSession* const c_Session;
     const u16 m_BlockSequenceNumber;
-    std::vector< std::unique_ptr< u08[] > > m_PacketBuffer;
+    std::vector< std::unique_ptr< u08[] > > m_DecodedPacketBuffer;
+    std::vector< std::unique_ptr< u08[] > > m_EncodedPacketBuffer;
     u08 m_ServiceMask[4];
+    bool IsInnovative(u08* buffer, u16 length);
 public:
     ReceptionBlock() = delete;
     ReceptionBlock(const ReceptionBlock&) = delete;

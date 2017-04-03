@@ -90,7 +90,8 @@ struct Data : Common
     enum DataHeaderFlag : u08
     {
         FLAGS_ORIGINAL = 0x1,
-        FLAGS_END_OF_BLK = 0x2
+        FLAGS_END_OF_BLK = 0x2,
+        FLAGS_CONSUMED = 0x4
     };
     u08 m_TxCount;
     enum OffSets : u08

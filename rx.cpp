@@ -28,9 +28,15 @@ void PRINT(Header::Data* data)
     printf("]\n");
 }
 
+bool ReceptionBlock::IsInnovative(u08* buffer, u16 length)
+{
+    return true;
+}
+
 ReceptionBlock::ReceptionBlock(Reception * const reception, ReceptionSession * const session, const u16 BlockSequenceNumber):c_Reception(reception), c_Session(session), m_BlockSequenceNumber(BlockSequenceNumber)
 {
-    m_PacketBuffer.clear();
+    m_DecodedPacketBuffer.clear();
+    m_EncodedPacketBuffer.clear();
     m_ServiceMask[0] = 0;
     m_ServiceMask[1] = 0;
     m_ServiceMask[2] = 0;
@@ -39,14 +45,15 @@ ReceptionBlock::ReceptionBlock(Reception * const reception, ReceptionSession * c
 
 ReceptionBlock::~ReceptionBlock()
 {
-    m_PacketBuffer.clear();
+    m_DecodedPacketBuffer.clear();
+    m_EncodedPacketBuffer.clear();
 }
 
 void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const sender_addr, const u32 sender_addr_len)
 {
     Header::Data* const DataHeader = reinterpret_cast <Header::Data*>(buffer);
-    // Check if the packet is innovative....
-    if((DataHeader->m_Flags & Header::Data::DataHeaderFlag::FLAGS_END_OF_BLK) && m_PacketBuffer.size() == DataHeader->m_ExpectedRank)
+    if((DataHeader->m_Flags & Header::Data::DataHeaderFlag::FLAGS_END_OF_BLK) &&
+            (m_DecodedPacketBuffer.size() + m_EncodedPacketBuffer.size()) == DataHeader->m_ExpectedRank)
     {
         Header::DataAck ack;
         ack.m_Type = Header::Common::HeaderType::DATA_ACK;
@@ -59,51 +66,69 @@ void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const 
         sendto(c_Reception->c_Socket, (u08*)&ack, sizeof(ack), 0, (sockaddr*)sender_addr, sender_addr_len);
         return;
     }
-    try
+    if(IsInnovative(buffer, length) == false)
     {
-        m_PacketBuffer.emplace_back(std::unique_ptr<u08[]>(new u08[length]));
-    }
-    catch(const std::bad_alloc& ex)
-    {
-        std::cout<<ex.what()<<std::endl;
         return;
     }
-    memcpy(m_PacketBuffer.back().get(), buffer, length);
     if(DataHeader->m_Flags & Header::Data::DataHeaderFlag::FLAGS_ORIGINAL)
     {
-        if(c_Session->m_MinSequenceNumber == DataHeader->m_CurrentBlockSequenceNumber && DataHeader->m_ExpectedRank == m_PacketBuffer.size())
+        try
         {
-            for(u32 i = 0 ; i < DataHeader->m_MaximumRank ; i++)
-            {
-                if(DataHeader->m_Codes[i] == 1)
-                {
-                    m_ServiceMask[i/8] |= (0x1<<(i%8));
-                    break;
-                }
-            }
-            const u32 buffer_index = DataHeader->m_ExpectedRank;
+            m_DecodedPacketBuffer.emplace_back(std::unique_ptr<u08[]>(new u08[length]));
+        }
+        catch(const std::bad_alloc& ex)
+        {
+            std::cout<<ex.what()<<std::endl;
+            return;
+        }
+        memcpy(m_DecodedPacketBuffer.back().get(), buffer, length);
+    }
+    else
+    {
+        try
+        {
+            m_EncodedPacketBuffer.emplace_back(std::unique_ptr<u08[]>(new u08[length]));
+        }
+        catch(const std::bad_alloc& ex)
+        {
+            std::cout<<ex.what()<<std::endl;
+            return;
+        }
+        memcpy(m_EncodedPacketBuffer.back().get(), buffer, length);
+    }
+    if(DataHeader->m_Flags & Header::Data::DataHeaderFlag::FLAGS_ORIGINAL)
+    {
+        if(c_Session->m_MinSequenceNumber == DataHeader->m_CurrentBlockSequenceNumber &&
+                DataHeader->m_ExpectedRank == m_DecodedPacketBuffer.size())
+        {
+            reinterpret_cast <Header::Data*>(m_DecodedPacketBuffer.back().get())->m_Flags |= Header::Data::DataHeaderFlag::FLAGS_CONSUMED;
+            const u32 buffer_index = m_DecodedPacketBuffer.size();
             const sockaddr_in addr = (*sender_addr);
             const u32 addr_length = sizeof(addr);
             c_Session->m_RxTaskQueue.Enqueue([this, buffer_index, length, addr, addr_length](){
-                c_Reception->m_RxCallback(m_PacketBuffer[buffer_index].get(), length, &addr, addr_length);
+                c_Reception->m_RxCallback(m_DecodedPacketBuffer[buffer_index].get(), length, &addr, addr_length);
             });
         }
     }
-    if((DataHeader->m_ExpectedRank == m_PacketBuffer.size()) && (DataHeader->m_Flags & Header::Data::DataHeaderFlag::FLAGS_END_OF_BLK))
+    if((DataHeader->m_ExpectedRank == (m_DecodedPacketBuffer.size() + m_EncodedPacketBuffer.size())) &&
+            (DataHeader->m_Flags & Header::Data::DataHeaderFlag::FLAGS_END_OF_BLK))
     {
         // Decoding.
-        if(!(DataHeader->m_Flags & Header::Data::DataHeaderFlag::FLAGS_ORIGINAL))
+        if(m_EncodedPacketBuffer.size())
         {
-            printf("=============\n");
-            for(u16 i = 0 ; i < m_PacketBuffer.size() ; i++)
-            {
-                Header::Data* const hdr = reinterpret_cast <Header::Data*>(m_PacketBuffer[i].get());
-                for(u16 i = 0 ; i < m_PacketBuffer.size() ; i++)
-                {
-                    printf(" %3hhu ", hdr->m_Codes[i]);
-                }
-                printf("\n");
-            }
+            printf("Decoding...%u %u\n", m_DecodedPacketBuffer.size(), m_EncodedPacketBuffer.size());
+        }
+        else
+        {
+            printf("No Decoding!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+        }
+        for(u08 i = 0 ; i < m_DecodedPacketBuffer.size() ; i++)
+        {
+            PRINT(reinterpret_cast <Header::Data*>(m_DecodedPacketBuffer[i].get()));
+        }
+        for(u08 i = 0 ; i < m_EncodedPacketBuffer.size() ; i++)
+        {
+            PRINT(reinterpret_cast <Header::Data*>(m_EncodedPacketBuffer[i].get()));
         }
         Header::DataAck ack;
         ack.m_Type = Header::Common::HeaderType::DATA_ACK;
@@ -201,7 +226,7 @@ void Reception::RxHandler(u08* buffer, u16 size, const sockaddr_in * const sende
     {
     case Header::Common::HeaderType::DATA:
     {
-        if((std::rand()%4) == 0)
+        if((std::rand()%2) == 0)
         {
             return;
         }
