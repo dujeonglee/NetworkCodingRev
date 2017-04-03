@@ -162,6 +162,7 @@ void ReceptionSession::Receive(u08* buffer, u16 length, const sockaddr_in * cons
     {
         for(; m_MinSequenceNumber!=DataHeader->m_MinBlockSequenceNumber ; m_MinSequenceNumber++)
         {
+            // This must be changed not to delete Block until it is successfully delivered to application.
             m_Blocks.Remove(m_MinSequenceNumber, [](ReceptionBlock* &data){delete data;});
         }
         m_MinSequenceNumber = DataHeader->m_MinBlockSequenceNumber;
