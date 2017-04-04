@@ -30,6 +30,105 @@ void PRINT(Header::Data* data)
 
 bool ReceptionBlock::IsInnovative(u08* buffer, u16 length)
 {
+    const u08 OLD_RANK = m_DecodedPacketBuffer.size() + m_EncodedPacketBuffer.size();
+    const u08 EXPECTED_RANK = OLD_RANK+1;
+    u08 MAX_RANK = 0;
+    std::vector<Header::Data*> Matrix;
+    if(OLD_RANK == 0)
+    {
+        // First packet is always innovative.
+        return true;
+    }
+    else if(m_DecodedPacketBuffer.size() == 0
+            && reinterpret_cast <Header::Data*>(buffer)->m_Flags & Header::Data::DataHeaderFlag::FLAGS_ORIGINAL)
+    {
+        // When there is only original packet in the buffer, and the received packet is Decoded packet,
+        // we can guarnatee this packet is always innovative.
+        return true;
+    }
+    else if(OLD_RANK == reinterpret_cast<Header::Data*>(buffer)->m_ExpectedRank)
+    {
+        return false;
+    }
+    // 1. Allcate Decoding Matrix
+    try
+    {
+        Matrix.resize(EXPECTED_RANK, nullptr);
+    }
+    catch(const std::bad_alloc& ex)
+    {
+        std::cout<<ex.what()<<std::endl;
+        return false;
+    }
+    u08 idx = 0;
+    u08 decoded_idx = 0;
+    u08 encoded_idx = 0;
+    u08 rxpacket_idx = 0;
+    for(u08 i = 0 ; i < EXPECTED_RANK ; )
+    {
+        if(decoded_idx < m_DecodedPacketBuffer.size() && reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[decoded_idx].get())->m_Codes[idx])
+        {
+            if(MAX_RANK < reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[decoded_idx++].get())->m_ExpectedRank)
+            {
+                MAX_RANK = reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[decoded_idx++].get())->m_ExpectedRank;
+            }
+            Matrix[i++] = reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[decoded_idx++].get());
+        }
+        else if(encoded_idx < m_EncodedPacketBuffer.size() && reinterpret_cast<Header::Data*>(m_EncodedPacketBuffer[encoded_idx].get())->m_Codes[idx])
+        {
+            if(MAX_RANK < reinterpret_cast<Header::Data*>(m_EncodedPacketBuffer[encoded_idx++].get())->m_ExpectedRank)
+            {
+                MAX_RANK = reinterpret_cast<Header::Data*>(m_EncodedPacketBuffer[encoded_idx++].get())->m_ExpectedRank;
+            }
+            Matrix[i++] = reinterpret_cast<Header::Data*>(m_EncodedPacketBuffer[encoded_idx++].get());
+        }
+        else if(rxpacket_idx < 1 && reinterpret_cast<Header::Data*>(buffer)->m_Codes[idx])
+        {
+            if(MAX_RANK < reinterpret_cast<Header::Data*>(buffer)->m_ExpectedRank)
+            {
+                MAX_RANK = reinterpret_cast<Header::Data*>(buffer)->m_ExpectedRank;
+            }
+            Matrix[i++] = reinterpret_cast<Header::Data*>(buffer);
+            rxpacket_idx++;
+        }
+        if(decoded_idx == m_DecodedPacketBuffer.size() &&
+                encoded_idx == m_EncodedPacketBuffer.size() &&
+                rxpacket_idx == 1 &&
+                i < EXPECTED_RANK)
+        {
+            exit(-1);
+            return false;
+        }
+        idx++;
+    }
+    for(u08 i = 0 ; i < EXPECTED_RANK ; )
+    {
+        while(Matrix[i]->m_Codes[idx] == 0)
+        {
+            idx++;
+        }
+        // 1. Make I-matrix
+        if(Matrix[i]->m_Codes[idx] != 1)
+        {
+            const u08 MUL = FiniteField::instance()->inv(Matrix[i]->m_Codes[idx]);
+            for(u08 ii = 0 ; ii < MAX_RANK ; ii++)
+            {
+                Matrix[i]->m_Codes[ii] = FiniteField::instance()->mul(MUL, Matrix[i]->m_Codes[ii]);
+            }
+        }
+        // 2. Elimination
+        for(u08 ii = 0 ; ii < EXPECTED_RANK ; ii++)
+        {
+            if(ii == i)
+            {
+                continue;
+            }
+            if(Matrix[ii]->m_Codes[idx] > 0)
+            {
+                for(u08 iii = 0 ; iii < )
+            }
+        }
+    }
     return true;
 }
 
@@ -124,11 +223,11 @@ void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const 
         }
         for(u08 i = 0 ; i < m_DecodedPacketBuffer.size() ; i++)
         {
-            PRINT(reinterpret_cast <Header::Data*>(m_DecodedPacketBuffer[i].get()));
+            //PRINT(reinterpret_cast <Header::Data*>(m_DecodedPacketBuffer[i].get()));
         }
         for(u08 i = 0 ; i < m_EncodedPacketBuffer.size() ; i++)
         {
-            PRINT(reinterpret_cast <Header::Data*>(m_EncodedPacketBuffer[i].get()));
+            //PRINT(reinterpret_cast <Header::Data*>(m_EncodedPacketBuffer[i].get()));
         }
         Header::DataAck ack;
         ack.m_Type = Header::Common::HeaderType::DATA_ACK;
