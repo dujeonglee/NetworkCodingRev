@@ -31,9 +31,8 @@ void PRINT(Header::Data* data)
 bool ReceptionBlock::IsInnovative(u08* buffer, u16 length)
 {
     const u08 OLD_RANK = m_DecodedPacketBuffer.size() + m_EncodedPacketBuffer.size();
-    const u08 EXPECTED_RANK = OLD_RANK+1;
-    u08 MAX_RANK = 0;
-    std::vector<Header::Data*> Matrix;
+    const u08 MAX_RANK = reinterpret_cast<Header::Data*>(buffer)->m_MaximumRank;
+    std::vector< std::unique_ptr< u08[] > > Matrix;
     if(OLD_RANK == 0)
     {
         // First packet is always innovative.
@@ -51,85 +50,107 @@ bool ReceptionBlock::IsInnovative(u08* buffer, u16 length)
         return false;
     }
     // 1. Allcate Decoding Matrix
-    try
+    for(u08 i = 0 ; i < MAX_RANK ; i++)
     {
-        Matrix.resize(EXPECTED_RANK, nullptr);
-    }
-    catch(const std::bad_alloc& ex)
-    {
-        std::cout<<ex.what()<<std::endl;
-        return false;
-    }
-    u08 idx = 0;
-    u08 decoded_idx = 0;
-    u08 encoded_idx = 0;
-    u08 rxpacket_idx = 0;
-    for(u08 i = 0 ; i < EXPECTED_RANK ; )
-    {
-        if(decoded_idx < m_DecodedPacketBuffer.size() && reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[decoded_idx].get())->m_Codes[idx])
+        try
         {
-            if(MAX_RANK < reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[decoded_idx++].get())->m_ExpectedRank)
-            {
-                MAX_RANK = reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[decoded_idx++].get())->m_ExpectedRank;
-            }
-            Matrix[i++] = reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[decoded_idx++].get());
+            Matrix.emplace_back(std::unique_ptr<u08[]>(new u08[MAX_RANK]));
+            memset(Matrix.back().get(), 0x0, MAX_RANK);
         }
-        else if(encoded_idx < m_EncodedPacketBuffer.size() && reinterpret_cast<Header::Data*>(m_EncodedPacketBuffer[encoded_idx].get())->m_Codes[idx])
+        catch(const std::bad_alloc& ex)
         {
-            if(MAX_RANK < reinterpret_cast<Header::Data*>(m_EncodedPacketBuffer[encoded_idx++].get())->m_ExpectedRank)
-            {
-                MAX_RANK = reinterpret_cast<Header::Data*>(m_EncodedPacketBuffer[encoded_idx++].get())->m_ExpectedRank;
-            }
-            Matrix[i++] = reinterpret_cast<Header::Data*>(m_EncodedPacketBuffer[encoded_idx++].get());
-        }
-        else if(rxpacket_idx < 1 && reinterpret_cast<Header::Data*>(buffer)->m_Codes[idx])
-        {
-            if(MAX_RANK < reinterpret_cast<Header::Data*>(buffer)->m_ExpectedRank)
-            {
-                MAX_RANK = reinterpret_cast<Header::Data*>(buffer)->m_ExpectedRank;
-            }
-            Matrix[i++] = reinterpret_cast<Header::Data*>(buffer);
-            rxpacket_idx++;
-        }
-        if(decoded_idx == m_DecodedPacketBuffer.size() &&
-                encoded_idx == m_EncodedPacketBuffer.size() &&
-                rxpacket_idx == 1 &&
-                i < EXPECTED_RANK)
-        {
-            exit(-1);
+            std::cout<<ex.what()<<std::endl;
             return false;
         }
-        idx++;
     }
-    for(u08 i = 0 ; i < EXPECTED_RANK ; )
+    // 2. Fill-in Decoding Matrix
+    for(u08 i = 0 ; i < m_DecodedPacketBuffer.size() ; i++)
     {
-        while(Matrix[i]->m_Codes[idx] == 0)
+        memcpy(Matrix[reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[i].get())->m_ExpectedRank-1].get(),
+                reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[i].get())->m_Codes,
+                MAX_RANK);
+    }
+    if(reinterpret_cast<Header::Data*>(buffer)->m_Flags & Header::Data::DataHeaderFlag::FLAGS_ORIGINAL)
+    {
+        memcpy(Matrix[reinterpret_cast<Header::Data*>(buffer)->m_ExpectedRank-1].get(),
+                reinterpret_cast<Header::Data*>(buffer)->m_Codes,
+                MAX_RANK);
+    }
+    const u08 EMPTY[Parameter::BLOCK_SIZE_64] = {0x00};
+    u08 EncodedPktIdx = 0;
+    for(u08 i = 0 ; i < MAX_RANK ; i++)
+    {
+        if(!(EncodedPktIdx < m_EncodedPacketBuffer.size()))
         {
-            idx++;
+            break;
         }
-        // 1. Make I-matrix
-        if(Matrix[i]->m_Codes[idx] != 1)
+        if(memcmp(EMPTY, Matrix[i].get(), MAX_RANK) != 0)
         {
-            const u08 MUL = FiniteField::instance()->inv(Matrix[i]->m_Codes[idx]);
-            for(u08 ii = 0 ; ii < MAX_RANK ; ii++)
-            {
-                Matrix[i]->m_Codes[ii] = FiniteField::instance()->mul(MUL, Matrix[i]->m_Codes[ii]);
-            }
+            continue;
         }
-        // 2. Elimination
-        for(u08 ii = 0 ; ii < EXPECTED_RANK ; ii++)
+        memcpy(Matrix[i].get(),reinterpret_cast<Header::Data*>(m_EncodedPacketBuffer[EncodedPktIdx++].get())->m_Codes, MAX_RANK);
+    }
+    if(!(reinterpret_cast<Header::Data*>(buffer)->m_Flags & Header::Data::DataHeaderFlag::FLAGS_ORIGINAL))
+    {
+        for(u08 i = 0 ; i < MAX_RANK ; i++)
         {
-            if(ii == i)
+            if(memcmp(EMPTY, Matrix[i].get(), MAX_RANK) != 0)
             {
                 continue;
             }
-            if(Matrix[ii]->m_Codes[idx] > 0)
+            memcpy(Matrix[i].get(),reinterpret_cast<Header::Data*>(buffer)->m_Codes, MAX_RANK);
+            break;
+        }
+    }
+    // 3. Elimination
+    for(u08 row = 0 ; row < MAX_RANK ; row++)
+    {
+        if(Matrix[row].get()[row] == 0)
+        {
+            continue;
+        }
+        const u08 MUL = FiniteField::instance()->inv(Matrix[row].get()[row]);
+        for(u08 col = row ; col < MAX_RANK ; col++)
+        {
+            Matrix[row].get()[col] = FiniteField::instance()->mul(Matrix[row].get()[col], MUL);
+        }
+        for(u08 row2 = row+1 ; row2 < MAX_RANK ; row2++)
+        {
+            if(Matrix[row2].get()[row] == 0)
             {
-                for(u08 iii = 0 ; iii < )
+                continue;
+            }
+            const u08 MUL2 = FiniteField::instance()->inv(Matrix[row2].get()[row]);
+            for(u08 j = 0 ; j < MAX_RANK ; j++)
+            {
+                Matrix[row2].get()[j] = FiniteField::instance()->mul(Matrix[row2].get()[j], MUL2);
+                Matrix[row2].get()[j] = FiniteField::instance()->sub(Matrix[row].get()[j], Matrix[row2].get()[j]);
             }
         }
     }
-    return true;
+    u08 RANK = 0;
+    for(u08 i = 0 ; i < MAX_RANK ; i++)
+    {
+        if(Matrix[i].get()[i] == 1)
+        {
+            RANK++;
+        }
+    }
+#if 0
+    if(RANK == MAX_RANK)
+    {
+        for(u08 i = 0 ; i < MAX_RANK ; i++)
+        {
+            printf("[");
+            for(u08 j = 0 ; j < MAX_RANK ; j++)
+            {
+                printf(" %3hhu ", Matrix[i].get()[j]);
+            }
+            printf("]\n");
+        }
+    }
+#endif
+    return RANK == (OLD_RANK+1);
 }
 
 ReceptionBlock::ReceptionBlock(Reception * const reception, ReceptionSession * const session, const u16 BlockSequenceNumber):c_Reception(reception), c_Session(session), m_BlockSequenceNumber(BlockSequenceNumber)
@@ -213,6 +234,8 @@ void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const 
             (DataHeader->m_Flags & Header::Data::DataHeaderFlag::FLAGS_END_OF_BLK))
     {
         // Decoding.
+        PRINT(reinterpret_cast<Header::Data*>(buffer));
+#if 0
         if(m_EncodedPacketBuffer.size())
         {
             printf("Decoding...%u %u\n", m_DecodedPacketBuffer.size(), m_EncodedPacketBuffer.size());
@@ -223,12 +246,13 @@ void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const 
         }
         for(u08 i = 0 ; i < m_DecodedPacketBuffer.size() ; i++)
         {
-            //PRINT(reinterpret_cast <Header::Data*>(m_DecodedPacketBuffer[i].get()));
+            PRINT(reinterpret_cast <Header::Data*>(m_DecodedPacketBuffer[i].get()));
         }
         for(u08 i = 0 ; i < m_EncodedPacketBuffer.size() ; i++)
         {
-            //PRINT(reinterpret_cast <Header::Data*>(m_EncodedPacketBuffer[i].get()));
+            PRINT(reinterpret_cast <Header::Data*>(m_EncodedPacketBuffer[i].get()));
         }
+#endif
         Header::DataAck ack;
         ack.m_Type = Header::Common::HeaderType::DATA_ACK;
         ack.m_Sequence = DataHeader->m_CurrentBlockSequenceNumber;

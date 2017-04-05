@@ -151,9 +151,9 @@ void TransmissionBlock::Retransmission()
         Header::Data* DataHeader = reinterpret_cast<Header::Data*>(m_OriginalPacketBuffer[0].get());
         DataHeader->m_Type = Header::Common::HeaderType::DATA;
         /* Must be the same *///DataHeader->m_TotalSize = sizeof(Header::Data) + (m_BlockSize-1) + m_LargestOriginalPacketSize;
-        DataHeader->m_MinBlockSequenceNumber = p_Session->m_MinBlockSequenceNumber.load();
+        DataHeader->m_MinBlockSequenceNumber = p_Session->m_MinBlockSequenceNumber;
         /* Must be the same *///DataHeader->m_CurrentBlockSequenceNumber = m_BlockSequenceNumber;
-        DataHeader->m_MaxBlockSequenceNumber = p_Session->m_MaxBlockSequenceNumber.load();
+        DataHeader->m_MaxBlockSequenceNumber = p_Session->m_MaxBlockSequenceNumber;
         /* Must be the same *///DataHeader->m_ExpectedRank = m_BlockSize;
         /* Must be the same *///DataHeader->m_MaximumRank = m_BlockSize;
         /* Must be the same *///DataHeader->m_AckAddress = (laddr)(&(p_Session->m_AckList[c_AckIndex]));
@@ -181,7 +181,7 @@ void TransmissionBlock::Retransmission()
         RemedyHeader->m_CurrentBlockSequenceNumber = m_BlockSequenceNumber;
         RemedyHeader->m_MaxBlockSequenceNumber = p_Session->m_MaxBlockSequenceNumber.load();
         RemedyHeader->m_ExpectedRank = m_OriginalPacketBuffer.size();
-        RemedyHeader->m_MaximumRank = m_OriginalPacketBuffer.size();
+        RemedyHeader->m_MaximumRank = m_BlockSize;
         RemedyHeader->m_AckAddress = (laddr)(&(p_Session->m_AckList[c_AckIndex]));
 #ifdef ENVIRONMENT32
         RemedyHeader->m_Reserved = 0;
