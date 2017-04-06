@@ -64,42 +64,26 @@ bool ReceptionBlock::IsInnovative(u08* buffer, u16 length)
         }
     }
     // 2. Fill-in Decoding Matrix
-    for(u08 i = 0 ; i < m_DecodedPacketBuffer.size() ; i++)
     {
-        memcpy(Matrix[reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[i].get())->m_ExpectedRank-1].get(),
-                reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[i].get())->m_Codes,
-                MAX_RANK);
-    }
-    if(reinterpret_cast<Header::Data*>(buffer)->m_Flags & Header::Data::DataHeaderFlag::FLAGS_ORIGINAL)
-    {
-        memcpy(Matrix[reinterpret_cast<Header::Data*>(buffer)->m_ExpectedRank-1].get(),
-                reinterpret_cast<Header::Data*>(buffer)->m_Codes,
-                MAX_RANK);
-    }
-    const u08 EMPTY[Parameter::BLOCK_SIZE_64] = {0x00};
-    u08 EncodedPktIdx = 0;
-    for(u08 i = 0 ; i < MAX_RANK ; i++)
-    {
-        if(!(EncodedPktIdx < m_EncodedPacketBuffer.size()))
-        {
-            break;
-        }
-        if(memcmp(EMPTY, Matrix[i].get(), MAX_RANK) != 0)
-        {
-            continue;
-        }
-        memcpy(Matrix[i].get(),reinterpret_cast<Header::Data*>(m_EncodedPacketBuffer[EncodedPktIdx++].get())->m_Codes, MAX_RANK);
-    }
-    if(!(reinterpret_cast<Header::Data*>(buffer)->m_Flags & Header::Data::DataHeaderFlag::FLAGS_ORIGINAL))
-    {
+        u08 DecodedPktIdx = 0;
+        u08 EncodedPktIdx = 0;
+        u08 RxPkt = 0;
         for(u08 i = 0 ; i < MAX_RANK ; i++)
         {
-            if(memcmp(EMPTY, Matrix[i].get(), MAX_RANK) != 0)
+            if(DecodedPktIdx < m_DecodedPacketBuffer.size() &&
+                    reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[DecodedPktIdx].get())->m_Codes[i])
             {
-                continue;
+                memcpy(Matrix[i].get(),reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[DecodedPktIdx++].get())->m_Codes, MAX_RANK);
             }
-            memcpy(Matrix[i].get(),reinterpret_cast<Header::Data*>(buffer)->m_Codes, MAX_RANK);
-            break;
+            else if(RxPkt < 1 && reinterpret_cast<Header::Data*>(buffer)->m_Codes[i])
+            {
+                memcpy(Matrix[i].get(),reinterpret_cast<Header::Data*>(buffer)->m_Codes, MAX_RANK);
+                RxPkt++;
+            }
+            else if(EncodedPktIdx < m_EncodedPacketBuffer.size() && reinterpret_cast<Header::Data*>(m_EncodedPacketBuffer[EncodedPktIdx].get())->m_Codes[i])
+            {
+                memcpy(Matrix[i].get(),reinterpret_cast<Header::Data*>(m_EncodedPacketBuffer[EncodedPktIdx++].get())->m_Codes, MAX_RANK);
+            }
         }
     }
     // 3. Elimination
@@ -136,20 +120,6 @@ bool ReceptionBlock::IsInnovative(u08* buffer, u16 length)
             RANK++;
         }
     }
-#if 0
-    if(RANK == MAX_RANK)
-    {
-        for(u08 i = 0 ; i < MAX_RANK ; i++)
-        {
-            printf("[");
-            for(u08 j = 0 ; j < MAX_RANK ; j++)
-            {
-                printf(" %3hhu ", Matrix[i].get()[j]);
-            }
-            printf("]\n");
-        }
-    }
-#endif
     return RANK == (OLD_RANK+1);
 }
 
