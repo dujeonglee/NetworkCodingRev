@@ -204,25 +204,7 @@ void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const 
             (DataHeader->m_Flags & Header::Data::DataHeaderFlag::FLAGS_END_OF_BLK))
     {
         // Decoding.
-        PRINT(reinterpret_cast<Header::Data*>(buffer));
-#if 0
-        if(m_EncodedPacketBuffer.size())
-        {
-            printf("Decoding...%u %u\n", m_DecodedPacketBuffer.size(), m_EncodedPacketBuffer.size());
-        }
-        else
-        {
-            printf("No Decoding!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-        }
-        for(u08 i = 0 ; i < m_DecodedPacketBuffer.size() ; i++)
-        {
-            PRINT(reinterpret_cast <Header::Data*>(m_DecodedPacketBuffer[i].get()));
-        }
-        for(u08 i = 0 ; i < m_EncodedPacketBuffer.size() ; i++)
-        {
-            PRINT(reinterpret_cast <Header::Data*>(m_EncodedPacketBuffer[i].get()));
-        }
-#endif
+        //PRINT(reinterpret_cast<Header::Data*>(buffer));
         Header::DataAck ack;
         ack.m_Type = Header::Common::HeaderType::DATA_ACK;
         ack.m_Sequence = DataHeader->m_CurrentBlockSequenceNumber;
@@ -256,9 +238,19 @@ void ReceptionSession::Receive(u08* buffer, u16 length, const sockaddr_in * cons
         for(; m_MinSequenceNumber!=DataHeader->m_MinBlockSequenceNumber ; m_MinSequenceNumber++)
         {
             // This must be changed not to delete Block until it is successfully delivered to application.
-            m_Blocks.Remove(m_MinSequenceNumber, [](ReceptionBlock* &data){delete data;});
+#if 1
+            m_Blocks.Remove(m_MinSequenceNumber, [this](ReceptionBlock* &data){
+                m_RxTaskQueue.Enqueue([data](){
+                    std::cout<<"Complete: "<<data->m_BlockSequenceNumber<<std::endl;
+                    delete data;
+                });
+            });
+#else
+            m_Blocks.Remove(m_MinSequenceNumber, [](ReceptionBlock* &data){
+                delete data;
+            });
+#endif
         }
-        m_MinSequenceNumber = DataHeader->m_MinBlockSequenceNumber;
     }
     if(ASCENDING_ORDER(m_MinSequenceNumber, m_MaxSequenceNumber, DataHeader->m_MaxBlockSequenceNumber))
     {

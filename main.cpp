@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
                           htons(1005),
                           3000,
                           NetworkCoding::Parameter::RELIABLE_TRANSMISSION_MODE,
-                          NetworkCoding::Parameter::BLOCK_SIZE_04,
+                          NetworkCoding::Parameter::BLOCK_SIZE_16,
                           0,
                           5) == false)
         {

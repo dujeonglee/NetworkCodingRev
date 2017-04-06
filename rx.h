@@ -11,7 +11,7 @@ class Reception;
 
 class ReceptionBlock
 {
-private:
+public:
     Reception* const c_Reception;
     ReceptionSession* const c_Session;
     const u16 m_BlockSequenceNumber;
