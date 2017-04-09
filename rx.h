@@ -18,6 +18,7 @@ public:
     std::vector< std::unique_ptr< u08[] > > m_DecodedPacketBuffer;
     std::vector< std::unique_ptr< u08[] > > m_EncodedPacketBuffer;
     u08 m_ServiceMask[4];
+    bool m_DecodingCompleted;
     bool IsInnovative(u08* buffer, u16 length);
 public:
     ReceptionBlock() = delete;
@@ -34,12 +35,13 @@ public:
 class ReceptionSession
 {
     friend class ReceptionBlock;
-private:
+public:
     Reception* const c_Reception;
     AVLTree< u16, ReceptionBlock* > m_Blocks;
     ThreadPool<1, 1> m_RxTaskQueue;
-    u16 m_MinSequenceNumber;
-    u16 m_MaxSequenceNumber;
+    u16 m_SequenceNumberForService;
+    u16 m_MinSequenceNumberAwaitingAck;
+    u16 m_MaxSequenceNumberAwaitingAck;
 public:
     ReceptionSession(const ReceptionSession&) = delete;
     ReceptionSession(ReceptionSession&&) = delete;

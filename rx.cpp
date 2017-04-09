@@ -1,7 +1,7 @@
 #include "rx.h"
 #include <cstdlib>
 
-#define ASCENDING_ORDER(a,b,c)        ((u16)(c - a) >= (u16)(c - b))
+#define STRICTLY_ASCENDING_ORDER(a,b,c) ((u16)((u16)(c) - (u16)(a)) > (u16)((u16)(c) - (u16)(b)))
 
 using namespace NetworkCoding;
 
@@ -131,6 +131,7 @@ ReceptionBlock::ReceptionBlock(Reception * const reception, ReceptionSession * c
     m_ServiceMask[1] = 0;
     m_ServiceMask[2] = 0;
     m_ServiceMask[3] = 0;
+    m_DecodingCompleted = false;
 }
 
 ReceptionBlock::~ReceptionBlock()
@@ -142,8 +143,7 @@ ReceptionBlock::~ReceptionBlock()
 void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const sender_addr, const u32 sender_addr_len)
 {
     Header::Data* const DataHeader = reinterpret_cast <Header::Data*>(buffer);
-    if((DataHeader->m_Flags & Header::Data::DataHeaderFlag::FLAGS_END_OF_BLK) &&
-            (m_DecodedPacketBuffer.size() + m_EncodedPacketBuffer.size()) == DataHeader->m_ExpectedRank)
+    if(m_DecodingCompleted)
     {
         Header::DataAck ack;
         ack.m_Type = Header::Common::HeaderType::DATA_ACK;
@@ -188,7 +188,7 @@ void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const 
     }
     if(DataHeader->m_Flags & Header::Data::DataHeaderFlag::FLAGS_ORIGINAL)
     {
-        if(c_Session->m_MinSequenceNumber == DataHeader->m_CurrentBlockSequenceNumber &&
+        if(c_Session->m_SequenceNumberForService == DataHeader->m_CurrentBlockSequenceNumber &&
                 DataHeader->m_ExpectedRank == m_DecodedPacketBuffer.size())
         {
             reinterpret_cast <Header::Data*>(m_DecodedPacketBuffer.back().get())->m_Flags |= Header::Data::DataHeaderFlag::FLAGS_CONSUMED;
@@ -205,6 +205,19 @@ void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const 
     {
         // Decoding.
         //PRINT(reinterpret_cast<Header::Data*>(buffer));
+        m_DecodingCompleted = true;
+        if(c_Session->m_SequenceNumberForService == DataHeader->m_CurrentBlockSequenceNumber)
+        {
+            ReceptionBlock** pp_block;
+            while(c_Session->m_SequenceNumberForService != c_Session->m_MaxSequenceNumberAwaitingAck&&
+                  (pp_block = c_Session->m_Blocks.GetPtr(c_Session->m_SequenceNumberForService))&&
+                  (*pp_block)->m_DecodingCompleted
+                  )
+            {
+                std::cout<<"Service:"<<(*pp_block)->m_BlockSequenceNumber<<std::endl;
+                c_Session->m_SequenceNumberForService++;
+            }
+        }
         Header::DataAck ack;
         ack.m_Type = Header::Common::HeaderType::DATA_ACK;
         ack.m_Sequence = DataHeader->m_CurrentBlockSequenceNumber;
@@ -220,8 +233,9 @@ void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const 
 
 ReceptionSession::ReceptionSession(Reception * const Session):c_Reception(Session)
 {
-    m_MinSequenceNumber = 0;
-    m_MaxSequenceNumber = 0;
+    m_SequenceNumberForService = 0;
+    m_MinSequenceNumberAwaitingAck = 0;
+    m_MaxSequenceNumberAwaitingAck = 0;
 }
 
 ReceptionSession::~ReceptionSession()
@@ -233,36 +247,28 @@ void ReceptionSession::Receive(u08* buffer, u16 length, const sockaddr_in * cons
 {
     Header::Data* const DataHeader = reinterpret_cast <Header::Data*>(buffer);
     // update min and max sequence.
-    if(ASCENDING_ORDER(m_MinSequenceNumber, DataHeader->m_MinBlockSequenceNumber, m_MaxSequenceNumber))
+    if(STRICTLY_ASCENDING_ORDER(m_MinSequenceNumberAwaitingAck-1, m_MinSequenceNumberAwaitingAck, DataHeader->m_MinBlockSequenceNumber))
     {
-        for(; m_MinSequenceNumber!=DataHeader->m_MinBlockSequenceNumber ; m_MinSequenceNumber++)
+        for(; m_MinSequenceNumberAwaitingAck!=DataHeader->m_MinBlockSequenceNumber &&
+            m_MinSequenceNumberAwaitingAck!=m_SequenceNumberForService ; m_MinSequenceNumberAwaitingAck++)
         {
             // This must be changed not to delete Block until it is successfully delivered to application.
-#if 1
-            m_Blocks.Remove(m_MinSequenceNumber, [this](ReceptionBlock* &data){
-                m_RxTaskQueue.Enqueue([data](){
-                    std::cout<<"Complete: "<<data->m_BlockSequenceNumber<<std::endl;
-                    delete data;
-                });
-            });
-#else
-            m_Blocks.Remove(m_MinSequenceNumber, [](ReceptionBlock* &data){
+            m_Blocks.Remove(m_MinSequenceNumberAwaitingAck, [this](ReceptionBlock* &data){
                 delete data;
             });
-#endif
         }
     }
-    if(ASCENDING_ORDER(m_MinSequenceNumber, m_MaxSequenceNumber, DataHeader->m_MaxBlockSequenceNumber))
+    if(STRICTLY_ASCENDING_ORDER(m_MaxSequenceNumberAwaitingAck-1, m_MaxSequenceNumberAwaitingAck, DataHeader->m_MaxBlockSequenceNumber))
     {
-        m_MaxSequenceNumber = DataHeader->m_MaxBlockSequenceNumber;
+        m_MaxSequenceNumberAwaitingAck = DataHeader->m_MaxBlockSequenceNumber;
     }
-    if(!ASCENDING_ORDER(m_MinSequenceNumber, DataHeader->m_CurrentBlockSequenceNumber, (m_MaxSequenceNumber+(Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION - (u16)(m_MaxSequenceNumber - m_MinSequenceNumber)))))
+    if(STRICTLY_ASCENDING_ORDER(DataHeader->m_CurrentBlockSequenceNumber, m_MinSequenceNumberAwaitingAck, m_MaxSequenceNumberAwaitingAck))
     {
         // If the sequence is less than min seq send ack and return.
         Header::DataAck ack;
         ack.m_Type = Header::Common::HeaderType::DATA_ACK;
         ack.m_Sequence = DataHeader->m_CurrentBlockSequenceNumber;
-        ack.m_SessionAckAddress = DataHeader->m_SessionAckAddress;
+        ack.m_SessionAddress = DataHeader->m_SessionAddress;
 #ifdef ENVIRONMENT32
         ack.m_Reserved = 0; // 32bit machine uses the first 4 bytes and the remaining memory shall be set to 0. This field should be used after casting to laddr.
 #endif
@@ -319,6 +325,20 @@ void Reception::RxHandler(u08* buffer, u16 size, const sockaddr_in * const sende
         //PRINT((Header::Data*)buffer);
         const DataStructures::IPv4PortKey key = {sender_addr->sin_addr.s_addr, sender_addr->sin_port};
         ReceptionSession** const pp_Session = m_Sessions.GetPtr(key);
+        if(pp_Session == nullptr)
+        {
+            return;
+        }
+        ReceptionSession* const p_Session = (*pp_Session);
+        p_Session->Receive(buffer, size, sender_addr, sender_addr_len);
+    }
+        break;
+
+    case Header::Common::HeaderType::SYNC:
+    {
+        // create Rx Session.
+        const DataStructures::IPv4PortKey key = {sender_addr->sin_addr.s_addr, sender_addr->sin_port};
+        ReceptionSession** const pp_Session = m_Sessions.GetPtr(key);
         ReceptionSession* p_Session = nullptr;
         if(pp_Session == nullptr)
         {
@@ -341,14 +361,10 @@ void Reception::RxHandler(u08* buffer, u16 size, const sockaddr_in * const sende
         {
             p_Session = (*pp_Session);
         }
-        p_Session->Receive(buffer, size, sender_addr, sender_addr_len);
-    }
-        break;
-
-    case Header::Common::HeaderType::SYNC:
-    {
-        // create Rx Session.
         Header::Sync* const sync = reinterpret_cast< Header::Sync* >(buffer);
+        p_Session->m_SequenceNumberForService = sync->m_Sequence;
+        p_Session->m_MinSequenceNumberAwaitingAck = sync->m_Sequence;
+        p_Session->m_MaxSequenceNumberAwaitingAck = sync->m_Sequence;
         sync->m_Type = Header::Common::HeaderType::SYNC_ACK;
         sendto(c_Socket, buffer, size, 0, (sockaddr*)sender_addr, sender_addr_len);
     }
