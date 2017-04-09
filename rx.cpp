@@ -52,13 +52,13 @@ bool ReceptionBlock::IsInnovative(u08* buffer, u16 length)
     }
     if(MAKE_DECODING_MATRIX)
     {
-        for(u08 i = 0 ; i < MAX_RANK ; i++)
+        for(u08 row = 0 ; row < MAX_RANK ; row++)
         {
             try
             {
                 m_DecodingMatrix.emplace_back(std::unique_ptr<u08[]>(new u08[MAX_RANK]));
                 memset(m_DecodingMatrix.back().get(), 0x0, MAX_RANK);
-                m_DecodingMatrix.back().get()[i] = 0x01;
+                m_DecodingMatrix.back().get()[row] = 0x01;
             }
             catch(const std::bad_alloc& ex)
             {
@@ -68,7 +68,7 @@ bool ReceptionBlock::IsInnovative(u08* buffer, u16 length)
         }
     }
     // 1. Allcate Decoding Matrix
-    for(u08 i = 0 ; i < MAX_RANK ; i++)
+    for(u08 row = 0 ; row < MAX_RANK ; row++)
     {
         try
         {
@@ -86,20 +86,20 @@ bool ReceptionBlock::IsInnovative(u08* buffer, u16 length)
         u08 DecodedPktIdx = 0;
         u08 EncodedPktIdx = 0;
         u08 RxPkt = 0;
-        for(u08 i = 0 ; i < MAX_RANK ; i++)
+        for(u08 row = 0 ; row < MAX_RANK ; row++)
         {
             if(DecodedPktIdx < m_DecodedPacketBuffer.size() &&
-                    reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[DecodedPktIdx].get())->m_Codes[i])
+                    reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[DecodedPktIdx].get())->m_Codes[row])
             {
-                memcpy(Matrix[i].get(),reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[DecodedPktIdx++].get())->m_Codes, MAX_RANK);
+                memcpy(Matrix[row].get(),reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[DecodedPktIdx++].get())->m_Codes, MAX_RANK);
             }
-            else if(EncodedPktIdx < m_EncodedPacketBuffer.size() && reinterpret_cast<Header::Data*>(m_EncodedPacketBuffer[EncodedPktIdx].get())->m_Codes[i])
+            else if(EncodedPktIdx < m_EncodedPacketBuffer.size() && reinterpret_cast<Header::Data*>(m_EncodedPacketBuffer[EncodedPktIdx].get())->m_Codes[row])
             {
-                memcpy(Matrix[i].get(),reinterpret_cast<Header::Data*>(m_EncodedPacketBuffer[EncodedPktIdx++].get())->m_Codes, MAX_RANK);
+                memcpy(Matrix[row].get(),reinterpret_cast<Header::Data*>(m_EncodedPacketBuffer[EncodedPktIdx++].get())->m_Codes, MAX_RANK);
             }
-            else if(RxPkt < 1 && reinterpret_cast<Header::Data*>(buffer)->m_Codes[i])
+            else if(RxPkt < 1 && reinterpret_cast<Header::Data*>(buffer)->m_Codes[row])
             {
-                memcpy(Matrix[i].get(),reinterpret_cast<Header::Data*>(buffer)->m_Codes, MAX_RANK);
+                memcpy(Matrix[row].get(),reinterpret_cast<Header::Data*>(buffer)->m_Codes, MAX_RANK);
                 RxPkt++;
             }
         }
@@ -120,21 +120,22 @@ bool ReceptionBlock::IsInnovative(u08* buffer, u16 length)
                 m_DecodingMatrix[row].get()[col] = FiniteField::instance()->mul(m_DecodingMatrix[row].get()[col], MUL);
             }
         }
-        for(u08 row2 = row+1 ; row2 < MAX_RANK ; row2++)
+
+        for(u08 elimination_row = row+1 ; elimination_row < MAX_RANK ; elimination_row++)
         {
-            if(Matrix[row2].get()[row] == 0)
+            if(Matrix[elimination_row].get()[row] == 0)
             {
                 continue;
             }
-            const u08 MUL2 = FiniteField::instance()->inv(Matrix[row2].get()[row]);
+            const u08 MUL2 = FiniteField::instance()->inv(Matrix[elimination_row].get()[row]);
             for(u08 j = 0 ; j < MAX_RANK ; j++)
             {
-                Matrix[row2].get()[j] = FiniteField::instance()->mul(Matrix[row2].get()[j], MUL2);
-                Matrix[row2].get()[j] = FiniteField::instance()->sub(Matrix[row].get()[j], Matrix[row2].get()[j]);
+                Matrix[elimination_row].get()[j] = FiniteField::instance()->mul(Matrix[elimination_row].get()[j], MUL2);
+                Matrix[elimination_row].get()[j] ^= Matrix[row].get()[j];
                 if(MAKE_DECODING_MATRIX)
                 {
-                    m_DecodingMatrix[row2].get()[j] = FiniteField::instance()->mul(m_DecodingMatrix[row2].get()[j], MUL2);
-                    m_DecodingMatrix[row2].get()[j] = FiniteField::instance()->sub(m_DecodingMatrix[row].get()[j], m_DecodingMatrix[row2].get()[j]);
+                    m_DecodingMatrix[elimination_row].get()[j] = FiniteField::instance()->mul(m_DecodingMatrix[elimination_row].get()[j], MUL2);
+                    m_DecodingMatrix[elimination_row].get()[j] ^= m_DecodingMatrix[row].get()[j];
                 }
             }
         }
@@ -149,37 +150,24 @@ bool ReceptionBlock::IsInnovative(u08* buffer, u16 length)
     }
     if(MAKE_DECODING_MATRIX)
     {
-        for(s16 col = MAX_RANK-1 ; col > -1 ; col--)
+        for(s16 col = MAX_RANK - 1 ; col > -1  ; col--)
         {
-            for(s16 row = col-1 ; row > -1 ; row--)
+            for(s16 row = 0 ; row < col ; row++)
             {
-                if(Matrix[row].get()[col])
+                if(Matrix[row].get()[col] == 0)
                 {
-                    for(u08 i = 0 ; i < MAX_RANK ; i++)
+                    continue;
+                }
+                const u08 MUL = Matrix[row].get()[col];
+                for(u08 j = 0 ; j < MAX_RANK ; j++)
+                {
+                    Matrix[row].get()[j] ^= FiniteField::instance()->mul(Matrix[col].get()[j], MUL);
+                    if(MAKE_DECODING_MATRIX)
                     {
-                        Matrix[row].get()[i] = FiniteField::instance()->sub(Matrix[row].get()[i], FiniteField::instance()->mul(Matrix[col].get()[i], Matrix[row].get()[col]));
-                        m_DecodingMatrix[row].get()[i] = FiniteField::instance()->sub(m_DecodingMatrix[row].get()[i], FiniteField::instance()->mul(m_DecodingMatrix[col].get()[i], m_DecodingMatrix[row].get()[col]));
+                        m_DecodingMatrix[row].get()[j] ^= FiniteField::instance()->mul(m_DecodingMatrix[col].get()[j], MUL);
                     }
                 }
             }
-        }
-        printf("Matrix\n");
-        for(u08 i = 0 ; i < MAX_RANK ; i++)
-        {
-            for(u08 j = 0 ; j < MAX_RANK ; j++)
-            {
-                printf(" %3hhu ", Matrix[i].get()[j]);
-            }
-            printf("\n");
-        }
-        printf("DecodingMatrix\n");
-        for(u08 i = 0 ; i < MAX_RANK ; i++)
-        {
-            for(u08 j = 0 ; j < MAX_RANK ; j++)
-            {
-                printf(" %3hhu ", m_DecodingMatrix[i].get()[j]);
-            }
-            printf("\n");
         }
     }
     return RANK == (OLD_RANK+1);
@@ -187,7 +175,22 @@ bool ReceptionBlock::IsInnovative(u08* buffer, u16 length)
 
 bool ReceptionBlock::Decoding()
 {
-
+    const u08 MAX_RANK = (m_DecodedPacketBuffer.size()?
+                              reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[0].get())->m_MaximumRank:
+                              reinterpret_cast<Header::Data*>(m_EncodedPacketBuffer[0].get())->m_MaximumRank);
+    u08 DecodedPktIdx = 0;
+    u08 EncodedPktIdx = 0;
+    u08 RxPkt = 0;
+    for(u08 row = 0 ; row < MAX_RANK ; row++)
+    {
+        if(DecodedPktIdx < m_DecodedPacketBuffer.size() &&
+                reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[DecodedPktIdx].get())->m_Codes[row])
+        {
+        }
+        else if(EncodedPktIdx < m_EncodedPacketBuffer.size() && reinterpret_cast<Header::Data*>(m_EncodedPacketBuffer[EncodedPktIdx].get())->m_Codes[row])
+        {
+        }
+    }
     return true;
 }
 
