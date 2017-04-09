@@ -65,7 +65,7 @@ bool TransmissionBlock::Send(u08* buffer, u16 buffersize, bool reqack)
     DataHeader->m_MaxBlockSequenceNumber = p_Session->m_MaxBlockSequenceNumber;
     DataHeader->m_ExpectedRank = m_TransmissionCount + 1;
     DataHeader->m_MaximumRank = m_BlockSize;
-    DataHeader->m_AckAddress = (laddr)(&(p_Session->m_AckList[AckIndex()]));
+    DataHeader->m_SessionAddress = (laddr)(p_Session);
 #ifdef ENVIRONMENT32
     DataHeader->m_Reserved = 0;
 #endif
@@ -182,7 +182,7 @@ void TransmissionBlock::Retransmission()
         RemedyHeader->m_MaxBlockSequenceNumber = p_Session->m_MaxBlockSequenceNumber.load();
         RemedyHeader->m_ExpectedRank = m_OriginalPacketBuffer.size();
         RemedyHeader->m_MaximumRank = m_BlockSize;
-        RemedyHeader->m_AckAddress = (laddr)(&(p_Session->m_AckList[c_AckIndex]));
+        RemedyHeader->m_SessionAddress = (laddr)(p_Session);
 #ifdef ENVIRONMENT32
         RemedyHeader->m_Reserved = 0;
 #endif
@@ -450,9 +450,10 @@ void Transmission::RxHandler(u08* buffer, u16 size, const sockaddr_in * const se
             TransmissionSession** const pp_session = m_Sessions.GetPtr(key);
             if(pp_session)
             {
-                std::atomic<bool>* const AckAddress = reinterpret_cast< std::atomic<bool>* >(Ack->m_AckAddress);
-                (*pp_session)->m_TaskQueue.Enqueue([AckAddress](){
-                    (*AckAddress) = true;
+                TransmissionSession* const SessionAddress = reinterpret_cast< TransmissionSession* >(Ack->m_SessionAddress);
+                u16 Sequence = Ack->m_Sequence;
+                (*pp_session)->m_TaskQueue.Enqueue([SessionAddress,Sequence](){
+                    SessionAddress->m_AckList[Sequence%(Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION*2)] = true;
                 }, TransmissionSession::HIGH_PRIORITY);
             }
         }

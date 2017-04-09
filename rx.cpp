@@ -15,7 +15,7 @@ void PRINT(Header::Data* data)
             data->m_MaxBlockSequenceNumber,
             data->m_ExpectedRank,
             data->m_MaximumRank,
-            data->m_AckAddress,
+            data->m_SessionAddress,
             data->m_Flags,
             data->m_TxCount,
             data->m_PayloadSize,
@@ -148,7 +148,7 @@ void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const 
         Header::DataAck ack;
         ack.m_Type = Header::Common::HeaderType::DATA_ACK;
         ack.m_Sequence = DataHeader->m_CurrentBlockSequenceNumber;
-        ack.m_AckAddress = DataHeader->m_AckAddress;
+        ack.m_SessionAddress = DataHeader->m_SessionAddress;
 #ifdef ENVIRONMENT32
         ack.m_Reserved = 0; // 32bit machine uses the first 4 bytes and the remaining memory shall be set to 0. This field should be used after casting to laddr.
 #endif
@@ -208,7 +208,7 @@ void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const 
         Header::DataAck ack;
         ack.m_Type = Header::Common::HeaderType::DATA_ACK;
         ack.m_Sequence = DataHeader->m_CurrentBlockSequenceNumber;
-        ack.m_AckAddress = DataHeader->m_AckAddress;
+        ack.m_SessionAddress = DataHeader->m_SessionAddress;
 #ifdef ENVIRONMENT32
         ack.m_Reserved = 0; // 32bit machine uses the first 4 bytes and the remaining memory shall be set to 0. This field should be used after casting to laddr.
 #endif
@@ -262,7 +262,7 @@ void ReceptionSession::Receive(u08* buffer, u16 length, const sockaddr_in * cons
         Header::DataAck ack;
         ack.m_Type = Header::Common::HeaderType::DATA_ACK;
         ack.m_Sequence = DataHeader->m_CurrentBlockSequenceNumber;
-        ack.m_AckAddress = DataHeader->m_AckAddress;
+        ack.m_SessionAckAddress = DataHeader->m_SessionAckAddress;
 #ifdef ENVIRONMENT32
         ack.m_Reserved = 0; // 32bit machine uses the first 4 bytes and the remaining memory shall be set to 0. This field should be used after casting to laddr.
 #endif

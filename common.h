@@ -82,7 +82,7 @@ struct Data : Common
     u16 m_MaxBlockSequenceNumber;
     u08 m_ExpectedRank;
     u08 m_MaximumRank;
-    laddr m_AckAddress; // Compatibility of 32 and 64bit machines.
+    laddr m_SessionAddress; // Compatibility of 32 and 64bit machines.
 #ifdef ENVIRONMENT32
     laddr m_Reserved;
 #endif
@@ -108,7 +108,7 @@ struct Data : Common
 struct DataAck : Common
 {
     u16 m_Sequence;
-    laddr m_AckAddress;    // 32bit machine uses the first 4 bytes and the remaining memory shall be set to 0. This field should be used after casting to laddr.
+    laddr m_SessionAddress;    // 32bit machine uses the first 4 bytes and the remaining memory shall be set to 0. This field should be used after casting to laddr.
 #ifdef ENVIRONMENT32
     laddr m_Reserved; // 32bit machine uses the first 4 bytes and the remaining memory shall be set to 0. This field should be used after casting to laddr.
 #endif
