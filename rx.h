@@ -11,15 +11,19 @@ class Reception;
 
 class ReceptionBlock
 {
-public:
+    friend class ReceptionSession;
+    friend class Reception;
+private:
     Reception* const c_Reception;
     ReceptionSession* const c_Session;
     const u16 m_BlockSequenceNumber;
     std::vector< std::unique_ptr< u08[] > > m_DecodedPacketBuffer;
     std::vector< std::unique_ptr< u08[] > > m_EncodedPacketBuffer;
+    std::vector< std::unique_ptr< u08[] > > m_DecodingMatrix;
     u08 m_ServiceMask[4];
     bool m_DecodingCompleted;
     bool IsInnovative(u08* buffer, u16 length);
+    bool Decoding();
 public:
     ReceptionBlock() = delete;
     ReceptionBlock(const ReceptionBlock&) = delete;
@@ -35,7 +39,8 @@ public:
 class ReceptionSession
 {
     friend class ReceptionBlock;
-public:
+    friend class Reception;
+private:
     Reception* const c_Reception;
     AVLTree< u16, ReceptionBlock* > m_Blocks;
     ThreadPool<1, 1> m_RxTaskQueue;
