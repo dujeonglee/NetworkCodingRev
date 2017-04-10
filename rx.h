@@ -23,7 +23,15 @@ private:
 
     bool m_DecodingCompleted;
     const u08 FindMaximumRank(Header::Data* hdr = nullptr);
-    bool IsInnovative(u08* buffer, u16 length);
+    const bool FindEndOfBlock(Header::Data* hdr = nullptr);
+    enum DecodingAction
+    {
+        DROP = 0,
+        ENQUEUE_AND_DECODING,
+        DECODING,
+    };
+
+    DecodingAction IsInnovative(u08* buffer, u16 length);
     bool Decoding();
 public:
     ReceptionBlock() = delete;
