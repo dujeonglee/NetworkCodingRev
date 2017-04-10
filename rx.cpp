@@ -8,18 +8,18 @@ using namespace NetworkCoding;
 void PRINT(Header::Data* data)
 {
     printf("[Type %hhu][TotalSize %hu][MinSeq. %hu][CurSeq. %hu][MaxSeq. %hu][Exp.Rank %hhu][Max.Rank %hhu][Addr %ld][Flags %hhx][TxCnt %hhu][Payload %hu][LastInd. %hhu]",
-            data->m_Type,
-            data->m_TotalSize,
-            data->m_MinBlockSequenceNumber,
-            data->m_CurrentBlockSequenceNumber,
-            data->m_MaxBlockSequenceNumber,
-            data->m_ExpectedRank,
-            data->m_MaximumRank,
-            data->m_SessionAddress,
-            data->m_Flags,
-            data->m_TxCount,
-            data->m_PayloadSize,
-            data->m_LastIndicator);
+           data->m_Type,
+           data->m_TotalSize,
+           data->m_MinBlockSequenceNumber,
+           data->m_CurrentBlockSequenceNumber,
+           data->m_MaxBlockSequenceNumber,
+           data->m_ExpectedRank,
+           data->m_MaximumRank,
+           data->m_SessionAddress,
+           data->m_Flags,
+           data->m_TxCount,
+           data->m_PayloadSize,
+           data->m_LastIndicator);
     printf("[Code ");
     for(u08 i = 0 ; i < data->m_MaximumRank ; i++)
     {
@@ -57,27 +57,47 @@ const u08 ReceptionBlock::FindMaximumRank(Header::Data* hdr)
     return MaximumRank;
 }
 
-bool ReceptionBlock::IsInnovative(u08* buffer, u16 length)
+const bool ReceptionBlock::FindEndOfBlock(Header::Data* hdr)
+{
+    if(m_EncodedPacketBuffer.size())
+    {
+        return true;
+    }
+    if(hdr && hdr->m_Flags & Header::Data::DataHeaderFlag::FLAGS_END_OF_BLK)
+    {
+        return true;
+    }
+    for(u08 i = 0 ; i < m_DecodedPacketBuffer.size() ; i++)
+    {
+        if(reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[i].get())->m_Flags & Header::Data::DataHeaderFlag::FLAGS_END_OF_BLK)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+ReceptionBlock::DecodingAction ReceptionBlock::IsInnovative(u08* buffer, u16 length)
 {
     const u08 OLD_RANK = m_DecodedPacketBuffer.size() + m_EncodedPacketBuffer.size();
     const u08 MAX_RANK = FindMaximumRank(reinterpret_cast<Header::Data*>(buffer));
-    const bool MAKE_DECODING_MATRIX = (OLD_RANK+1 == MAX_RANK);
-    std::vector< std::unique_ptr< u08[] > > Matrix;
+    const bool MAKE_DECODING_MATRIX = (OLD_RANK+1 == MAX_RANK && FindEndOfBlock(reinterpret_cast<Header::Data*>(buffer)));
+    std::vector< std::unique_ptr< u08[] > > EncodingMatrix;
     if(OLD_RANK == 0)
     {
         // First packet is always innovative.
-        return true;
+        return ENQUEUE_AND_DECODING;
     }
     else if(m_DecodedPacketBuffer.size() == 0
             && reinterpret_cast <Header::Data*>(buffer)->m_Flags & Header::Data::DataHeaderFlag::FLAGS_ORIGINAL)
     {
         // When there is only original packet in the buffer, and the received packet is Decoded packet,
         // we can guarnatee this packet is always innovative.
-        return true;
+        return ENQUEUE_AND_DECODING;
     }
-    else if(OLD_RANK == reinterpret_cast<Header::Data*>(buffer)->m_ExpectedRank)
+    else if(OLD_RANK == MAX_RANK)
     {
-        return false;
+        return DECODING;
     }
     if(MAKE_DECODING_MATRIX)
     {
@@ -86,31 +106,33 @@ bool ReceptionBlock::IsInnovative(u08* buffer, u16 length)
             try
             {
                 m_DecodingMatrix.emplace_back(std::unique_ptr<u08[]>(new u08[MAX_RANK]));
-                memset(m_DecodingMatrix.back().get(), 0x0, MAX_RANK);
-                m_DecodingMatrix.back().get()[row] = 0x01;
             }
             catch(const std::bad_alloc& ex)
             {
+                m_DecodingMatrix.clear();
                 std::cout<<ex.what()<<std::endl;
-                return false;
+                return DROP;
             }
+            memset(m_DecodingMatrix.back().get(), 0x0, MAX_RANK);
+            m_DecodingMatrix.back().get()[row] = 0x01;
         }
     }
-    // 1. Allcate Decoding Matrix
+    // 1. Allcate Encoding Matrix
     for(u08 row = 0 ; row < MAX_RANK ; row++)
     {
         try
         {
-            Matrix.emplace_back(std::unique_ptr<u08[]>(new u08[MAX_RANK]));
-            memset(Matrix.back().get(), 0x0, MAX_RANK);
+            EncodingMatrix.emplace_back(std::unique_ptr<u08[]>(new u08[MAX_RANK]));
+            memset(EncodingMatrix.back().get(), 0x0, MAX_RANK);
         }
         catch(const std::bad_alloc& ex)
         {
+            m_DecodingMatrix.clear();
             std::cout<<ex.what()<<std::endl;
-            return false;
+            return DROP;
         }
     }
-    // 2. Fill-in Decoding Matrix
+    // 2. Fill-in Encoding Matrix
     {
         u08 DecodedPktIdx = 0;
         u08 EncodedPktIdx = 0;
@@ -120,15 +142,15 @@ bool ReceptionBlock::IsInnovative(u08* buffer, u16 length)
             if(DecodedPktIdx < m_DecodedPacketBuffer.size() &&
                     reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[DecodedPktIdx].get())->m_Codes[row])
             {
-                memcpy(Matrix[row].get(),reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[DecodedPktIdx++].get())->m_Codes, MAX_RANK);
+                memcpy(EncodingMatrix[row].get(),reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[DecodedPktIdx++].get())->m_Codes, MAX_RANK);
             }
             else if(EncodedPktIdx < m_EncodedPacketBuffer.size() && reinterpret_cast<Header::Data*>(m_EncodedPacketBuffer[EncodedPktIdx].get())->m_Codes[row])
             {
-                memcpy(Matrix[row].get(),reinterpret_cast<Header::Data*>(m_EncodedPacketBuffer[EncodedPktIdx++].get())->m_Codes, MAX_RANK);
+                memcpy(EncodingMatrix[row].get(),reinterpret_cast<Header::Data*>(m_EncodedPacketBuffer[EncodedPktIdx++].get())->m_Codes, MAX_RANK);
             }
             else if(RxPkt < 1 && reinterpret_cast<Header::Data*>(buffer)->m_Codes[row])
             {
-                memcpy(Matrix[row].get(),reinterpret_cast<Header::Data*>(buffer)->m_Codes, MAX_RANK);
+                memcpy(EncodingMatrix[row].get(),reinterpret_cast<Header::Data*>(buffer)->m_Codes, MAX_RANK);
                 RxPkt++;
             }
         }
@@ -136,14 +158,14 @@ bool ReceptionBlock::IsInnovative(u08* buffer, u16 length)
     // 3. Elimination
     for(u08 row = 0 ; row < MAX_RANK ; row++)
     {
-        if(Matrix[row].get()[row] == 0)
+        if(EncodingMatrix[row].get()[row] == 0)
         {
             continue;
         }
-        const u08 MUL = FiniteField::instance()->inv(Matrix[row].get()[row]);
+        const u08 MUL = FiniteField::instance()->inv(EncodingMatrix[row].get()[row]);
         for(u08 col = 0 ; col < MAX_RANK ; col++)
         {
-            Matrix[row].get()[col] = FiniteField::instance()->mul(Matrix[row].get()[col], MUL);
+            EncodingMatrix[row].get()[col] = FiniteField::instance()->mul(EncodingMatrix[row].get()[col], MUL);
             if(MAKE_DECODING_MATRIX)
             {
                 m_DecodingMatrix[row].get()[col] = FiniteField::instance()->mul(m_DecodingMatrix[row].get()[col], MUL);
@@ -152,15 +174,15 @@ bool ReceptionBlock::IsInnovative(u08* buffer, u16 length)
 
         for(u08 elimination_row = row+1 ; elimination_row < MAX_RANK ; elimination_row++)
         {
-            if(Matrix[elimination_row].get()[row] == 0)
+            if(EncodingMatrix[elimination_row].get()[row] == 0)
             {
                 continue;
             }
-            const u08 MUL2 = FiniteField::instance()->inv(Matrix[elimination_row].get()[row]);
+            const u08 MUL2 = FiniteField::instance()->inv(EncodingMatrix[elimination_row].get()[row]);
             for(u08 j = 0 ; j < MAX_RANK ; j++)
             {
-                Matrix[elimination_row].get()[j] = FiniteField::instance()->mul(Matrix[elimination_row].get()[j], MUL2);
-                Matrix[elimination_row].get()[j] ^= Matrix[row].get()[j];
+                EncodingMatrix[elimination_row].get()[j] = FiniteField::instance()->mul(EncodingMatrix[elimination_row].get()[j], MUL2);
+                EncodingMatrix[elimination_row].get()[j] ^= EncodingMatrix[row].get()[j];
                 if(MAKE_DECODING_MATRIX)
                 {
                     m_DecodingMatrix[elimination_row].get()[j] = FiniteField::instance()->mul(m_DecodingMatrix[elimination_row].get()[j], MUL2);
@@ -172,7 +194,7 @@ bool ReceptionBlock::IsInnovative(u08* buffer, u16 length)
     u08 RANK = 0;
     for(u08 i = 0 ; i < MAX_RANK ; i++)
     {
-        if(Matrix[i].get()[i] == 1)
+        if(EncodingMatrix[i].get()[i] == 1)
         {
             RANK++;
         }
@@ -183,14 +205,14 @@ bool ReceptionBlock::IsInnovative(u08* buffer, u16 length)
         {
             for(s16 row = 0 ; row < col ; row++)
             {
-                if(Matrix[row].get()[col] == 0)
+                if(EncodingMatrix[row].get()[col] == 0)
                 {
                     continue;
                 }
-                const u08 MUL = Matrix[row].get()[col];
+                const u08 MUL = EncodingMatrix[row].get()[col];
                 for(u08 j = 0 ; j < MAX_RANK ; j++)
                 {
-                    Matrix[row].get()[j] ^= FiniteField::instance()->mul(Matrix[col].get()[j], MUL);
+                    EncodingMatrix[row].get()[j] ^= FiniteField::instance()->mul(EncodingMatrix[col].get()[j], MUL);
                     if(MAKE_DECODING_MATRIX)
                     {
                         m_DecodingMatrix[row].get()[j] ^= FiniteField::instance()->mul(m_DecodingMatrix[col].get()[j], MUL);
@@ -199,13 +221,16 @@ bool ReceptionBlock::IsInnovative(u08* buffer, u16 length)
             }
         }
     }
-    return RANK == (OLD_RANK+1);
+    if(RANK == (OLD_RANK+1))
+    {
+        return ENQUEUE_AND_DECODING;
+    }
+    return DROP;
 }
 
 bool ReceptionBlock::Decoding()
 {
     const u08 MAX_RANK = FindMaximumRank();
-    u08 DecodedPktIdx = 0;
     u08 EncodedPktIdx = 0;
     for(u08 row = 0 ; row < MAX_RANK ; row++)
     {
@@ -266,76 +291,82 @@ void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const 
         sendto(c_Reception->c_Socket, (u08*)&ack, sizeof(ack), 0, (sockaddr*)sender_addr, sender_addr_len);
         return;
     }
-    if(IsInnovative(buffer, length) == false)
+    switch(IsInnovative(buffer, length))
     {
+    case DROP:
         return;
-    }
-    if(DataHeader->m_Flags & Header::Data::DataHeaderFlag::FLAGS_ORIGINAL)
-    {
-        try
+        break;
+    case ENQUEUE_AND_DECODING:
+        if(DataHeader->m_Flags & Header::Data::DataHeaderFlag::FLAGS_ORIGINAL)
         {
-            m_DecodedPacketBuffer.emplace_back(std::unique_ptr<u08[]>(new u08[length]));
-        }
-        catch(const std::bad_alloc& ex)
-        {
-            std::cout<<ex.what()<<std::endl;
-            return;
-        }
-        memcpy(m_DecodedPacketBuffer.back().get(), buffer, length);
-    }
-    else
-    {
-        try
-        {
-            m_EncodedPacketBuffer.emplace_back(std::unique_ptr<u08[]>(new u08[length]));
-        }
-        catch(const std::bad_alloc& ex)
-        {
-            std::cout<<ex.what()<<std::endl;
-            return;
-        }
-        memcpy(m_EncodedPacketBuffer.back().get(), buffer, length);
-    }
-    if(DataHeader->m_Flags & Header::Data::DataHeaderFlag::FLAGS_ORIGINAL)
-    {
-        if(c_Session->m_SequenceNumberForService == DataHeader->m_CurrentBlockSequenceNumber &&
-                DataHeader->m_ExpectedRank == m_DecodedPacketBuffer.size())
-        {
-            reinterpret_cast <Header::Data*>(m_DecodedPacketBuffer.back().get())->m_Flags |= Header::Data::DataHeaderFlag::FLAGS_CONSUMED;
-            const u32 buffer_index = m_DecodedPacketBuffer.size();
-            const sockaddr_in addr = (*sender_addr);
-            const u32 addr_length = sizeof(addr);
-            c_Session->m_RxTaskQueue.Enqueue([this, buffer_index, length, addr, addr_length](){
-                c_Reception->m_RxCallback(m_DecodedPacketBuffer[buffer_index].get(), length, &addr, addr_length);
-            });
-        }
-    }
-    if((DataHeader->m_ExpectedRank == (m_DecodedPacketBuffer.size() + m_EncodedPacketBuffer.size())) &&
-            (DataHeader->m_Flags & Header::Data::DataHeaderFlag::FLAGS_END_OF_BLK))
-    {
-        // Decoding.
-        m_DecodingCompleted = Decoding();
-        if(c_Session->m_SequenceNumberForService == DataHeader->m_CurrentBlockSequenceNumber)
-        {
-            ReceptionBlock** pp_block;
-            while(c_Session->m_SequenceNumberForService != c_Session->m_MaxSequenceNumberAwaitingAck&&
-                  (pp_block = c_Session->m_Blocks.GetPtr(c_Session->m_SequenceNumberForService))&&
-                  (*pp_block)->m_DecodingCompleted
-                  )
+            try
             {
-                std::cout<<"Service:"<<(*pp_block)->m_BlockSequenceNumber<<std::endl;
-                c_Session->m_SequenceNumberForService++;
+                m_DecodedPacketBuffer.emplace_back(std::unique_ptr<u08[]>(new u08[length]));
+            }
+            catch(const std::bad_alloc& ex)
+            {
+                std::cout<<ex.what()<<std::endl;
+                return;
+            }
+            memcpy(m_DecodedPacketBuffer.back().get(), buffer, length);
+        }
+        else
+        {
+            try
+            {
+                m_EncodedPacketBuffer.emplace_back(std::unique_ptr<u08[]>(new u08[length]));
+            }
+            catch(const std::bad_alloc& ex)
+            {
+                std::cout<<ex.what()<<std::endl;
+                return;
+            }
+            memcpy(m_EncodedPacketBuffer.back().get(), buffer, length);
+        }
+        if(DataHeader->m_Flags & Header::Data::DataHeaderFlag::FLAGS_ORIGINAL)
+        {
+            if(c_Session->m_SequenceNumberForService == DataHeader->m_CurrentBlockSequenceNumber &&
+                    DataHeader->m_ExpectedRank == m_DecodedPacketBuffer.size())
+            {
+                reinterpret_cast <Header::Data*>(m_DecodedPacketBuffer.back().get())->m_Flags |= Header::Data::DataHeaderFlag::FLAGS_CONSUMED;
+                const u32 buffer_index = m_DecodedPacketBuffer.size();
+                const sockaddr_in addr = (*sender_addr);
+                const u32 addr_length = sizeof(addr);
+                c_Session->m_RxTaskQueue.Enqueue([this, buffer_index, length, addr, addr_length](){
+                    c_Reception->m_RxCallback(m_DecodedPacketBuffer[buffer_index].get(), length, &addr, addr_length);
+                });
             }
         }
-        Header::DataAck ack;
-        ack.m_Type = Header::Common::HeaderType::DATA_ACK;
-        ack.m_Sequence = DataHeader->m_CurrentBlockSequenceNumber;
-        ack.m_SessionAddress = DataHeader->m_SessionAddress;
+        // Continue with decoding.
+    case DECODING:
+        if((DataHeader->m_ExpectedRank == (m_DecodedPacketBuffer.size() + m_EncodedPacketBuffer.size())) &&
+                (DataHeader->m_Flags & Header::Data::DataHeaderFlag::FLAGS_END_OF_BLK))
+        {
+            // Decoding.
+            m_DecodingCompleted = Decoding();
+            if(c_Session->m_SequenceNumberForService == DataHeader->m_CurrentBlockSequenceNumber)
+            {
+                ReceptionBlock** pp_block;
+                while(c_Session->m_SequenceNumberForService != c_Session->m_MaxSequenceNumberAwaitingAck&&
+                      (pp_block = c_Session->m_Blocks.GetPtr(c_Session->m_SequenceNumberForService))&&
+                      (*pp_block)->m_DecodingCompleted
+                      )
+                {
+                    std::cout<<"Service:"<<(*pp_block)->m_BlockSequenceNumber<<std::endl;
+                    c_Session->m_SequenceNumberForService++;
+                }
+            }
+            Header::DataAck ack;
+            ack.m_Type = Header::Common::HeaderType::DATA_ACK;
+            ack.m_Sequence = DataHeader->m_CurrentBlockSequenceNumber;
+            ack.m_SessionAddress = DataHeader->m_SessionAddress;
 #ifdef ENVIRONMENT32
-        ack.m_Reserved = 0; // 32bit machine uses the first 4 bytes and the remaining memory shall be set to 0. This field should be used after casting to laddr.
+            ack.m_Reserved = 0; // 32bit machine uses the first 4 bytes and the remaining memory shall be set to 0. This field should be used after casting to laddr.
 #endif
-        ack.m_Losses = DataHeader->m_TxCount - DataHeader->m_ExpectedRank;
-        sendto(c_Reception->c_Socket, (u08*)&ack, sizeof(ack), 0, (sockaddr*)sender_addr, sender_addr_len);
+            ack.m_Losses = DataHeader->m_TxCount - DataHeader->m_ExpectedRank;
+            sendto(c_Reception->c_Socket, (u08*)&ack, sizeof(ack), 0, (sockaddr*)sender_addr, sender_addr_len);
+        }
+        break;
     }
 }
 
