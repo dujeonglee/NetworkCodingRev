@@ -28,10 +28,39 @@ void PRINT(Header::Data* data)
     printf("]\n");
 }
 
+const u08 ReceptionBlock::FindMaximumRank(Header::Data* hdr)
+{
+    u08 MaximumRank = 0;
+    if(m_EncodedPacketBuffer.size())
+    {
+        return reinterpret_cast<Header::Data*>(m_EncodedPacketBuffer[0].get())->m_ExpectedRank;
+    }
+    if(hdr && hdr->m_Flags & Header::Data::DataHeaderFlag::FLAGS_END_OF_BLK)
+    {
+        return hdr->m_ExpectedRank;
+    }
+    for(u08 i = 0 ; i < m_DecodedPacketBuffer.size() ; i++)
+    {
+        if(reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[i].get())->m_Flags & Header::Data::DataHeaderFlag::FLAGS_END_OF_BLK)
+        {
+            return reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[i].get())->m_ExpectedRank;
+        }
+        else if(MaximumRank < reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[i].get())->m_ExpectedRank)
+        {
+            MaximumRank = reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[i].get())->m_ExpectedRank;
+        }
+    }
+    if(hdr && MaximumRank < hdr->m_ExpectedRank)
+    {
+        MaximumRank = hdr->m_ExpectedRank;
+    }
+    return MaximumRank;
+}
+
 bool ReceptionBlock::IsInnovative(u08* buffer, u16 length)
 {
     const u08 OLD_RANK = m_DecodedPacketBuffer.size() + m_EncodedPacketBuffer.size();
-    const u08 MAX_RANK = reinterpret_cast<Header::Data*>(buffer)->m_MaximumRank;
+    const u08 MAX_RANK = FindMaximumRank(reinterpret_cast<Header::Data*>(buffer));
     const bool MAKE_DECODING_MATRIX = (OLD_RANK+1 == MAX_RANK);
     std::vector< std::unique_ptr< u08[] > > Matrix;
     if(OLD_RANK == 0)
@@ -175,21 +204,30 @@ bool ReceptionBlock::IsInnovative(u08* buffer, u16 length)
 
 bool ReceptionBlock::Decoding()
 {
-    const u08 MAX_RANK = (m_DecodedPacketBuffer.size()?
-                              reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[0].get())->m_MaximumRank:
-                              reinterpret_cast<Header::Data*>(m_EncodedPacketBuffer[0].get())->m_MaximumRank);
+    const u08 MAX_RANK = FindMaximumRank();
     u08 DecodedPktIdx = 0;
     u08 EncodedPktIdx = 0;
-    u08 RxPkt = 0;
     for(u08 row = 0 ; row < MAX_RANK ; row++)
     {
-        if(DecodedPktIdx < m_DecodedPacketBuffer.size() &&
-                reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[DecodedPktIdx].get())->m_Codes[row])
+        if(row < m_DecodedPacketBuffer.size() &&
+                reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[row].get())->m_Codes[row] > 0)
         {
+            continue;
         }
-        else if(EncodedPktIdx < m_EncodedPacketBuffer.size() && reinterpret_cast<Header::Data*>(m_EncodedPacketBuffer[EncodedPktIdx].get())->m_Codes[row])
+        try
         {
+            m_DecodedPacketBuffer.emplace(m_DecodedPacketBuffer.begin()+row, std::unique_ptr< u08[] >(m_EncodedPacketBuffer[EncodedPktIdx++].release()));
         }
+        catch(const std::bad_alloc& ex)
+        {
+            std::cout<<ex.what()<<std::endl;
+            return false;
+        }
+    }
+    m_EncodedPacketBuffer.clear();
+    for(u08 row = 0 ; row < MAX_RANK ; row++)
+    {
+        PRINT(reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[row].get()));
     }
     return true;
 }
@@ -198,10 +236,6 @@ ReceptionBlock::ReceptionBlock(Reception * const reception, ReceptionSession * c
 {
     m_DecodedPacketBuffer.clear();
     m_EncodedPacketBuffer.clear();
-    m_ServiceMask[0] = 0;
-    m_ServiceMask[1] = 0;
-    m_ServiceMask[2] = 0;
-    m_ServiceMask[3] = 0;
     m_DecodingCompleted = false;
 }
 

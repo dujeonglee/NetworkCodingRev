@@ -20,8 +20,9 @@ private:
     std::vector< std::unique_ptr< u08[] > > m_DecodedPacketBuffer;
     std::vector< std::unique_ptr< u08[] > > m_EncodedPacketBuffer;
     std::vector< std::unique_ptr< u08[] > > m_DecodingMatrix;
-    u08 m_ServiceMask[4];
+
     bool m_DecodingCompleted;
+    const u08 FindMaximumRank(Header::Data* hdr = nullptr);
     bool IsInnovative(u08* buffer, u16 length);
     bool Decoding();
 public:
