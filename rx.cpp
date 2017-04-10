@@ -214,15 +214,20 @@ bool ReceptionBlock::Decoding()
         {
             continue;
         }
-        try
+        do
         {
-            m_DecodedPacketBuffer.emplace(m_DecodedPacketBuffer.begin()+row, std::unique_ptr< u08[] >(m_EncodedPacketBuffer[EncodedPktIdx++].release()));
-        }
-        catch(const std::bad_alloc& ex)
-        {
-            std::cout<<ex.what()<<std::endl;
-            return false;
-        }
+            try
+            {
+                m_DecodedPacketBuffer.emplace(m_DecodedPacketBuffer.begin()+row, std::unique_ptr< u08[] >(m_EncodedPacketBuffer[EncodedPktIdx++].release()));
+            }
+            catch(const std::bad_alloc& ex)
+            {
+                std::cout<<ex.what()<<std::endl;
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                continue;
+            }
+            break;
+        }while(1);
     }
     m_EncodedPacketBuffer.clear();
     for(u08 row = 0 ; row < MAX_RANK ; row++)
@@ -319,29 +324,6 @@ void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const 
                   )
             {
                 std::cout<<"Service:"<<(*pp_block)->m_BlockSequenceNumber<<std::endl;
-                u08 DecodedIdx = 0;
-                u08 EncodedIdx = 0;
-                for(u08 Idx = 0 ; Idx < m_EncodedPacketBuffer.size() + m_DecodedPacketBuffer.size() ; Idx++)
-                {
-                    if(DecodedIdx < m_DecodedPacketBuffer.size()&&
-                            reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[DecodedIdx].get())->m_Codes[Idx] == 1)
-                    {
-                        if(!(reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[DecodedIdx].get())->m_Flags & Header::Data::DataHeaderFlag::FLAGS_CONSUMED))
-                        {
-
-                        }
-                        DecodedIdx++;
-                    }
-                    else if(EncodedIdx < m_EncodedPacketBuffer.size()&&
-                            reinterpret_cast<Header::Data*>(m_EncodedPacketBuffer[EncodedIdx].get())->m_Codes[Idx] == 1)
-                    {
-                        EncodedIdx++;
-                    }
-                    else
-                    {
-                        std::cout<<"Decode Error"<<std::endl;
-                    }
-                }
                 c_Session->m_SequenceNumberForService++;
             }
         }
