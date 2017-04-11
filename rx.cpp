@@ -82,6 +82,7 @@ ReceptionBlock::ReceiveAction ReceptionBlock::FindAction(u08* buffer, u16 length
     const u08 OLD_RANK = m_DecodedPacketBuffer.size() + m_EncodedPacketBuffer.size();
     const u08 MAX_RANK = FindMaximumRank(reinterpret_cast<Header::Data*>(buffer));
     const bool MAKE_DECODING_MATRIX = (OLD_RANK+1 == MAX_RANK && FindEndOfBlock(reinterpret_cast<Header::Data*>(buffer)));
+
     std::vector< std::unique_ptr< u08[] > > EncodingMatrix;
     if(OLD_RANK == 0)
     {
@@ -101,7 +102,7 @@ ReceptionBlock::ReceiveAction ReceptionBlock::FindAction(u08* buffer, u16 length
     }
     if(MAKE_DECODING_MATRIX)
     {
-        m_DecodingMatrix.clear();
+        //m_DecodingMatrix.clear();
         for(u08 row = 0 ; row < MAX_RANK ; row++)
         {
             try
@@ -225,6 +226,10 @@ ReceptionBlock::ReceiveAction ReceptionBlock::FindAction(u08* buffer, u16 length
     if(RANK == (OLD_RANK+1))
     {
         return ENQUEUE_AND_DECODING;
+    }
+    if(MAKE_DECODING_MATRIX && m_DecodingMatrix.size())
+    {
+        m_DecodingMatrix.clear();
     }
     return DROP;
 }
