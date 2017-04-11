@@ -20,18 +20,18 @@ private:
     std::vector< std::unique_ptr< u08[] > > m_DecodedPacketBuffer;
     std::vector< std::unique_ptr< u08[] > > m_EncodedPacketBuffer;
     std::vector< std::unique_ptr< u08[] > > m_DecodingMatrix;
-
-    bool m_DecodingCompleted;
+    u08 DecodedPkt[1500];
+    bool m_DecodingReady;
     const u08 FindMaximumRank(Header::Data* hdr = nullptr);
     const bool FindEndOfBlock(Header::Data* hdr = nullptr);
-    enum DecodingAction
+    enum ReceiveAction
     {
         DROP = 0,
         ENQUEUE_AND_DECODING,
         DECODING,
     };
 
-    DecodingAction IsInnovative(u08* buffer, u16 length);
+    ReceiveAction FindAction(u08* buffer, u16 length);
     bool Decoding();
 public:
     ReceptionBlock() = delete;

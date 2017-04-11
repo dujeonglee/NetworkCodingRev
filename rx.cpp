@@ -77,7 +77,7 @@ const bool ReceptionBlock::FindEndOfBlock(Header::Data* hdr)
     return false;
 }
 
-ReceptionBlock::DecodingAction ReceptionBlock::IsInnovative(u08* buffer, u16 length)
+ReceptionBlock::ReceiveAction ReceptionBlock::FindAction(u08* buffer, u16 length)
 {
     const u08 OLD_RANK = m_DecodedPacketBuffer.size() + m_EncodedPacketBuffer.size();
     const u08 MAX_RANK = FindMaximumRank(reinterpret_cast<Header::Data*>(buffer));
@@ -88,8 +88,8 @@ ReceptionBlock::DecodingAction ReceptionBlock::IsInnovative(u08* buffer, u16 len
         // First packet is always innovative.
         return ENQUEUE_AND_DECODING;
     }
-    else if(m_DecodedPacketBuffer.size() == 0
-            && reinterpret_cast <Header::Data*>(buffer)->m_Flags & Header::Data::DataHeaderFlag::FLAGS_ORIGINAL)
+    else if(m_DecodedPacketBuffer.size() == 0 &&
+            reinterpret_cast <Header::Data*>(buffer)->m_Flags & Header::Data::DataHeaderFlag::FLAGS_ORIGINAL)
     {
         // When there is only original packet in the buffer, and the received packet is Decoded packet,
         // we can guarnatee this packet is always innovative.
@@ -101,6 +101,7 @@ ReceptionBlock::DecodingAction ReceptionBlock::IsInnovative(u08* buffer, u16 len
     }
     if(MAKE_DECODING_MATRIX)
     {
+        m_DecodingMatrix.clear();
         for(u08 row = 0 ; row < MAX_RANK ; row++)
         {
             try
@@ -257,7 +258,32 @@ bool ReceptionBlock::Decoding()
     m_EncodedPacketBuffer.clear();
     for(u08 row = 0 ; row < MAX_RANK ; row++)
     {
-        PRINT(reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[row].get()));
+        Header::Data* const pkt = reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[row].get());
+        u08 tmp;
+        if(pkt->m_Flags & Header::Data::DataHeaderFlag::FLAGS_ORIGINAL)
+        {
+            PRINT(pkt);
+            continue;
+        }
+        for(u32 decodingposition = 0 ; decodingposition < Header::Data::CodingOffset ; decodingposition++)
+        {
+            DecodedPkt[decodingposition] = m_DecodedPacketBuffer[row].get()[decodingposition];
+        }
+        for(u32 decodingposition = Header::Data::CodingOffset ; decodingposition < pkt->m_TotalSize ; decodingposition++)
+        {
+            tmp = 0;
+            for(u08 i = 0 ; i < MAX_RANK ; i++)
+            {
+                tmp ^= FiniteField::instance()->mul(m_DecodingMatrix[row].get()[i], m_DecodedPacketBuffer[i].get()[decodingposition]);
+            }
+            DecodedPkt[decodingposition] = tmp;
+        }
+        PRINT(reinterpret_cast<Header::Data*>(DecodedPkt));
+        if(reinterpret_cast<Header::Data*>(DecodedPkt)->m_Codes[row] != 1)
+        {
+            std::cout<<"Decoding Error\n";
+            exit(-1);
+        }
     }
     return true;
 }
@@ -266,7 +292,7 @@ ReceptionBlock::ReceptionBlock(Reception * const reception, ReceptionSession * c
 {
     m_DecodedPacketBuffer.clear();
     m_EncodedPacketBuffer.clear();
-    m_DecodingCompleted = false;
+    m_DecodingReady = false;
 }
 
 ReceptionBlock::~ReceptionBlock()
@@ -278,7 +304,7 @@ ReceptionBlock::~ReceptionBlock()
 void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const sender_addr, const u32 sender_addr_len)
 {
     Header::Data* const DataHeader = reinterpret_cast <Header::Data*>(buffer);
-    if(m_DecodingCompleted)
+    if(m_DecodingReady)
     {
         Header::DataAck ack;
         ack.m_Type = Header::Common::HeaderType::DATA_ACK;
@@ -291,7 +317,7 @@ void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const 
         sendto(c_Reception->c_Socket, (u08*)&ack, sizeof(ack), 0, (sockaddr*)sender_addr, sender_addr_len);
         return;
     }
-    switch(IsInnovative(buffer, length))
+    switch(FindAction(buffer, length))
     {
     case DROP:
         return;
@@ -343,16 +369,21 @@ void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const 
                 (DataHeader->m_Flags & Header::Data::DataHeaderFlag::FLAGS_END_OF_BLK))
         {
             // Decoding.
-            m_DecodingCompleted = Decoding();
+            m_DecodingReady = true;
             if(c_Session->m_SequenceNumberForService == DataHeader->m_CurrentBlockSequenceNumber)
             {
                 ReceptionBlock** pp_block;
+                ReceptionBlock* p_block;
                 while(c_Session->m_SequenceNumberForService != c_Session->m_MaxSequenceNumberAwaitingAck&&
                       (pp_block = c_Session->m_Blocks.GetPtr(c_Session->m_SequenceNumberForService))&&
-                      (*pp_block)->m_DecodingCompleted
+                      (*pp_block)->m_DecodingReady
                       )
                 {
-                    std::cout<<"Service:"<<(*pp_block)->m_BlockSequenceNumber<<std::endl;
+                    p_block = (*pp_block);
+                    //c_Session->m_RxTaskQueue.Enqueue([p_block, sender_addr, sender_addr_len](){
+                        std::cout<<"Service:"<<p_block->m_BlockSequenceNumber<<std::endl;
+                        p_block->Decoding();
+                    //});
                     c_Session->m_SequenceNumberForService++;
                 }
             }
@@ -387,18 +418,20 @@ void ReceptionSession::Receive(u08* buffer, u16 length, const sockaddr_in * cons
 {
     Header::Data* const DataHeader = reinterpret_cast <Header::Data*>(buffer);
     // update min and max sequence.
-    if(STRICTLY_ASCENDING_ORDER(m_MinSequenceNumberAwaitingAck-1, m_MinSequenceNumberAwaitingAck, DataHeader->m_MinBlockSequenceNumber))
+    if(STRICTLY_ASCENDING_ORDER((m_MinSequenceNumberAwaitingAck-1), m_MinSequenceNumberAwaitingAck, DataHeader->m_MinBlockSequenceNumber))
     {
         for(; m_MinSequenceNumberAwaitingAck!=DataHeader->m_MinBlockSequenceNumber &&
             m_MinSequenceNumberAwaitingAck!=m_SequenceNumberForService ; m_MinSequenceNumberAwaitingAck++)
         {
             // This must be changed not to delete Block until it is successfully delivered to application.
             m_Blocks.Remove(m_MinSequenceNumberAwaitingAck, [this](ReceptionBlock* &data){
-                delete data;
+                m_RxTaskQueue.Enqueue([data](){
+                    delete data;
+                });
             });
         }
     }
-    if(STRICTLY_ASCENDING_ORDER(m_MaxSequenceNumberAwaitingAck-1, m_MaxSequenceNumberAwaitingAck, DataHeader->m_MaxBlockSequenceNumber))
+    if(STRICTLY_ASCENDING_ORDER((m_MaxSequenceNumberAwaitingAck-1), m_MaxSequenceNumberAwaitingAck, DataHeader->m_MaxBlockSequenceNumber))
     {
         m_MaxSequenceNumberAwaitingAck = DataHeader->m_MaxBlockSequenceNumber;
     }

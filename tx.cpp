@@ -161,7 +161,7 @@ void TransmissionBlock::Retransmission()
         DataHeader->m_Reserved = 0;
 #endif
         DataHeader->m_Flags = Header::Data::FLAGS_ORIGINAL | Header::Data::FLAGS_END_OF_BLK;
-        DataHeader->m_TxCount = m_TransmissionCount++;
+        DataHeader->m_TxCount = ++m_TransmissionCount;
         sendto(p_Session->c_Socket, m_OriginalPacketBuffer[0].get(), DataHeader->m_TotalSize, 0, (sockaddr*)&RemoteAddress, sizeof(RemoteAddress));
     }
     else
@@ -187,7 +187,7 @@ void TransmissionBlock::Retransmission()
         RemedyHeader->m_Reserved = 0;
 #endif
         RemedyHeader->m_Flags = Header::Data::FLAGS_END_OF_BLK;
-        RemedyHeader->m_TxCount = m_TransmissionCount++;
+        RemedyHeader->m_TxCount = ++m_TransmissionCount;
         for(u16 CodingOffset = Header::Data::OffSets::CodingOffset ;
             CodingOffset < m_LargestOriginalPacketSize ;
             CodingOffset++)
@@ -377,7 +377,7 @@ bool Transmission::Send(u32 IPv4, u16 Port, u08* buffer, u16 buffersize, bool re
 
     std::atomic<bool> TransmissionIsCompleted(false);
     std::atomic<bool> TransmissionResult(false);
-    while(p_session->m_ConcurrentRetransmissions >= Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION);
+    while((u16)(p_session->m_MaxBlockSequenceNumber - p_session->m_MinBlockSequenceNumber) >= Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION);
     const bool TransmissionIsScheduled = p_session->m_TaskQueue.Enqueue([buffer, buffersize, reqack, p_session, &TransmissionIsCompleted, &TransmissionResult](){
         // 1. Get Transmission Block
         if(p_session->p_TransmissionBlock == nullptr)
