@@ -238,6 +238,10 @@ bool ReceptionBlock::Decoding()
     std::vector< std::unique_ptr< u08[] > > DecodeOut;
     const u08 MAX_RANK = FindMaximumRank();
     u08 EncodedPktIdx = 0;
+    if(MAX_RANK != m_DecodedPacketBuffer.size() + m_EncodedPacketBuffer.size())
+    {
+        return false;
+    }
     for(u08 row = 0 ; row < MAX_RANK ; row++)
     {
         if(row < m_DecodedPacketBuffer.size() &&
@@ -392,22 +396,6 @@ void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const 
             }
             memcpy(m_EncodedPacketBuffer.back().get(), buffer, length);
         }
-        /*
-        if(DataHeader->m_Flags & Header::Data::DataHeaderFlag::FLAGS_ORIGINAL)
-        {
-            if(c_Session->m_SequenceNumberForService == ntohs(DataHeader->m_CurrentBlockSequenceNumber) &&
-                    DataHeader->m_ExpectedRank == m_DecodedPacketBuffer.size())
-            {
-                reinterpret_cast <Header::Data*>(m_DecodedPacketBuffer.back().get())->m_Flags |= Header::Data::DataHeaderFlag::FLAGS_CONSUMED;
-                const u32 buffer_index = m_DecodedPacketBuffer.size();
-                const sockaddr_in addr = (*sender_addr);
-                const u32 addr_length = sizeof(addr);
-                c_Session->m_RxTaskQueue.Enqueue([this, buffer_index, length, addr, addr_length](){
-                    c_Reception->m_RxCallback(m_DecodedPacketBuffer[buffer_index].get(), length, &addr, addr_length);
-                });
-            }
-        }
-        */
         // Continue with decoding.
     case DECODING:
         if((DataHeader->m_ExpectedRank == (m_DecodedPacketBuffer.size() + m_EncodedPacketBuffer.size())) &&
@@ -425,8 +413,10 @@ void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const 
                       )
                 {
                     p_block = (*pp_block);
-                    p_block->Decoding();
-                    c_Session->m_SequenceNumberForService++;
+                    if(p_block->Decoding())
+                    {
+                        c_Session->m_SequenceNumberForService++;
+                    }
                 }
             }
             Header::DataAck ack;
@@ -458,10 +448,29 @@ void ReceptionSession::Receive(u08* buffer, u16 length, const sockaddr_in * cons
     // update min and max sequence.
     if(STRICTLY_ASCENDING_ORDER((m_MinSequenceNumberAwaitingAck-1), m_MinSequenceNumberAwaitingAck, ntohs(DataHeader->m_MinBlockSequenceNumber)))
     {
-        for(; m_MinSequenceNumberAwaitingAck!=ntohs(DataHeader->m_MinBlockSequenceNumber) &&
-            m_MinSequenceNumberAwaitingAck!=m_SequenceNumberForService ; m_MinSequenceNumberAwaitingAck++)
+        for(; m_MinSequenceNumberAwaitingAck!=ntohs(DataHeader->m_MinBlockSequenceNumber) ; m_MinSequenceNumberAwaitingAck++)
         {
-            // This must be changed not to delete Block until it is successfully delivered to application.
+            if(m_MinSequenceNumberAwaitingAck==m_SequenceNumberForService)
+            {
+                // This is the case of best effort service.
+                ReceptionBlock** const pp_block = m_Blocks.GetPtr(m_SequenceNumberForService);
+                if(pp_block)
+                {
+                    ReceptionBlock* const p_block = (*pp_block);
+                    if(p_block->Decoding() == false)
+                    {
+                        for(u08 i = 0 ; i < p_block->m_DecodedPacketBuffer.size() ; i++)
+                        {
+                            u08* pkt = p_block->m_DecodedPacketBuffer[i].release();
+                            m_RxTaskQueue.Enqueue([this, pkt](){
+                                c_Reception->m_RxCallback(pkt+sizeof(Header::Data)+reinterpret_cast<Header::Data*>(pkt)->m_MaximumRank-1, ntohs(reinterpret_cast<Header::Data*>(pkt)->m_PayloadSize), &m_SenderAddress, sizeof(m_SenderAddress));
+                                delete pkt;
+                            });
+                        }
+                    }
+                }
+                m_SequenceNumberForService++;
+            }
             m_Blocks.Remove(m_MinSequenceNumberAwaitingAck, [this](ReceptionBlock* &data){
                 m_RxTaskQueue.Enqueue([data](){
                     delete data;
