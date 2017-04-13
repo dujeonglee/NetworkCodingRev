@@ -327,14 +327,8 @@ bool ReceptionBlock::Decoding()
     for(u08 i = 0 ; i < DecodeOut.size() ; i++)
     {
         u08* pkt = DecodeOut[i].release();
-        if(pkt == nullptr)
-        {
-            std::cout<<"asdfasdfasdf\n";
-            exit(-1);
-            continue;
-        }
         c_Session->m_RxTaskQueue.Enqueue([this, pkt](){
-            c_Reception->m_RxCallback(pkt, ntohs(reinterpret_cast<Header::Data*>(pkt)->m_TotalSize), nullptr, 0);
+            c_Reception->m_RxCallback(pkt+sizeof(Header::Data)+reinterpret_cast<Header::Data*>(pkt)->m_MaximumRank-1, ntohs(reinterpret_cast<Header::Data*>(pkt)->m_PayloadSize), &c_Session->m_SenderAddress, sizeof(c_Session->m_SenderAddress));
             delete [] pkt;
         });
     }
@@ -446,7 +440,7 @@ void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const 
 }
 
 
-ReceptionSession::ReceptionSession(Reception * const Session):c_Reception(Session)
+ReceptionSession::ReceptionSession(Reception * const Session, const sockaddr_in addr):c_Reception(Session), m_SenderAddress(addr)
 {
     m_SequenceNumberForService = 0;
     m_MinSequenceNumberAwaitingAck = 0;
@@ -531,11 +525,10 @@ void Reception::RxHandler(u08* buffer, u16 size, const sockaddr_in * const sende
     {
     case Header::Common::HeaderType::DATA:
     {
-        if((std::rand()%2) == 0)
+        if((std::rand()%10) == 0)
         {
             return;
         }
-        //PRINT((Header::Data*)buffer);
         const DataStructures::IPv4PortKey key = {sender_addr->sin_addr.s_addr, sender_addr->sin_port};
         ReceptionSession** const pp_Session = m_Sessions.GetPtr(key);
         if(pp_Session == nullptr)
@@ -557,7 +550,7 @@ void Reception::RxHandler(u08* buffer, u16 size, const sockaddr_in * const sende
         {
             try
             {
-                p_Session = new ReceptionSession(this);
+                p_Session = new ReceptionSession(this, (*sender_addr));
             }
             catch(const std::bad_alloc& ex)
             {

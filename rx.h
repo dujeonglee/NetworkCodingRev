@@ -55,13 +55,14 @@ private:
     u16 m_SequenceNumberForService;
     u16 m_MinSequenceNumberAwaitingAck;
     u16 m_MaxSequenceNumberAwaitingAck;
+    const sockaddr_in m_SenderAddress;
 public:
     ReceptionSession(const ReceptionSession&) = delete;
     ReceptionSession(ReceptionSession&&) = delete;
     ReceptionSession& operator=(const ReceptionSession&) = delete;
     ReceptionSession& operator=(ReceptionSession&&) = delete;
 
-    ReceptionSession(Reception * const Session);
+    ReceptionSession(Reception * const Session, const sockaddr_in addr);
     ~ReceptionSession();
     void Receive(u08* buffer, u16 length, const sockaddr_in * const sender_addr, const u32 sender_addr_len);
 };

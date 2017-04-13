@@ -362,7 +362,10 @@ bool Transmission::Send(u32 IPv4, u16 Port, u08* buffer, u16 buffersize, bool re
 
     std::atomic<bool> TransmissionIsCompleted(false);
     std::atomic<bool> TransmissionResult(false);
-    while((u16)(p_session->m_MaxBlockSequenceNumber - p_session->m_MinBlockSequenceNumber) >= Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION);
+    while((u16)(p_session->m_MaxBlockSequenceNumber - p_session->m_MinBlockSequenceNumber) >= Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION)
+    {
+        std::this_thread::sleep_for (std::chrono::milliseconds(1));
+    }
     const bool TransmissionIsScheduled = p_session->m_TaskQueue.Enqueue([buffer, buffersize, reqack, p_session, &TransmissionIsCompleted, &TransmissionResult](){
         // 1. Get Transmission Block
         if(p_session->p_TransmissionBlock == nullptr)
