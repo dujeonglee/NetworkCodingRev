@@ -7,18 +7,17 @@ using namespace NetworkCoding;
 
 void PRINT(Header::Data* data)
 {
-    printf("[Type %hhu][TotalSize %hu][MinSeq. %hu][CurSeq. %hu][MaxSeq. %hu][Exp.Rank %hhu][Max.Rank %hhu][Addr %ld][Flags %hhx][TxCnt %hhu][Payload %hu][LastInd. %hhu]",
+    printf("[Type %hhu][TotalSize %hu][MinSeq. %hu][CurSeq. %hu][MaxSeq. %hu][Exp.Rank %hhu][Max.Rank %hhu][Flags %hhx][TxCnt %hhu][Payload %hu][LastInd. %hhu]",
            data->m_Type,
-           data->m_TotalSize,
-           data->m_MinBlockSequenceNumber,
-           data->m_CurrentBlockSequenceNumber,
-           data->m_MaxBlockSequenceNumber,
+           ntohs(data->m_TotalSize),
+           ntohs(data->m_MinBlockSequenceNumber),
+           ntohs(data->m_CurrentBlockSequenceNumber),
+           ntohs(data->m_MaxBlockSequenceNumber),
            data->m_ExpectedRank,
            data->m_MaximumRank,
-           data->m_SessionAddress,
            data->m_Flags,
            data->m_TxCount,
-           data->m_PayloadSize,
+           ntohs(data->m_PayloadSize),
            data->m_LastIndicator);
     printf("[Code ");
     for(u08 i = 0 ; i < data->m_MaximumRank ; i++)
@@ -236,6 +235,7 @@ ReceptionBlock::ReceiveAction ReceptionBlock::FindAction(u08* buffer, u16 length
 
 bool ReceptionBlock::Decoding()
 {
+    std::vector< std::unique_ptr< u08[] > > DecodeOut;
     const u08 MAX_RANK = FindMaximumRank();
     u08 EncodedPktIdx = 0;
     for(u08 row = 0 ; row < MAX_RANK ; row++)
@@ -267,28 +267,76 @@ bool ReceptionBlock::Decoding()
         u08 tmp;
         if(pkt->m_Flags & Header::Data::DataHeaderFlag::FLAGS_ORIGINAL)
         {
-            PRINT(pkt);
+            do
+            {
+                try
+                {
+                    DecodeOut.emplace_back(std::unique_ptr< u08[] >(nullptr));
+                }
+                catch(const std::bad_alloc& ex)
+                {
+                    std::cout<<ex.what()<<std::endl;
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                    continue;
+                }
+                break;
+            }while(1);
             continue;
         }
+        do
+        {
+            try
+            {
+                DecodeOut.emplace_back(std::unique_ptr< u08[] >(new u08[ntohs(pkt->m_TotalSize)]));
+            }
+            catch(std::bad_alloc& ex)
+            {
+                std::cout<<ex.what()<<std::endl;
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                continue;
+            }
+            break;
+        }while(1);
+
         for(u32 decodingposition = 0 ; decodingposition < Header::Data::CodingOffset ; decodingposition++)
         {
-            DecodedPkt[decodingposition] = m_DecodedPacketBuffer[row].get()[decodingposition];
+            DecodeOut.back().get()[decodingposition] = m_DecodedPacketBuffer[row].get()[decodingposition];
         }
-        for(u32 decodingposition = Header::Data::CodingOffset ; decodingposition < pkt->m_TotalSize ; decodingposition++)
+        for(u32 decodingposition = Header::Data::CodingOffset ; decodingposition < ntohs(pkt->m_TotalSize) ; decodingposition++)
         {
             tmp = 0;
             for(u08 i = 0 ; i < MAX_RANK ; i++)
             {
                 tmp ^= FiniteField::instance()->mul(m_DecodingMatrix[row].get()[i], m_DecodedPacketBuffer[i].get()[decodingposition]);
             }
-            DecodedPkt[decodingposition] = tmp;
+            DecodeOut.back().get()[decodingposition] = tmp;
         }
-        PRINT(reinterpret_cast<Header::Data*>(DecodedPkt));
-        if(reinterpret_cast<Header::Data*>(DecodedPkt)->m_Codes[row] != 1)
+        if(reinterpret_cast<Header::Data*>(DecodeOut.back().get())->m_Codes[row] != 1)
         {
             std::cout<<"Decoding Error\n";
             exit(-1);
         }
+    }
+    for(u08 i = 0 ; i < DecodeOut.size() ; i++)
+    {
+        if(DecodeOut[i].get() == nullptr)
+        {
+            DecodeOut[i].reset(m_DecodedPacketBuffer[i].release());
+        }
+    }
+    for(u08 i = 0 ; i < DecodeOut.size() ; i++)
+    {
+        u08* pkt = DecodeOut[i].release();
+        if(pkt == nullptr)
+        {
+            std::cout<<"asdfasdfasdf\n";
+            exit(-1);
+            continue;
+        }
+        c_Session->m_RxTaskQueue.Enqueue([this, pkt](){
+            c_Reception->m_RxCallback(pkt, ntohs(reinterpret_cast<Header::Data*>(pkt)->m_TotalSize), nullptr, 0);
+            delete [] pkt;
+        });
     }
     return true;
 }
@@ -314,10 +362,6 @@ void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const 
         Header::DataAck ack;
         ack.m_Type = Header::Common::HeaderType::DATA_ACK;
         ack.m_Sequence = DataHeader->m_CurrentBlockSequenceNumber;
-        ack.m_SessionAddress = DataHeader->m_SessionAddress;
-#ifdef ENVIRONMENT32
-        ack.m_Reserved = 0; // 32bit machine uses the first 4 bytes and the remaining memory shall be set to 0. This field should be used after casting to laddr.
-#endif
         ack.m_Losses = DataHeader->m_TxCount - DataHeader->m_ExpectedRank;
         sendto(c_Reception->c_Socket, (u08*)&ack, sizeof(ack), 0, (sockaddr*)sender_addr, sender_addr_len);
         return;
@@ -354,9 +398,10 @@ void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const 
             }
             memcpy(m_EncodedPacketBuffer.back().get(), buffer, length);
         }
+        /*
         if(DataHeader->m_Flags & Header::Data::DataHeaderFlag::FLAGS_ORIGINAL)
         {
-            if(c_Session->m_SequenceNumberForService == DataHeader->m_CurrentBlockSequenceNumber &&
+            if(c_Session->m_SequenceNumberForService == ntohs(DataHeader->m_CurrentBlockSequenceNumber) &&
                     DataHeader->m_ExpectedRank == m_DecodedPacketBuffer.size())
             {
                 reinterpret_cast <Header::Data*>(m_DecodedPacketBuffer.back().get())->m_Flags |= Header::Data::DataHeaderFlag::FLAGS_CONSUMED;
@@ -368,6 +413,7 @@ void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const 
                 });
             }
         }
+        */
         // Continue with decoding.
     case DECODING:
         if((DataHeader->m_ExpectedRank == (m_DecodedPacketBuffer.size() + m_EncodedPacketBuffer.size())) &&
@@ -375,7 +421,7 @@ void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const 
         {
             // Decoding.
             m_DecodingReady = true;
-            if(c_Session->m_SequenceNumberForService == DataHeader->m_CurrentBlockSequenceNumber)
+            if(c_Session->m_SequenceNumberForService == ntohs(DataHeader->m_CurrentBlockSequenceNumber))
             {
                 ReceptionBlock** pp_block;
                 ReceptionBlock* p_block;
@@ -385,20 +431,13 @@ void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const 
                       )
                 {
                     p_block = (*pp_block);
-                    //c_Session->m_RxTaskQueue.Enqueue([p_block, sender_addr, sender_addr_len](){
-                        std::cout<<"Service:"<<p_block->m_BlockSequenceNumber<<std::endl;
-                        p_block->Decoding();
-                    //});
+                    p_block->Decoding();
                     c_Session->m_SequenceNumberForService++;
                 }
             }
             Header::DataAck ack;
             ack.m_Type = Header::Common::HeaderType::DATA_ACK;
             ack.m_Sequence = DataHeader->m_CurrentBlockSequenceNumber;
-            ack.m_SessionAddress = DataHeader->m_SessionAddress;
-#ifdef ENVIRONMENT32
-            ack.m_Reserved = 0; // 32bit machine uses the first 4 bytes and the remaining memory shall be set to 0. This field should be used after casting to laddr.
-#endif
             ack.m_Losses = DataHeader->m_TxCount - DataHeader->m_ExpectedRank;
             sendto(c_Reception->c_Socket, (u08*)&ack, sizeof(ack), 0, (sockaddr*)sender_addr, sender_addr_len);
         }
@@ -423,9 +462,9 @@ void ReceptionSession::Receive(u08* buffer, u16 length, const sockaddr_in * cons
 {
     Header::Data* const DataHeader = reinterpret_cast <Header::Data*>(buffer);
     // update min and max sequence.
-    if(STRICTLY_ASCENDING_ORDER((m_MinSequenceNumberAwaitingAck-1), m_MinSequenceNumberAwaitingAck, DataHeader->m_MinBlockSequenceNumber))
+    if(STRICTLY_ASCENDING_ORDER((m_MinSequenceNumberAwaitingAck-1), m_MinSequenceNumberAwaitingAck, ntohs(DataHeader->m_MinBlockSequenceNumber)))
     {
-        for(; m_MinSequenceNumberAwaitingAck!=DataHeader->m_MinBlockSequenceNumber &&
+        for(; m_MinSequenceNumberAwaitingAck!=ntohs(DataHeader->m_MinBlockSequenceNumber) &&
             m_MinSequenceNumberAwaitingAck!=m_SequenceNumberForService ; m_MinSequenceNumberAwaitingAck++)
         {
             // This must be changed not to delete Block until it is successfully delivered to application.
@@ -436,39 +475,35 @@ void ReceptionSession::Receive(u08* buffer, u16 length, const sockaddr_in * cons
             });
         }
     }
-    if(STRICTLY_ASCENDING_ORDER((m_MaxSequenceNumberAwaitingAck-1), m_MaxSequenceNumberAwaitingAck, DataHeader->m_MaxBlockSequenceNumber))
+    if(STRICTLY_ASCENDING_ORDER((m_MaxSequenceNumberAwaitingAck-1), m_MaxSequenceNumberAwaitingAck, ntohs(DataHeader->m_MaxBlockSequenceNumber)))
     {
-        m_MaxSequenceNumberAwaitingAck = DataHeader->m_MaxBlockSequenceNumber;
+        m_MaxSequenceNumberAwaitingAck = ntohs(DataHeader->m_MaxBlockSequenceNumber);
     }
-    if(STRICTLY_ASCENDING_ORDER(DataHeader->m_CurrentBlockSequenceNumber, m_MinSequenceNumberAwaitingAck, m_MaxSequenceNumberAwaitingAck))
+    if(STRICTLY_ASCENDING_ORDER(ntohs(DataHeader->m_CurrentBlockSequenceNumber), m_MinSequenceNumberAwaitingAck, m_MaxSequenceNumberAwaitingAck))
     {
         // If the sequence is less than min seq send ack and return.
         Header::DataAck ack;
         ack.m_Type = Header::Common::HeaderType::DATA_ACK;
         ack.m_Sequence = DataHeader->m_CurrentBlockSequenceNumber;
-        ack.m_SessionAddress = DataHeader->m_SessionAddress;
-#ifdef ENVIRONMENT32
-        ack.m_Reserved = 0; // 32bit machine uses the first 4 bytes and the remaining memory shall be set to 0. This field should be used after casting to laddr.
-#endif
         ack.m_Losses = DataHeader->m_TxCount - DataHeader->m_ExpectedRank;
         sendto(c_Reception->c_Socket, (u08*)&ack, sizeof(ack), 0, (sockaddr*)sender_addr, sender_addr_len);
         return;
     }
 
-    ReceptionBlock** const pp_Block = m_Blocks.GetPtr(DataHeader->m_CurrentBlockSequenceNumber);
+    ReceptionBlock** const pp_Block = m_Blocks.GetPtr(ntohs(DataHeader->m_CurrentBlockSequenceNumber));
     ReceptionBlock* p_Block = nullptr;
     if(pp_Block == nullptr)
     {
         try
         {
-            p_Block = new ReceptionBlock(c_Reception, this, DataHeader->m_CurrentBlockSequenceNumber);
+            p_Block = new ReceptionBlock(c_Reception, this, ntohs(DataHeader->m_CurrentBlockSequenceNumber));
         }
         catch(const std::bad_alloc& ex)
         {
             std::cout<<ex.what()<<std::endl;
             return;
         }
-        if(m_Blocks.Insert(DataHeader->m_CurrentBlockSequenceNumber, p_Block) == false)
+        if(m_Blocks.Insert(ntohs(DataHeader->m_CurrentBlockSequenceNumber), p_Block) == false)
         {
             delete p_Block;
             return;
@@ -540,9 +575,9 @@ void Reception::RxHandler(u08* buffer, u16 size, const sockaddr_in * const sende
             p_Session = (*pp_Session);
         }
         Header::Sync* const sync = reinterpret_cast< Header::Sync* >(buffer);
-        p_Session->m_SequenceNumberForService = sync->m_Sequence;
-        p_Session->m_MinSequenceNumberAwaitingAck = sync->m_Sequence;
-        p_Session->m_MaxSequenceNumberAwaitingAck = sync->m_Sequence;
+        p_Session->m_SequenceNumberForService = ntohs(sync->m_Sequence);
+        p_Session->m_MinSequenceNumberAwaitingAck = ntohs(sync->m_Sequence);
+        p_Session->m_MaxSequenceNumberAwaitingAck = ntohs(sync->m_Sequence);
         sync->m_Type = Header::Common::HeaderType::SYNC_ACK;
         sendto(c_Socket, buffer, size, 0, (sockaddr*)sender_addr, sender_addr_len);
     }

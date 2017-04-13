@@ -82,10 +82,6 @@ struct Data : Common
     u16 m_MaxBlockSequenceNumber;
     u08 m_ExpectedRank;
     u08 m_MaximumRank;
-    laddr m_SessionAddress; // Compatibility of 32 and 64bit machines.
-#ifdef ENVIRONMENT32
-    laddr m_Reserved;
-#endif
     u08 m_Flags;
     enum DataHeaderFlag : u08
     {
@@ -96,7 +92,7 @@ struct Data : Common
     u08 m_TxCount;
     enum OffSets : u08
     {
-        CodingOffset = (1+2+2+2+2+1+1+4+4+1+1)
+        CodingOffset = (1+2+2+2+2+1+1+1+1)
     };
     // ^^^ This part is not encoded ^^^ //
     u16 m_PayloadSize;
@@ -108,20 +104,12 @@ struct Data : Common
 struct DataAck : Common
 {
     u16 m_Sequence;
-    laddr m_SessionAddress;    // 32bit machine uses the first 4 bytes and the remaining memory shall be set to 0. This field should be used after casting to laddr.
-#ifdef ENVIRONMENT32
-    laddr m_Reserved; // 32bit machine uses the first 4 bytes and the remaining memory shall be set to 0. This field should be used after casting to laddr.
-#endif
     u08 m_Losses;           /*1*/
 }__attribute__((packed, may_alias));
 
 struct Sync : Common
 {
     u16 m_Sequence;
-    laddr m_SessionAddress;    // 32bit machine uses the first 4 bytes and the remaining memory shall be set to 0. This field should be used after casting to laddr.
-#ifdef ENVIRONMENT32
-    laddr m_Reserved; // 32bit machine uses the first 4 bytes and the remaining memory shall be set to 0. This field should be used after casting to laddr.
-#endif
 }__attribute__((packed, may_alias));
 
 }// namespace Header

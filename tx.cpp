@@ -59,16 +59,12 @@ bool TransmissionBlock::Send(u08* buffer, u16 buffersize, bool reqack)
     // Fill up the fields
     Header::Data* const DataHeader = reinterpret_cast <Header::Data*>(m_OriginalPacketBuffer[m_TransmissionCount].get());
     DataHeader->m_Type = Header::Common::HeaderType::DATA;
-    DataHeader->m_TotalSize = sizeof(Header::Data) + (m_BlockSize - 1) + buffersize;
-    DataHeader->m_MinBlockSequenceNumber = p_Session->m_MinBlockSequenceNumber;
-    DataHeader->m_CurrentBlockSequenceNumber = m_BlockSequenceNumber;
-    DataHeader->m_MaxBlockSequenceNumber = p_Session->m_MaxBlockSequenceNumber;
+    DataHeader->m_TotalSize = htons(sizeof(Header::Data) + (m_BlockSize - 1) + buffersize);
+    DataHeader->m_MinBlockSequenceNumber = htons(p_Session->m_MinBlockSequenceNumber);
+    DataHeader->m_CurrentBlockSequenceNumber = htons(m_BlockSequenceNumber);
+    DataHeader->m_MaxBlockSequenceNumber = htons(p_Session->m_MaxBlockSequenceNumber);
     DataHeader->m_ExpectedRank = m_TransmissionCount + 1;
     DataHeader->m_MaximumRank = m_BlockSize;
-    DataHeader->m_SessionAddress = (laddr)(p_Session);
-#ifdef ENVIRONMENT32
-    DataHeader->m_Reserved = 0;
-#endif
     DataHeader->m_Flags = Header::Data::FLAGS_ORIGINAL;
     DataHeader->m_TxCount = m_TransmissionCount + 1;
     if(reqack || DataHeader->m_ExpectedRank == m_BlockSize)
@@ -76,7 +72,7 @@ bool TransmissionBlock::Send(u08* buffer, u16 buffersize, bool reqack)
         //Note: Header::Data::FLAGS_END_OF_BLK asks ack from the client
         DataHeader->m_Flags |= Header::Data::FLAGS_END_OF_BLK;
     }
-    DataHeader->m_PayloadSize = buffersize;
+    DataHeader->m_PayloadSize = htons(buffersize);
     if(m_LargestOriginalPacketSize < buffersize)
     {
         m_LargestOriginalPacketSize = buffersize;
@@ -98,7 +94,7 @@ bool TransmissionBlock::Send(u08* buffer, u16 buffersize, bool reqack)
     RemoteAddress.sin_family = AF_INET;
     RemoteAddress.sin_addr.s_addr = p_Session->c_IPv4;
     RemoteAddress.sin_port = p_Session->c_Port;
-    sendto(p_Session->c_Socket, m_OriginalPacketBuffer[m_TransmissionCount++].get(), DataHeader->m_TotalSize, 0, (sockaddr*)&RemoteAddress, sizeof(RemoteAddress));
+    sendto(p_Session->c_Socket, m_OriginalPacketBuffer[m_TransmissionCount++].get(), ntohs(DataHeader->m_TotalSize), 0, (sockaddr*)&RemoteAddress, sizeof(RemoteAddress));
 
     if((m_TransmissionCount == m_BlockSize) || reqack == true)
     {
@@ -151,18 +147,14 @@ void TransmissionBlock::Retransmission()
         Header::Data* DataHeader = reinterpret_cast<Header::Data*>(m_OriginalPacketBuffer[0].get());
         DataHeader->m_Type = Header::Common::HeaderType::DATA;
         /* Must be the same *///DataHeader->m_TotalSize = sizeof(Header::Data) + (m_BlockSize-1) + m_LargestOriginalPacketSize;
-        DataHeader->m_MinBlockSequenceNumber = p_Session->m_MinBlockSequenceNumber;
+        DataHeader->m_MinBlockSequenceNumber = htons(p_Session->m_MinBlockSequenceNumber);
         /* Must be the same *///DataHeader->m_CurrentBlockSequenceNumber = m_BlockSequenceNumber;
-        DataHeader->m_MaxBlockSequenceNumber = p_Session->m_MaxBlockSequenceNumber;
+        DataHeader->m_MaxBlockSequenceNumber = htons(p_Session->m_MaxBlockSequenceNumber);
         /* Must be the same *///DataHeader->m_ExpectedRank = m_BlockSize;
         /* Must be the same *///DataHeader->m_MaximumRank = m_BlockSize;
-        /* Must be the same *///DataHeader->m_AckAddress = (laddr)(&(p_Session->m_AckList[c_AckIndex]));
-#ifdef ENVIRONMENT32
-        DataHeader->m_Reserved = 0;
-#endif
         DataHeader->m_Flags = Header::Data::FLAGS_ORIGINAL | Header::Data::FLAGS_END_OF_BLK;
         DataHeader->m_TxCount = ++m_TransmissionCount;
-        sendto(p_Session->c_Socket, m_OriginalPacketBuffer[0].get(), DataHeader->m_TotalSize, 0, (sockaddr*)&RemoteAddress, sizeof(RemoteAddress));
+        sendto(p_Session->c_Socket, m_OriginalPacketBuffer[0].get(), ntohs(DataHeader->m_TotalSize), 0, (sockaddr*)&RemoteAddress, sizeof(RemoteAddress));
     }
     else
     {
@@ -176,16 +168,12 @@ void TransmissionBlock::Retransmission()
 
         RandomCoefficients.resize(m_BlockSize, (rand()%255)+1);
         RemedyHeader->m_Type = Header::Common::HeaderType::DATA;
-        RemedyHeader->m_TotalSize = sizeof(Header::Data) + (m_BlockSize-1) + m_LargestOriginalPacketSize;
-        RemedyHeader->m_MinBlockSequenceNumber = p_Session->m_MinBlockSequenceNumber.load();
-        RemedyHeader->m_CurrentBlockSequenceNumber = m_BlockSequenceNumber;
-        RemedyHeader->m_MaxBlockSequenceNumber = p_Session->m_MaxBlockSequenceNumber.load();
+        RemedyHeader->m_TotalSize = htons(sizeof(Header::Data) + (m_BlockSize-1) + m_LargestOriginalPacketSize);
+        RemedyHeader->m_MinBlockSequenceNumber = htons(p_Session->m_MinBlockSequenceNumber.load());
+        RemedyHeader->m_CurrentBlockSequenceNumber = htons(m_BlockSequenceNumber);
+        RemedyHeader->m_MaxBlockSequenceNumber = htons(p_Session->m_MaxBlockSequenceNumber.load());
         RemedyHeader->m_ExpectedRank = m_OriginalPacketBuffer.size();
         RemedyHeader->m_MaximumRank = m_BlockSize;
-        RemedyHeader->m_SessionAddress = (laddr)(p_Session);
-#ifdef ENVIRONMENT32
-        RemedyHeader->m_Reserved = 0;
-#endif
         RemedyHeader->m_Flags = Header::Data::FLAGS_END_OF_BLK;
         RemedyHeader->m_TxCount = ++m_TransmissionCount;
         for(u16 CodingOffset = Header::Data::OffSets::CodingOffset ;
@@ -199,7 +187,7 @@ void TransmissionBlock::Retransmission()
                 m_RemedyPacketBuffer[CodingOffset] ^= FiniteField::instance()->mul(OriginalBuffer[CodingOffset], RandomCoefficients[PacketIndex]);
             }
         }
-        sendto(p_Session->c_Socket, m_RemedyPacketBuffer, RemedyHeader->m_TotalSize, 0, (sockaddr*)&RemoteAddress, sizeof(RemoteAddress));
+        sendto(p_Session->c_Socket, m_RemedyPacketBuffer, ntohs(RemedyHeader->m_TotalSize), 0, (sockaddr*)&RemoteAddress, sizeof(RemoteAddress));
     }
     p_Session->m_Timer.ScheduleTask(m_RetransmissionInterval, [this](){
         p_Session->m_TaskQueue.Enqueue([this](){
@@ -298,44 +286,41 @@ Transmission::~Transmission()
 /* OK */
 bool Transmission::Connect(u32 IPv4, u16 Port, u32 ConnectionTimeout, Parameter::TRANSMISSION_MODE TransmissionMode, Parameter::BLOCK_SIZE BlockSize, u16 RetransmissionRedundancy, u16 RetransmissionInterval)
 {
-    std::unique_lock< std::mutex > lock(m_Lock);
-
-    const DataStructures::IPv4PortKey key = {IPv4, Port};
-    TransmissionSession** const session = m_Sessions.GetPtr(key);
     TransmissionSession* newsession = nullptr;
-    if(session != nullptr)
     {
-        newsession = (*session);
-    }
-    else
-    {
-        try
+        std::unique_lock< std::mutex > lock(m_Lock);
+        const DataStructures::IPv4PortKey key = {IPv4, Port};
+        TransmissionSession** const session = m_Sessions.GetPtr(key);
+        if(session != nullptr)
         {
-            newsession = new TransmissionSession(c_Socket, IPv4, Port, TransmissionMode, BlockSize, RetransmissionRedundancy, RetransmissionInterval);
+            newsession = (*session);
         }
-        catch(const std::bad_alloc& ex)
+        else
         {
-            std::cout<<ex.what();
-            return false;
-        }
-        if(m_Sessions.Insert(key, newsession) == false)
-        {
-            return false;
-        }
-        if(newsession->m_BlockSize == Parameter::BLOCK_SIZE::INVALID_BLOCK_SIZE)
-        {
-            delete newsession;
-            m_Sessions.Remove(key);
-            return false;
+            try
+            {
+                newsession = new TransmissionSession(c_Socket, IPv4, Port, TransmissionMode, BlockSize, RetransmissionRedundancy, RetransmissionInterval);
+            }
+            catch(const std::bad_alloc& ex)
+            {
+                std::cout<<ex.what();
+                return false;
+            }
+            if(m_Sessions.Insert(key, newsession) == false)
+            {
+                return false;
+            }
+            if(newsession->m_BlockSize == Parameter::BLOCK_SIZE::INVALID_BLOCK_SIZE)
+            {
+                delete newsession;
+                m_Sessions.Remove(key);
+                return false;
+            }
         }
     }
     Header::Sync SyncPacket;
     SyncPacket.m_Type = Header::Common::HeaderType::SYNC;
-    SyncPacket.m_Sequence = newsession->m_MaxBlockSequenceNumber;
-    SyncPacket.m_SessionAddress = (laddr)newsession;
-#ifdef ENVIRONMENT32
-    SyncPacket.m_Reserved = 0;
-#endif
+    SyncPacket.m_Sequence = htons(newsession->m_MaxBlockSequenceNumber);
 
     sockaddr_in RemoteAddress = {0};
     RemoteAddress.sin_family = AF_INET;
@@ -450,8 +435,8 @@ void Transmission::RxHandler(u08* buffer, u16 size, const sockaddr_in * const se
             TransmissionSession** const pp_session = m_Sessions.GetPtr(key);
             if(pp_session)
             {
-                TransmissionSession* const SessionAddress = reinterpret_cast< TransmissionSession* >(Ack->m_SessionAddress);
-                u16 Sequence = Ack->m_Sequence;
+                TransmissionSession* const SessionAddress = (*pp_session);
+                u16 Sequence = ntohs(Ack->m_Sequence);
                 (*pp_session)->m_TaskQueue.Enqueue([SessionAddress,Sequence](){
                     SessionAddress->m_AckList[Sequence%(Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION*2)] = true;
                 }, TransmissionSession::HIGH_PRIORITY);
@@ -462,10 +447,15 @@ void Transmission::RxHandler(u08* buffer, u16 size, const sockaddr_in * const se
         case Header::Common::HeaderType::SYNC_ACK:
         {
             const Header::Sync* sync = reinterpret_cast< Header::Sync* >(buffer);
-            TransmissionSession* const session = (TransmissionSession*)sync->m_SessionAddress;
-            if(sync->m_Sequence == session->m_MaxBlockSequenceNumber)
+            const DataStructures::IPv4PortKey key = {sender_addr->sin_addr.s_addr, sender_addr->sin_port};
+            std::unique_lock< std::mutex > lock(m_Lock);
+            TransmissionSession** const pp_session = m_Sessions.GetPtr(key);
+            if(pp_session)
             {
-                session->m_IsConnected = true;
+                if(ntohs(sync->m_Sequence) == (*pp_session)->m_MaxBlockSequenceNumber)
+                {
+                    (*pp_session)->m_IsConnected = true;
+                }
             }
         }
         break;

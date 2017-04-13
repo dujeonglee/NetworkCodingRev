@@ -20,7 +20,6 @@ private:
     std::vector< std::unique_ptr< u08[] > > m_DecodedPacketBuffer;
     std::vector< std::unique_ptr< u08[] > > m_EncodedPacketBuffer;
     std::vector< std::unique_ptr< u08[] > > m_DecodingMatrix;
-    u08 DecodedPkt[1500];
     bool m_DecodingReady;
     const u08 FindMaximumRank(Header::Data* hdr = nullptr);
     const bool FindEndOfBlock(Header::Data* hdr = nullptr);

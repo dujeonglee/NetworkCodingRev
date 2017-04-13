@@ -85,7 +85,7 @@ public:
                 while(m_RxThreadIsRunning)
                 {
                     sockaddr_in sender_addr = {0,};
-                    int sender_addr_length = sizeof(sockaddr_in);
+                    socklen_t sender_addr_length = sizeof(sockaddr_in);
                     fd_set ReadFD;
                     FD_ZERO(&ReadFD);
                     FD_SET(m_Socket, &ReadFD);
