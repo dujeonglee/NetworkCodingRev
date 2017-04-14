@@ -7,7 +7,7 @@ OBJECTS  := $(SOURCES:.cpp=.o)
 LIBRARY := -lpthread
 CPP := g++
 #CPP := arm-linux-gnueabihf-g++
-TARGET = test
+TARGET = run
 
 all : debug
 
@@ -21,7 +21,7 @@ $(TARGET) : $(OBJECTS)
 	git clone https://github.com/dujeonglee/basiclibrary.git
 
 clean :
-	rm -rf $(OBJECTS) $(TARGET) *~ gmon.out *.bak
+	rm -rf $(OBJECTS) $(TARGET) *~ gmon.out *.bak *.stackdump
 
 debug : CPPFLAGS := -g -pg -c -Wall -std=c++11 -fopenmp
 debug : ./basiclibrary/.git/config

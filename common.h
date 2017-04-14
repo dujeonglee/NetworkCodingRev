@@ -30,9 +30,9 @@
 #include <arpa/inet.h>
 
 // C++ Library Header
-#include "basiclibrary/threadpool/ThreadPool.h"
-#include "basiclibrary/avltree/AVLTree.h"
-#include "basiclibrary/singleshottimer/SingleShotTimer.h"
+#include "ThreadPool.h"
+#include "AVLTree.h"
+#include "SingleShotTimer.h"
 #include "finite_field.h"
 
 #include "debug.h"

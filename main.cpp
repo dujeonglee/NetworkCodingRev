@@ -18,8 +18,8 @@ int main(int argc, char *argv[])
                           3000,
                           NetworkCoding::Parameter::RELIABLE_TRANSMISSION_MODE,
                           NetworkCoding::Parameter::BLOCK_SIZE_04,
-                          0,
-                          5) == false)
+                          (u16)0,
+                          (u16)5) == false)
         {
             std::cout<<"Failed\n";
             return -1;
@@ -32,40 +32,10 @@ int main(int argc, char *argv[])
     while(1)
     {
         buffer[0]++;
+        const bool result = socket1.Send(inet_addr("127.0.0.1"), htons(1005), buffer, sizeof(buffer), false);
+        if(!result)
         {
-            const bool result = socket1.Send(inet_addr("127.0.0.1"),
-                                            htons(1005),buffer, sizeof(buffer), false);
-            if(!result)
-            {
-                std::cout<<"Send failed\n";
-            }
-        }
-        buffer[0]++;
-        {
-            const bool result = socket1.Send(inet_addr("127.0.0.1"),
-                                            htons(1005),buffer, sizeof(buffer), false);
-            if(!result)
-            {
-                std::cout<<"Send failed\n";
-            }
-        }
-        buffer[0]++;
-        {
-            const bool result = socket1.Send(inet_addr("127.0.0.1"),
-                                            htons(1005),buffer, sizeof(buffer), false);
-            if(!result)
-            {
-                std::cout<<"Send failed\n";
-            }
-        }
-        buffer[0]++;
-        {
-            const bool result = socket1.Send(inet_addr("127.0.0.1"),
-                                            htons(1005),buffer, sizeof(buffer), false);
-            if(!result)
-            {
-                std::cout<<"Send failed\n";
-            }
+            std::cout<<"Send failed\n";
         }
     }
     return 0;
