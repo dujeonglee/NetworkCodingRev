@@ -35,20 +35,7 @@
 #include "basiclibrary/singleshottimer/SingleShotTimer.h"
 #include "finite_field.h"
 
-
-
-#ifdef DEBUG
-#define PRINT_ERR(ex)   std::cerr << __PRETTY_FUNCTION__ << ": Failed - " << ex.what() << '\n'
-#else
-#define PRINT_ERR(ex)
-#endif
-
-// Check windows
-#if ((ULONG_MAX) == (UINT_MAX))
-#define ENVIRONMENT32
-#else
-#define ENVIRONMENT64
-#endif
+#include "debug.h"
 
 typedef unsigned char u08;
 typedef unsigned short u16;
