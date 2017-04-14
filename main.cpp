@@ -2,6 +2,7 @@
 #include "ncsocket.h"
 using namespace std;
 
+
 void RxCallback(unsigned char* buffer, unsigned int length, const sockaddr_in * const sender_addr, const u32 sender_addr_len)
 {
     printf("Get %hhu\n", buffer[0]);
