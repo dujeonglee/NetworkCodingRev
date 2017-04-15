@@ -589,6 +589,7 @@ void Reception::RxHandler(u08* buffer, u16 size, const sockaddr_in * const sende
         p_Session->m_MaxSequenceNumberAwaitingAck = ntohs(sync->m_Sequence);
         sync->m_Type = Header::Common::HeaderType::SYNC_ACK;
         sendto(c_Socket, buffer, size, 0, (sockaddr*)sender_addr, sender_addr_len);
+        sync->m_Type = Header::Common::HeaderType::SYNC;// This prevents that the packet is processed by m_Tx RxHandler.
     }
         break;
 
@@ -597,6 +598,7 @@ void Reception::RxHandler(u08* buffer, u16 size, const sockaddr_in * const sende
         Header::Ping* const ping = reinterpret_cast<Header::Ping*>(buffer);
         ping->m_Type = Header::Data::HeaderType::PONG;
         sendto(c_Socket, buffer, size, 0, (sockaddr*)sender_addr, sender_addr_len);
+        ping->m_Type = Header::Data::HeaderType::PING;// This prevents that the packet is processed by m_Tx RxHandler.
     }
         break;
     default:
