@@ -57,7 +57,9 @@ struct Common
         DATA = 1,
         DATA_ACK,
         SYNC,
-        SYNC_ACK
+        SYNC_ACK,
+        PING,
+        PONG
     };
 }__attribute__((packed, may_alias));
 
@@ -99,12 +101,24 @@ struct Sync : Common
     u16 m_Sequence;
 }__attribute__((packed, may_alias));
 
+struct Ping : Common
+{
+    u32 m_PingID;
+}__attribute__((packed, may_alias));
+
+struct Pong : Common
+{
+    u32 m_PingID;
+}__attribute__((packed, may_alias));
+
 }// namespace Header
 
 namespace Parameter
 {
-const u08 MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION = 64;
+const u08 MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION = 128;
 const u16 MAXIMUM_BUFFER_SIZE = 1500;
+const u16 PING_INTERVAL = 5000;
+const u16 MINIMUM_RETRANSMISSION_INTERVAL = 10;
 enum TRANSMISSION_MODE: u08
 {
     RELIABLE_TRANSMISSION_MODE = 0,

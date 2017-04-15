@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
                           NetworkCoding::Parameter::RELIABLE_TRANSMISSION_MODE,
                           NetworkCoding::Parameter::BLOCK_SIZE_04,
                           (u16)0,
-                          (u16)5) == false)
+                          (u16)10) == false)
         {
             std::cout<<"Failed\n";
             return -1;
@@ -38,6 +38,7 @@ int main(int argc, char *argv[])
         {
             std::cout<<"Send failed\n";
         }
+        std::this_thread::sleep_for (std::chrono::milliseconds(1000));
     }
     return 0;
 }

@@ -591,6 +591,14 @@ void Reception::RxHandler(u08* buffer, u16 size, const sockaddr_in * const sende
         sendto(c_Socket, buffer, size, 0, (sockaddr*)sender_addr, sender_addr_len);
     }
         break;
+
+    case Header::Data::HeaderType::PING:
+    {
+        Header::Ping* const ping = reinterpret_cast<Header::Ping*>(buffer);
+        ping->m_Type = Header::Data::HeaderType::PONG;
+        sendto(c_Socket, buffer, size, 0, (sockaddr*)sender_addr, sender_addr_len);
+    }
+        break;
     default:
         break;
     }

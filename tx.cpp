@@ -272,6 +272,27 @@ void TransmissionSession::ChangeSessionParameter(const Parameter::TRANSMISSION_M
     });
 }
 
+void TransmissionSession::SendPing()
+{
+    Header::Ping ping;
+    ping.m_Type = Header::Data::HeaderType::PING;
+    m_PingID = std::rand();
+    ping.m_PingID = htonl(m_PingID);
+
+    sockaddr_in RemoteAddress = {0};
+    RemoteAddress.sin_family = AF_INET;
+    RemoteAddress.sin_addr.s_addr = c_IPv4;
+    RemoteAddress.sin_port = c_Port;
+    printf("Send Ping to %hu\n", ntohs(c_Port));
+    m_PingTime = std::chrono::steady_clock::now();
+    sendto(c_Socket, reinterpret_cast<u08*>(&ping), sizeof(Header::Ping), 0, (sockaddr*)&RemoteAddress, sizeof(RemoteAddress));
+    m_Timer.ScheduleTask(Parameter::PING_INTERVAL, [this](){
+        m_TaskQueue.Enqueue([this](){
+            SendPing();
+        }, TransmissionSession::HIGH_PRIORITY);
+    });
+}
+
 ////////////////////////////////////////////////////////////
 /////////////// Transmission
 /* OK */
@@ -338,7 +359,16 @@ bool Transmission::Connect(u32 IPv4, u16 Port, u32 ConnectionTimeout, Parameter:
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
         ConnectionTimeout--;
     }
-    return ConnectionTimeout > 0;
+    if(ConnectionTimeout == 0)
+    {
+        return false;
+    }
+    newsession->m_Timer.ScheduleTask(0, [newsession](){
+        newsession->m_TaskQueue.Enqueue([newsession](){
+            newsession->SendPing();
+        }, TransmissionSession::HIGH_PRIORITY);
+    });
+    return true;
 }
 
 /* OK */
@@ -433,6 +463,7 @@ bool Transmission::Disconnect(u32 IPv4, u16 Port)
 void Transmission::RxHandler(u08* buffer, u16 size, const sockaddr_in * const sender_addr, const u32 sender_addr_len)
 {
     Header::Common* CommonHeader = reinterpret_cast< Header::Common* >(buffer);
+    printf("Recv pkt %5hhu from %5hu\n", CommonHeader->m_Type, ntohs(sender_addr->sin_port));
     switch(CommonHeader->m_Type)
     {
         case Header::Common::HeaderType::DATA_ACK:
@@ -467,6 +498,33 @@ void Transmission::RxHandler(u08* buffer, u16 size, const sockaddr_in * const se
             }
         }
         break;
+
+        case Header::Common::PONG:
+        {
+            const Header::Pong* pong = reinterpret_cast< Header::Pong* >(buffer);
+            const DataStructures::IPv4PortKey key = {sender_addr->sin_addr.s_addr, sender_addr->sin_port};
+            printf("Recv Pong From %hu\n", ntohs(sender_addr->sin_port));
+            std::unique_lock< std::mutex > lock(m_Lock);
+            TransmissionSession** const pp_session = m_Sessions.GetPtr(key);
+            if(pp_session)
+            {
+                if(ntohl(pong->m_PingID) == (*pp_session)->m_PingID)
+                {
+                    std::chrono::duration<double> rtt = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::steady_clock::now() - (*pp_session)->m_PingTime);
+                    std::cout<<"Update RTT "<<rtt.count()<<"."<<std::endl;
+                    if(rtt.count() * 1000 < Parameter::MINIMUM_RETRANSMISSION_INTERVAL)
+                    {
+                        (*pp_session)->ChangeRetransmissionInterval(Parameter::MINIMUM_RETRANSMISSION_INTERVAL);
+                    }
+                    else
+                    {
+                        (*pp_session)->ChangeRetransmissionInterval((u16)(rtt.count() * 1000));
+                    }
+                }
+            }
+        }
+        break;
+
         default:
         break;
     }

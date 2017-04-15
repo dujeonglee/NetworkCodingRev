@@ -61,6 +61,8 @@ public:
         LOW_PRIORITY,
         PRIORITY_LEVELS
     };
+    u32 m_PingID;
+    std::chrono::time_point<std::chrono::steady_clock> m_PingTime;
 
     ThreadPool<TaskPriority::PRIORITY_LEVELS, 1> m_TaskQueue;
     TransmissionBlock* p_TransmissionBlock;
@@ -82,6 +84,7 @@ public:
     void ChangeRetransmissionRedundancy(const u16 RetransmissionRedundancy);
     void ChangeRetransmissionInterval(const u16 RetransmissionInterval);
     void ChangeSessionParameter(const Parameter::TRANSMISSION_MODE TransmissionMode, const Parameter::BLOCK_SIZE BlockSize, const u16 RetransmissionRedundancy, const u16 RetransmissionInterval);
+    void SendPing();
 };
 
 class Transmission
