@@ -55,10 +55,10 @@ struct Common
     enum HeaderType : u08
     {
         DATA = 1,
-        DATA_ACK,
         SYNC,
-        SYNC_ACK,
         PING,
+        DATA_ACK,
+        SYNC_ACK,
         PONG
     };
 }__attribute__((packed, may_alias));

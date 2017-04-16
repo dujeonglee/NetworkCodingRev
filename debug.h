@@ -1,7 +1,7 @@
 #ifndef TEST_CASE_H
 #define TEST_CASE_H
 
-#define ENABLE_TEST_DROP        (0)
+#define ENABLE_TEST_DROP        (1)
 #define ENABLE_TEST_EXCEPTION   (0)
 #define ENABLE_EXCEPTION_LOG    (0)
 

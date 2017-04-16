@@ -99,8 +99,16 @@ public:
                         {
                             continue;
                         }
-                        m_Rx->RxHandler(rxbuffer, (u16)ret, &sender_addr, sender_addr_length);
-                        m_Tx->RxHandler(rxbuffer, (u16)ret, &sender_addr, sender_addr_length);
+                        if(reinterpret_cast<Header::Common*>(rxbuffer)->m_Type == Header::Common::HeaderType::DATA ||
+                                reinterpret_cast<Header::Common*>(rxbuffer)->m_Type == Header::Common::HeaderType::SYNC ||
+                                reinterpret_cast<Header::Common*>(rxbuffer)->m_Type == Header::Common::HeaderType::PING)
+                        {
+                            m_Rx->RxHandler(rxbuffer, (u16)ret, &sender_addr, sender_addr_length);
+                        }
+                        else
+                        {
+                            m_Tx->RxHandler(rxbuffer, (u16)ret, &sender_addr, sender_addr_length);
+                        }
                     }
                 }
             });
