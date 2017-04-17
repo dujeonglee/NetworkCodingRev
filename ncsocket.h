@@ -106,6 +106,7 @@ public:
                         {
                             continue;
                         }
+                        TEST_DROP(4);
                         if(reinterpret_cast<Header::Common*>(rxbuffer)->m_Type == Header::Common::HeaderType::DATA ||
                                 reinterpret_cast<Header::Common*>(rxbuffer)->m_Type == Header::Common::HeaderType::SYNC ||
                                 reinterpret_cast<Header::Common*>(rxbuffer)->m_Type == Header::Common::HeaderType::PING)

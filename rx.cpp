@@ -574,7 +574,6 @@ void Reception::RxHandler(u08* buffer, u16 size, const sockaddr_in * const sende
     {
         case Header::Common::HeaderType::DATA:
         {
-            TEST_DROP(4);
             const DataStructures::IPv4PortKey key = {sender_addr->sin_addr.s_addr, sender_addr->sin_port};
             ReceptionSession** const pp_Session = m_Sessions.GetPtr(key);
             if(pp_Session == nullptr)
