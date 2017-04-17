@@ -42,6 +42,7 @@ public:
 class TransmissionSession
 {
 public:
+    const Transmission* c_Transmission;
     const s32 c_Socket;
     const u32 c_IPv4;
     const u16 c_Port;

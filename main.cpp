@@ -33,10 +33,11 @@ int main(int argc, char *argv[])
     while(1)
     {
         buffer[0]++;
-        const bool result = socket1.Send(inet_addr("127.0.0.1"), htons(1005), buffer, sizeof(buffer), false);
-        if(!result)
+        const auto result = socket1.Send(inet_addr("127.0.0.1"), htons(1005), buffer, sizeof(buffer), false);
+        if(result == false)
         {
             std::cout<<"Send failed\n";
+            socket1.Disconnect(inet_addr("127.0.0.1"), htons(1005));
         }
         std::this_thread::sleep_for (std::chrono::milliseconds(100));
     }

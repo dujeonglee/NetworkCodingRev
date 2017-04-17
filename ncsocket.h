@@ -190,6 +190,7 @@ public:
         {
             return;
         }
+        m_Tx->Disconnect(ip, port);
     }
 
     bool Send(u32 ip, u16 port, u08* buff, u16 size, bool reqack)

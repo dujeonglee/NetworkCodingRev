@@ -284,6 +284,7 @@ void TransmissionSession::SendPing()
     std::chrono::duration<double> TimeSinceLastPongTime = std::chrono::duration_cast<std::chrono::duration<double>> (CurrentTime - LastPongRecvTime);
     if(TimeSinceLastPongTime.count() > Parameter::CONNECTION_TIMEOUT)
     {
+
         m_IsConnected = false;
     }
 
@@ -456,12 +457,9 @@ bool Transmission::Disconnect(u32 IPv4, u16 Port)
     {
         return false;
     }
-    TransmissionSession* const p_session = (*pp_session);
-    while(p_session->m_TaskQueue.Enqueue([p_session](){
-        p_session->m_Timer.Stop();
-        p_session->m_TaskQueue.Stop();
-        p_session->m_IsConnected = false;
-    }, TransmissionSession::HIGH_PRIORITY)==false);
+    m_Sessions.Remove(key, [](TransmissionSession*&session){
+        delete session;
+    });
     return true;
 }
 
