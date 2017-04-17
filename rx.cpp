@@ -572,65 +572,66 @@ void Reception::RxHandler(u08* buffer, u16 size, const sockaddr_in * const sende
     Header::Common* CommonHeader = reinterpret_cast< Header::Common* >(buffer);
     switch(CommonHeader->m_Type)
     {
-    case Header::Common::HeaderType::DATA:
-    {
-        TEST_DROP(2);
-        const DataStructures::IPv4PortKey key = {sender_addr->sin_addr.s_addr, sender_addr->sin_port};
-        ReceptionSession** const pp_Session = m_Sessions.GetPtr(key);
-        if(pp_Session == nullptr)
+        case Header::Common::HeaderType::DATA:
         {
-            return;
-        }
-        ReceptionSession* const p_Session = (*pp_Session);
-        p_Session->Receive(buffer, size, sender_addr, sender_addr_len);
-    }
-        break;
-
-    case Header::Common::HeaderType::SYNC:
-    {
-        // create Rx Session.
-        const DataStructures::IPv4PortKey key = {sender_addr->sin_addr.s_addr, sender_addr->sin_port};
-        ReceptionSession** const pp_Session = m_Sessions.GetPtr(key);
-        ReceptionSession* p_Session = nullptr;
-        if(pp_Session == nullptr)
-        {
-            try
+            TEST_DROP(4);
+            const DataStructures::IPv4PortKey key = {sender_addr->sin_addr.s_addr, sender_addr->sin_port};
+            ReceptionSession** const pp_Session = m_Sessions.GetPtr(key);
+            if(pp_Session == nullptr)
             {
-                TEST_EXCEPTION(std::bad_alloc(), 20);
-                p_Session = new ReceptionSession(this, (*sender_addr));
-            }
-            catch(const std::bad_alloc& ex)
-            {
-                EXCEPTION_PRINT;
                 return;
             }
-            if(m_Sessions.Insert(key, p_Session) == false)
-            {
-                delete p_Session;
-                return;
-            }
+            ReceptionSession* const p_Session = (*pp_Session);
+            p_Session->Receive(buffer, size, sender_addr, sender_addr_len);
         }
-        else
-        {
-            p_Session = (*pp_Session);
-        }
-        Header::Sync* const sync = reinterpret_cast< Header::Sync* >(buffer);
-        p_Session->m_SequenceNumberForService = ntohs(sync->m_Sequence);
-        p_Session->m_MinSequenceNumberAwaitingAck = ntohs(sync->m_Sequence);
-        p_Session->m_MaxSequenceNumberAwaitingAck = ntohs(sync->m_Sequence);
-        sync->m_Type = Header::Common::HeaderType::SYNC_ACK;
-        sendto(c_Socket, buffer, size, 0, (sockaddr*)sender_addr, sender_addr_len);
-    }
         break;
 
-    case Header::Data::HeaderType::PING:
-    {
-        Header::Ping* const ping = reinterpret_cast<Header::Ping*>(buffer);
-        ping->m_Type = Header::Data::HeaderType::PONG;
-        sendto(c_Socket, buffer, size, 0, (sockaddr*)sender_addr, sender_addr_len);
-    }
+        case Header::Common::HeaderType::SYNC:
+        {
+            // create Rx Session.
+            const DataStructures::IPv4PortKey key = {sender_addr->sin_addr.s_addr, sender_addr->sin_port};
+            ReceptionSession** const pp_Session = m_Sessions.GetPtr(key);
+            ReceptionSession* p_Session = nullptr;
+            if(pp_Session == nullptr)
+            {
+                try
+                {
+                    TEST_EXCEPTION(std::bad_alloc(), 20);
+                    p_Session = new ReceptionSession(this, (*sender_addr));
+                }
+                catch(const std::bad_alloc& ex)
+                {
+                    EXCEPTION_PRINT;
+                    return;
+                }
+                if(m_Sessions.Insert(key, p_Session) == false)
+                {
+                    delete p_Session;
+                    return;
+                }
+            }
+            else
+            {
+                p_Session = (*pp_Session);
+            }
+            Header::Sync* const sync = reinterpret_cast< Header::Sync* >(buffer);
+            p_Session->m_SequenceNumberForService = ntohs(sync->m_Sequence);
+            p_Session->m_MinSequenceNumberAwaitingAck = ntohs(sync->m_Sequence);
+            p_Session->m_MaxSequenceNumberAwaitingAck = ntohs(sync->m_Sequence);
+            sync->m_Type = Header::Common::HeaderType::SYNC_ACK;
+            sendto(c_Socket, buffer, size, 0, (sockaddr*)sender_addr, sender_addr_len);
+        }
         break;
-    default:
+
+        case Header::Data::HeaderType::PING:
+        {
+            Header::Ping* const ping = reinterpret_cast<Header::Ping*>(buffer);
+            ping->m_Type = Header::Data::HeaderType::PONG;
+            sendto(c_Socket, buffer, size, 0, (sockaddr*)sender_addr, sender_addr_len);
+        }
+        break;
+
+        default:
         break;
     }
 
