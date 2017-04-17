@@ -337,10 +337,10 @@ bool ReceptionBlock::Decoding()
         u08* pkt = DecodeOut[i].release();
         if(!(reinterpret_cast<Header::Data*>(pkt)->m_Flags & Header::Data::DataHeaderFlag::FLAGS_CONSUMED))
         {
-            c_Session->m_RxTaskQueue.Enqueue([this, pkt](){
+            while(c_Session->m_RxTaskQueue.Enqueue([this, pkt](){
                 c_Reception->m_RxCallback(pkt+sizeof(Header::Data)+reinterpret_cast<Header::Data*>(pkt)->m_MaximumRank-1, ntohs(reinterpret_cast<Header::Data*>(pkt)->m_PayloadSize), &c_Session->m_SenderAddress, sizeof(c_Session->m_SenderAddress));
                 delete [] pkt;
-            });
+            })==false);
         }
         else
         {
@@ -404,10 +404,10 @@ void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const 
                     TEST_EXCEPTION(std::bad_alloc(), 20);
                     pkt = new u08[length];
                     memcpy(pkt, buffer, length);
-                    c_Session->m_RxTaskQueue.Enqueue([this, pkt](){
+                    while(c_Session->m_RxTaskQueue.Enqueue([this, pkt](){
                         c_Reception->m_RxCallback(pkt+sizeof(Header::Data)+reinterpret_cast<Header::Data*>(pkt)->m_MaximumRank-1, ntohs(reinterpret_cast<Header::Data*>(pkt)->m_PayloadSize), &c_Session->m_SenderAddress, sizeof(c_Session->m_SenderAddress));
                         delete [] pkt;
-                    });
+                    })==false);
                     reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer.back().get())->m_Flags |= Header::Data::DataHeaderFlag::FLAGS_CONSUMED;
                     if(reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer.back().get())->m_Flags & Header::Data::DataHeaderFlag::FLAGS_END_OF_BLK)
                     {
@@ -501,19 +501,19 @@ void ReceptionSession::Receive(u08* buffer, u16 length, const sockaddr_in * cons
                         for(u08 i = 0 ; i < p_block->m_DecodedPacketBuffer.size() ; i++)
                         {
                             u08* pkt = p_block->m_DecodedPacketBuffer[i].release();
-                            m_RxTaskQueue.Enqueue([this, pkt](){
+                            while(m_RxTaskQueue.Enqueue([this, pkt](){
                                 c_Reception->m_RxCallback(pkt+sizeof(Header::Data)+reinterpret_cast<Header::Data*>(pkt)->m_MaximumRank-1, ntohs(reinterpret_cast<Header::Data*>(pkt)->m_PayloadSize), &m_SenderAddress, sizeof(m_SenderAddress));
                                 delete pkt;
-                            });
+                            })==false);
                         }
                     }
                 }
                 m_SequenceNumberForService++;
             }
             m_Blocks.Remove(m_MinSequenceNumberAwaitingAck, [this](ReceptionBlock* &data){
-                m_RxTaskQueue.Enqueue([data](){
+                while(m_RxTaskQueue.Enqueue([data](){
                     delete data;
-                });
+                })==false);
             });
         }
     }
