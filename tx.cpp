@@ -214,6 +214,7 @@ TransmissionSession::TransmissionSession(s32 Socket, u32 IPv4, u16 Port, Paramet
         m_AckList[i] = true;
     }
     m_ConcurrentRetransmissions = 0;
+    m_LastPongTime = std::chrono::steady_clock::now().time_since_epoch().count();
 }
 
 
@@ -278,12 +279,20 @@ void TransmissionSession::SendPing()
     ping.m_Type = Header::Data::HeaderType::PING;
     ping.m_PingTime = std::chrono::steady_clock::now().time_since_epoch().count();
 
+    std::chrono::steady_clock::time_point const CurrentTime(std::chrono::steady_clock::duration(ping.m_PingTime));
+    std::chrono::steady_clock::time_point const LastPongRecvTime(std::chrono::steady_clock::duration(m_LastPongTime.load()));
+    std::chrono::duration<double> TimeSinceLastPongTime = std::chrono::duration_cast<std::chrono::duration<double>> (CurrentTime - LastPongRecvTime);
+    if(TimeSinceLastPongTime.count() > Parameter::CONNECTION_TIMEOUT)
+    {
+        m_IsConnected = false;
+    }
+
     sockaddr_in RemoteAddress = {0};
     RemoteAddress.sin_family = AF_INET;
     RemoteAddress.sin_addr.s_addr = c_IPv4;
     RemoteAddress.sin_port = c_Port;
     sendto(c_Socket, reinterpret_cast<u08*>(&ping), sizeof(Header::Ping), 0, (sockaddr*)&RemoteAddress, sizeof(RemoteAddress));
-    while(m_Timer.ScheduleTask(Parameter::MINIMUM_PING_INTERVAL, [this](){
+    while(m_Timer.ScheduleTask(Parameter::PING_INTERVAL, [this](){
         while(m_TaskQueue.Enqueue([this](){
             SendPing();
         }, TransmissionSession::HIGH_PRIORITY)==false);
@@ -504,7 +513,10 @@ void Transmission::RxHandler(u08* buffer, u16 size, const sockaddr_in * const se
             if(pp_session)
             {
                 std::chrono::steady_clock::time_point const SentTime(std::chrono::steady_clock::duration(pong->m_PingTime));
-                std::chrono::duration<double> rtt = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::steady_clock::now() - SentTime);
+                (*pp_session)->m_LastPongTime = std::chrono::steady_clock::now().time_since_epoch().count();
+                std::chrono::steady_clock::time_point const RecvTime(std::chrono::steady_clock::duration((*pp_session)->m_LastPongTime));
+                std::chrono::duration<double> rtt = std::chrono::duration_cast<std::chrono::duration<double>>(RecvTime - SentTime);
+                std::cout<<"RTT :"<<rtt.count()<<std::endl;
                 if(rtt.count() * 1000 < Parameter::MINIMUM_RETRANSMISSION_INTERVAL)
                 {
                     (*pp_session)->ChangeRetransmissionInterval(Parameter::MINIMUM_RETRANSMISSION_INTERVAL);
