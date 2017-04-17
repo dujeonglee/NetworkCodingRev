@@ -61,9 +61,6 @@ public:
         LOW_PRIORITY,
         PRIORITY_LEVELS
     };
-    u32 m_PingID;
-    std::chrono::time_point<std::chrono::steady_clock> m_PingTime;
-    u32 m_PingInterval;
 
     ThreadPool<TaskPriority::PRIORITY_LEVELS, 1> m_TaskQueue;
     TransmissionBlock* p_TransmissionBlock;

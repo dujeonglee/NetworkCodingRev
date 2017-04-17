@@ -214,7 +214,6 @@ TransmissionSession::TransmissionSession(s32 Socket, u32 IPv4, u16 Port, Paramet
         m_AckList[i] = true;
     }
     m_ConcurrentRetransmissions = 0;
-    m_PingInterval = Parameter::MINIMUM_PING_INTERVAL;
 }
 
 
@@ -277,16 +276,14 @@ void TransmissionSession::SendPing()
 {
     Header::Ping ping;
     ping.m_Type = Header::Data::HeaderType::PING;
-    m_PingID = std::rand();
-    ping.m_PingID = htonl(m_PingID);
+    ping.m_PingTime = std::chrono::steady_clock::now().time_since_epoch().count();
 
     sockaddr_in RemoteAddress = {0};
     RemoteAddress.sin_family = AF_INET;
     RemoteAddress.sin_addr.s_addr = c_IPv4;
     RemoteAddress.sin_port = c_Port;
-    m_PingTime = std::chrono::steady_clock::now();
     sendto(c_Socket, reinterpret_cast<u08*>(&ping), sizeof(Header::Ping), 0, (sockaddr*)&RemoteAddress, sizeof(RemoteAddress));
-    while(m_Timer.ScheduleTask(m_PingInterval, [this](){
+    while(m_Timer.ScheduleTask(Parameter::MINIMUM_PING_INTERVAL, [this](){
         while(m_TaskQueue.Enqueue([this](){
             SendPing();
         }, TransmissionSession::HIGH_PRIORITY)==false);
@@ -506,40 +503,15 @@ void Transmission::RxHandler(u08* buffer, u16 size, const sockaddr_in * const se
             TransmissionSession** const pp_session = m_Sessions.GetPtr(key);
             if(pp_session)
             {
-                if(ntohl(pong->m_PingID) == (*pp_session)->m_PingID)
+                std::chrono::steady_clock::time_point const SentTime(std::chrono::steady_clock::duration(pong->m_PingTime));
+                std::chrono::duration<double> rtt = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::steady_clock::now() - SentTime);
+                if(rtt.count() * 1000 < Parameter::MINIMUM_RETRANSMISSION_INTERVAL)
                 {
-                    std::chrono::duration<double> rtt = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::steady_clock::now() - (*pp_session)->m_PingTime);
-                    if(rtt.count() * 1000 < Parameter::MINIMUM_RETRANSMISSION_INTERVAL)
-                    {
-                        (*pp_session)->ChangeRetransmissionInterval(Parameter::MINIMUM_RETRANSMISSION_INTERVAL);
-                    }
-                    else
-                    {
-                        (*pp_session)->ChangeRetransmissionInterval((u16)(rtt.count() * 1000));
-                    }
-                    if(rtt.count() * 1000 < Parameter::MINIMUM_PING_INTERVAL)
-                    {
-                        (*pp_session)->m_PingInterval = Parameter::MINIMUM_PING_INTERVAL;
-                    }
-                    else
-                    {
-                        (*pp_session)->m_PingInterval = (u32)(rtt.count() * 1000);
-                    }
+                    (*pp_session)->ChangeRetransmissionInterval(Parameter::MINIMUM_RETRANSMISSION_INTERVAL);
                 }
                 else
                 {
-                    if((*pp_session)->m_PingInterval == Parameter::MAXIMUM_PING_INTERVAL)
-                    {
-                        //connection error
-                    }
-                    else
-                    {
-                        (*pp_session)->m_PingInterval *= 2;
-                        if((*pp_session)->m_PingInterval > Parameter::MAXIMUM_PING_INTERVAL)
-                        {
-                            (*pp_session)->m_PingInterval = Parameter::MAXIMUM_PING_INTERVAL;
-                        }
-                    }
+                    (*pp_session)->ChangeRetransmissionInterval((u16)(rtt.count()));
                 }
             }
         }

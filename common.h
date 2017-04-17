@@ -103,12 +103,12 @@ struct Sync : Common
 
 struct Ping : Common
 {
-    u32 m_PingID;
+    std::chrono::steady_clock::time_point::duration::rep m_PingTime;
 }__attribute__((packed, may_alias));
 
 struct Pong : Common
 {
-    u32 m_PingID;
+    std::chrono::steady_clock::time_point::duration::rep m_PingTime;
 }__attribute__((packed, may_alias));
 
 }// namespace Header

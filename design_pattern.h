@@ -17,5 +17,4 @@ static inline class_type* instance(){\
 #define SINGLETON_PATTERN_INITIALIZATION_CPP(class_type)\
 class_type* class_type::_instance = new class_type;\
 void class_type::init()
-
 #endif
