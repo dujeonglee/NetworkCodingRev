@@ -100,11 +100,11 @@ bool TransmissionBlock::Send(u08* buffer, u16 buffersize, bool reqack)
     if((m_TransmissionCount == m_BlockSize) || reqack == true)
     {
         p_Session->p_TransmissionBlock = nullptr;
-        p_Session->m_Timer.ScheduleTask(m_RetransmissionInterval, [this](){
-            p_Session->m_TaskQueue.Enqueue([this](){
+        while(p_Session->m_Timer.ScheduleTask(m_RetransmissionInterval, [this](){
+            while(p_Session->m_TaskQueue.Enqueue([this](){
                 Retransmission();
-            }, (p_Session->m_MinBlockSequenceNumber == m_BlockSequenceNumber?TransmissionSession::MIDDLE_PRIORITY:TransmissionSession::LOW_PRIORITY));
-        });
+            }, (p_Session->m_MinBlockSequenceNumber == m_BlockSequenceNumber?TransmissionSession::MIDDLE_PRIORITY:TransmissionSession::LOW_PRIORITY))==false);
+        })==false);
     }
     return true;
 }
@@ -190,11 +190,11 @@ void TransmissionBlock::Retransmission()
         }
         sendto(p_Session->c_Socket, m_RemedyPacketBuffer, ntohs(RemedyHeader->m_TotalSize), 0, (sockaddr*)&RemoteAddress, sizeof(RemoteAddress));
     }
-    p_Session->m_Timer.ScheduleTask(m_RetransmissionInterval, [this](){
-        p_Session->m_TaskQueue.Enqueue([this](){
+    while(p_Session->m_Timer.ScheduleTask(m_RetransmissionInterval, [this](){
+        while(p_Session->m_TaskQueue.Enqueue([this](){
             Retransmission();
-        }, (p_Session->m_MinBlockSequenceNumber == m_BlockSequenceNumber?TransmissionSession::MIDDLE_PRIORITY:TransmissionSession::LOW_PRIORITY));
-    });
+        }, (p_Session->m_MinBlockSequenceNumber == m_BlockSequenceNumber?TransmissionSession::MIDDLE_PRIORITY:TransmissionSession::LOW_PRIORITY))==false);
+    })==false);
 }
 
 ////////////////////////////////////////////////////////////
@@ -286,11 +286,11 @@ void TransmissionSession::SendPing()
     RemoteAddress.sin_port = c_Port;
     m_PingTime = std::chrono::steady_clock::now();
     sendto(c_Socket, reinterpret_cast<u08*>(&ping), sizeof(Header::Ping), 0, (sockaddr*)&RemoteAddress, sizeof(RemoteAddress));
-    m_Timer.ScheduleTask(m_PingInterval, [this](){
-        m_TaskQueue.Enqueue([this](){
+    while(m_Timer.ScheduleTask(m_PingInterval, [this](){
+        while(m_TaskQueue.Enqueue([this](){
             SendPing();
-        }, TransmissionSession::HIGH_PRIORITY);
-    });
+        }, TransmissionSession::HIGH_PRIORITY)==false);
+    })==false);
 }
 
 ////////////////////////////////////////////////////////////
@@ -363,11 +363,11 @@ bool Transmission::Connect(u32 IPv4, u16 Port, u32 ConnectionTimeout, Parameter:
     {
         return false;
     }
-    newsession->m_Timer.ScheduleTask(0, [newsession](){
-        newsession->m_TaskQueue.Enqueue([newsession](){
+    while(newsession->m_Timer.ScheduleTask(0, [newsession](){
+        while(newsession->m_TaskQueue.Enqueue([newsession](){
             newsession->SendPing();
-        }, TransmissionSession::HIGH_PRIORITY);
-    });
+        }, TransmissionSession::HIGH_PRIORITY)==false);
+    })==false);
     return true;
 }
 
@@ -451,11 +451,11 @@ bool Transmission::Disconnect(u32 IPv4, u16 Port)
         return false;
     }
     TransmissionSession* const p_session = (*pp_session);
-    p_session->m_TaskQueue.Enqueue([p_session](){
+    while(p_session->m_TaskQueue.Enqueue([p_session](){
         p_session->m_Timer.Stop();
         p_session->m_TaskQueue.Stop();
         p_session->m_IsConnected = false;
-    }, TransmissionSession::HIGH_PRIORITY);
+    }, TransmissionSession::HIGH_PRIORITY)==false);
     return true;
 }
 
