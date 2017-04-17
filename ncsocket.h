@@ -15,6 +15,10 @@ public:
     NCSocket(const u16 PORT, const long int RXTIMEOUT, const long int TXTIMEOUT, const std::function <void (u08* buffer, u16 length, const sockaddr_in * const sender_addr, const u32 sender_addr_len)> rx)
     {
         m_State = INIT_FAILURE;
+        m_Socket = -1;
+        m_Rx = nullptr;
+        m_Tx = nullptr;
+        m_RxThread = nullptr;
         m_Socket = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
         if(m_Socket == -1)
         {
@@ -61,6 +65,7 @@ public:
         {
             std::cout<<ex.what()<<std::endl;
             close(m_Socket);
+            m_Rx = nullptr;
             m_Socket = -1;
             return;
         }
@@ -73,6 +78,8 @@ public:
             std::cout<<ex.what()<<std::endl;
             delete m_Rx;
             close(m_Socket);
+            m_Tx = nullptr;
+            m_Rx = nullptr;
             m_Socket = -1;
             return;
         }
@@ -119,6 +126,9 @@ public:
             delete m_Tx;
             delete m_Rx;
             close(m_Socket);
+            m_RxThread = nullptr;
+            m_Tx = nullptr;
+            m_Rx = nullptr;
             m_Socket = -1;
             return;
         }
@@ -128,9 +138,26 @@ public:
     ~NCSocket()
     {
         m_RxThreadIsRunning = false;
-        if(m_RxThread->joinable())
-            m_RxThread->join();
-        delete m_Tx;
+        if(m_RxThread)
+        {
+            if(m_RxThread->joinable())
+            {
+                m_RxThread->join();
+            }
+            delete m_RxThread;
+        }
+        if(m_Tx)
+        {
+            delete m_Tx;
+        }
+        if(m_Rx)
+        {
+            delete m_Rx;
+        }
+        if(m_Socket != -1)
+        {
+            close(m_Socket);
+        }
     }
 
     NCSocket& operator=(const NCSocket&) = delete;
