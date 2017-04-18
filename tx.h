@@ -68,7 +68,7 @@ public:
     TransmissionBlock* p_TransmissionBlock;
     std::atomic<unsigned long> m_ConcurrentRetransmissions;
 
-    TransmissionSession(s32 Socket, u32 IPv4, u16 Port,
+    TransmissionSession(Transmission* const transmission, s32 Socket, u32 IPv4, u16 Port,
                         Parameter::TRANSMISSION_MODE TransmissionMode = Parameter::TRANSMISSION_MODE::RELIABLE_TRANSMISSION_MODE,
                         Parameter::BLOCK_SIZE BlockSize = Parameter::BLOCK_SIZE::BLOCK_SIZE_04,
                         u16 RetransmissionRedundancy = 0, u16 RetransmissionInterval = 10);
