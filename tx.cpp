@@ -332,7 +332,7 @@ bool Transmission::Connect(u32 IPv4, u16 Port, u32 ConnectionTimeout, Parameter:
             try
             {
                 TEST_EXCEPTION(std::bad_alloc(), 20);
-                newsession = new TransmissionSession(c_Socket, IPv4, Port, TransmissionMode, BlockSize, RetransmissionRedundancy, RetransmissionInterval);
+                newsession = new TransmissionSession(this, c_Socket, IPv4, Port, TransmissionMode, BlockSize, RetransmissionRedundancy, RetransmissionInterval);
             }
             catch(const std::bad_alloc& ex)
             {
