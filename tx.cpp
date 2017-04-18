@@ -200,7 +200,7 @@ void TransmissionBlock::Retransmission()
 ////////////////////////////////////////////////////////////
 /////////////// TransmissionSession
 /*OK*/
-TransmissionSession::TransmissionSession(s32 Socket, u32 IPv4, u16 Port, Parameter::TRANSMISSION_MODE TransmissionMode, Parameter::BLOCK_SIZE BlockSize, u16 RetransmissionRedundancy, u16 RetransmissionInterval): c_Socket(Socket),c_IPv4(IPv4), c_Port(Port)
+TransmissionSession::TransmissionSession(Transmission* const transmission, s32 Socket, u32 IPv4, u16 Port, Parameter::TRANSMISSION_MODE TransmissionMode, Parameter::BLOCK_SIZE BlockSize, u16 RetransmissionRedundancy, u16 RetransmissionInterval): c_Transmission(transmission), c_Socket(Socket),c_IPv4(IPv4), c_Port(Port)
 {
     m_TransmissionMode = TransmissionMode;
     m_BlockSize = BlockSize;
@@ -284,8 +284,11 @@ void TransmissionSession::SendPing()
     std::chrono::duration<double> TimeSinceLastPongTime = std::chrono::duration_cast<std::chrono::duration<double>> (CurrentTime - LastPongRecvTime);
     if(TimeSinceLastPongTime.count() > Parameter::CONNECTION_TIMEOUT)
     {
-
-        m_IsConnected = false;
+        std::thread DisconnectThread = std::thread([this](){
+            c_Transmission->Disconnect(c_IPv4, c_Port);
+        });
+        DisconnectThread.detach();
+        return;
     }
 
     sockaddr_in RemoteAddress = {0};
