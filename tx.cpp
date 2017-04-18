@@ -337,7 +337,6 @@ bool Transmission::Connect(u32 IPv4, u16 Port, u32 ConnectionTimeout, Parameter:
             catch(const std::bad_alloc& ex)
             {
                 EXCEPTION_PRINT;
-                std::cout<<ex.what();
                 return false;
             }
             if(m_Sessions.Insert(key, newsession) == false)
@@ -524,7 +523,7 @@ void Transmission::RxHandler(u08* buffer, u16 size, const sockaddr_in * const se
                 }
                 else
                 {
-                    (*pp_session)->ChangeRetransmissionInterval((u16)(rtt.count()));
+                    (*pp_session)->ChangeRetransmissionInterval((u16)(rtt.count()*1000.));
                 }
             }
         }
