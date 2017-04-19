@@ -1,25 +1,28 @@
 #ifndef TEST_CASE_H
 #define TEST_CASE_H
 
-#define ENABLE_TEST_DROP        (1)
-#define ENABLE_TEST_EXCEPTION   (0)
-#define ENABLE_EXCEPTION_LOG    (0)
+#define ENABLE_TEST_DROP           (1)
+#define ENABLE_TEST_EXCEPTION      (0)
+#define ENABLE_EXCEPTION_LOG       (0)
 
 #if ENABLE_TEST_DROP
-#define TEST_DROP(rate)            if(std::rand()%(rate) == (rate-1)){continue;}
+#define DROP_RATE                  (20)
+#define TEST_DROP                  if(std::rand()%(DROP_RATE) == (DROP_RATE-1)){continue;}
 #else
-#define TEST_DROP(rate)            while(0)
+#define TEST_DROP                  while(0)
 #endif
 
 #if ENABLE_TEST_EXCEPTION
-#define TEST_EXCEPTION(ex, rate)   do{if(std::rand()%(rate) == (rate-1))throw ex;}while(0)
+#define ENABLE_CRITICAL_EXCEPTIONS (0)
+#define EXCEPTION_RATE             (20)
+#define TEST_EXCEPTION(ex)         do{if(std::rand()%(EXCEPTION_RATE) == (EXCEPTION_RATE-1))throw ex;}while(0)
 #if ENABLE_EXCEPTION_LOG
 #define EXCEPTION_PRINT            std::cout<<__PRETTY_FUNCTION__<<":"<<__LINE__<<":"<<ex.what()<<std::endl
 #else
 #define EXCEPTION_PRINT            while(0)
 #endif
 #else
-#define TEST_EXCEPTION(ex, rate)   while(0)
+#define TEST_EXCEPTION(ex)         while(0)
 #define EXCEPTION_PRINT            while(0)
 #endif
 

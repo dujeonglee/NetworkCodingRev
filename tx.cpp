@@ -48,7 +48,9 @@ bool TransmissionBlock::Send(u08* buffer, u16 buffersize, bool reqack)
     // 2. Allocate memory for packet buffer.
     try
     {
-        TEST_EXCEPTION(std::bad_alloc(), 20);
+#if ENABLE_CRITICAL_EXCEPTIONS
+        TEST_EXCEPTION(std::bad_alloc());
+#endif
         m_OriginalPacketBuffer.emplace_back(std::unique_ptr<u08[]>(new u08[sizeof(Header::Data) + (m_BlockSize - 1) + buffersize]));
     }
     catch(const std::bad_alloc& ex)
@@ -331,7 +333,7 @@ bool Transmission::Connect(u32 IPv4, u16 Port, u32 ConnectionTimeout, Parameter:
         {
             try
             {
-                TEST_EXCEPTION(std::bad_alloc(), 20);
+                TEST_EXCEPTION(std::bad_alloc());
                 newsession = new TransmissionSession(this, c_Socket, IPv4, Port, TransmissionMode, BlockSize, RetransmissionRedundancy);
             }
             catch(const std::bad_alloc& ex)
@@ -419,7 +421,9 @@ bool Transmission::Send(u32 IPv4, u16 Port, u08* buffer, u16 buffersize, bool re
         {
             try
             {
-                TEST_EXCEPTION(std::bad_alloc(), 20);
+#if ENABLE_CRITICAL_EXCEPTIONS
+                TEST_EXCEPTION(std::bad_alloc());
+#endif
                 p_session->p_TransmissionBlock = new TransmissionBlock(p_session);
             }
             catch(const std::bad_alloc& ex)

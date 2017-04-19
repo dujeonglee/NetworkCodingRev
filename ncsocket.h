@@ -59,11 +59,14 @@ public:
 
         try
         {
+#if ENABLE_CRITICAL_EXCEPTIONS
+            TEST_EXCEPTION(std::bad_alloc());
+#endif
             m_Rx = new Reception(m_Socket, rx);
         }
         catch(const std::bad_alloc& ex)
         {
-            std::cout<<ex.what()<<std::endl;
+            EXCEPTION_PRINT;
             close(m_Socket);
             m_Rx = nullptr;
             m_Socket = -1;
@@ -71,11 +74,14 @@ public:
         }
         try
         {
+#if ENABLE_CRITICAL_EXCEPTIONS
+            TEST_EXCEPTION(std::bad_alloc());
+#endif
             m_Tx = new Transmission(m_Socket);
         }
         catch(const std::bad_alloc& ex)
         {
-            std::cout<<ex.what()<<std::endl;
+            EXCEPTION_PRINT;
             delete m_Rx;
             close(m_Socket);
             m_Tx = nullptr;
@@ -87,6 +93,9 @@ public:
         m_RxThreadIsRunning = true;
         try
         {
+#if ENABLE_CRITICAL_EXCEPTIONS
+            TEST_EXCEPTION(std::bad_alloc());
+#endif
             m_RxThread = new std::thread([this, RXTIMEOUT](){
                 u08 rxbuffer[Parameter::MAXIMUM_BUFFER_SIZE];
                 while(m_RxThreadIsRunning)
@@ -106,7 +115,7 @@ public:
                         {
                             continue;
                         }
-                        TEST_DROP(2);
+                        TEST_DROP;
                         if(reinterpret_cast<Header::Common*>(rxbuffer)->m_Type == Header::Common::HeaderType::DATA ||
                                 reinterpret_cast<Header::Common*>(rxbuffer)->m_Type == Header::Common::HeaderType::SYNC ||
                                 reinterpret_cast<Header::Common*>(rxbuffer)->m_Type == Header::Common::HeaderType::PING)
@@ -123,7 +132,7 @@ public:
         }
         catch(const std::bad_alloc& ex)
         {
-            std::cout<<ex.what()<<std::endl;
+            EXCEPTION_PRINT;
             delete m_Tx;
             delete m_Rx;
             close(m_Socket);

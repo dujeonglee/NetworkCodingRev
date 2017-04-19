@@ -105,7 +105,7 @@ ReceptionBlock::ReceiveAction ReceptionBlock::FindAction(u08* buffer, u16 length
         {
             try
             {
-                TEST_EXCEPTION(std::bad_alloc(), 20);
+                TEST_EXCEPTION(std::bad_alloc());
                 m_DecodingMatrix.emplace_back(std::unique_ptr<u08[]>(new u08[MAX_RANK]));
             }
             catch(const std::bad_alloc& ex)
@@ -123,7 +123,7 @@ ReceptionBlock::ReceiveAction ReceptionBlock::FindAction(u08* buffer, u16 length
     {
         try
         {
-            TEST_EXCEPTION(std::bad_alloc(), 20);
+            TEST_EXCEPTION(std::bad_alloc());
             EncodingMatrix.emplace_back(std::unique_ptr<u08[]>(new u08[MAX_RANK]));
             memset(EncodingMatrix.back().get(), 0x0, MAX_RANK);
         }
@@ -254,7 +254,7 @@ bool ReceptionBlock::Decoding()
         {
             try
             {
-                TEST_EXCEPTION(std::bad_alloc(), 20);
+                TEST_EXCEPTION(std::bad_alloc());
                 m_DecodedPacketBuffer.emplace(m_DecodedPacketBuffer.begin()+row, std::unique_ptr< u08[] >(m_EncodedPacketBuffer[EncodedPktIdx++].release()));
             }
             catch(const std::bad_alloc& ex)
@@ -277,7 +277,7 @@ bool ReceptionBlock::Decoding()
             {
                 try
                 {
-                    TEST_EXCEPTION(std::bad_alloc(), 20);
+                    TEST_EXCEPTION(std::bad_alloc());
                     DecodeOut.emplace_back(std::unique_ptr< u08[] >(nullptr));
                 }
                 catch(const std::bad_alloc& ex)
@@ -294,7 +294,7 @@ bool ReceptionBlock::Decoding()
         {
             try
             {
-                TEST_EXCEPTION(std::bad_alloc(), 20);
+                TEST_EXCEPTION(std::bad_alloc());
                 DecodeOut.emplace_back(std::unique_ptr< u08[] >(new u08[ntohs(pkt->m_TotalSize)]));
             }
             catch(std::bad_alloc& ex)
@@ -385,7 +385,7 @@ void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const 
         {
             try
             {
-                TEST_EXCEPTION(std::bad_alloc(), 20);
+                TEST_EXCEPTION(std::bad_alloc());
                 m_DecodedPacketBuffer.emplace_back(std::unique_ptr<u08[]>(new u08[length]));
             }
             catch(const std::bad_alloc& ex)
@@ -401,7 +401,7 @@ void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const 
                 u08* pkt;
                 try
                 {
-                    TEST_EXCEPTION(std::bad_alloc(), 20);
+                    TEST_EXCEPTION(std::bad_alloc());
                     pkt = new u08[length];
                     memcpy(pkt, buffer, length);
                     while(c_Session->m_RxTaskQueue.Enqueue([this, pkt](){
@@ -424,7 +424,7 @@ void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const 
         {
             try
             {
-                TEST_EXCEPTION(std::bad_alloc(), 20);
+                TEST_EXCEPTION(std::bad_alloc());
                 m_EncodedPacketBuffer.emplace_back(std::unique_ptr<u08[]>(new u08[length]));
             }
             catch(const std::bad_alloc& ex)
@@ -538,7 +538,7 @@ void ReceptionSession::Receive(u08* buffer, u16 length, const sockaddr_in * cons
     {
         try
         {
-            TEST_EXCEPTION(std::bad_alloc(), 20);
+            TEST_EXCEPTION(std::bad_alloc());
             p_Block = new ReceptionBlock(c_Reception, this, ntohs(DataHeader->m_CurrentBlockSequenceNumber));
         }
         catch(const std::bad_alloc& ex)
@@ -595,7 +595,7 @@ void Reception::RxHandler(u08* buffer, u16 size, const sockaddr_in * const sende
             {
                 try
                 {
-                    TEST_EXCEPTION(std::bad_alloc(), 20);
+                    TEST_EXCEPTION(std::bad_alloc());
                     p_Session = new ReceptionSession(this, (*sender_addr));
                 }
                 catch(const std::bad_alloc& ex)
