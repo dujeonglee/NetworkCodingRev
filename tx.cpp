@@ -113,10 +113,6 @@ bool TransmissionBlock::Send(u08* buffer, u16 buffersize, bool reqack)
 
 void TransmissionBlock::Retransmission()
 {
-    if(p_Session->m_IsConnected == false)
-    {
-        return;
-    }
     const u08 c_AckIndex = AckIndex();
     if(m_TransmissionMode == Parameter::BEST_EFFORT_TRANSMISSION_MODE)
     {
@@ -139,6 +135,10 @@ void TransmissionBlock::Retransmission()
             }
         }
         delete this;
+        return;
+    }
+    if(p_Session->m_IsConnected == false)
+    {
         return;
     }
     sockaddr_in RemoteAddress = {0};
