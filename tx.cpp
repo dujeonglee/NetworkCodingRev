@@ -43,6 +43,7 @@ bool TransmissionBlock::Send(u08* buffer, u16 buffersize, bool reqack)
 {
     if(p_Session->m_IsConnected == false)
     {
+        delete this;
         return false;
     }
     // 2. Allocate memory for packet buffer.
@@ -100,10 +101,11 @@ bool TransmissionBlock::Send(u08* buffer, u16 buffersize, bool reqack)
     if((m_TransmissionCount == m_BlockSize) || reqack == true)
     {
         p_Session->p_TransmissionBlock = nullptr;
-        while(p_Session->m_Timer.ScheduleTask(m_RetransmissionInterval, [this](){
-            while(p_Session->m_TaskQueue.Enqueue([this](){
+        while(p_Session->m_IsConnected && p_Session->m_Timer.ScheduleTask(m_RetransmissionInterval, [this](){
+            const auto Priority = (p_Session->m_MinBlockSequenceNumber == m_BlockSequenceNumber?TransmissionSession::MIDDLE_PRIORITY:TransmissionSession::LOW_PRIORITY);
+            while(p_Session->m_IsConnected && p_Session->m_TaskQueue.Enqueue([this](){
                 Retransmission();
-            }, (p_Session->m_MinBlockSequenceNumber == m_BlockSequenceNumber?TransmissionSession::MIDDLE_PRIORITY:TransmissionSession::LOW_PRIORITY))==false);
+            }, Priority)==false);
         })==false);
     }
     return true;
@@ -190,10 +192,11 @@ void TransmissionBlock::Retransmission()
         }
         sendto(p_Session->c_Socket, m_RemedyPacketBuffer, ntohs(RemedyHeader->m_TotalSize), 0, (sockaddr*)&RemoteAddress, sizeof(RemoteAddress));
     }
-    while(p_Session->m_Timer.ScheduleTask(m_RetransmissionInterval, [this](){
-        while(p_Session->m_TaskQueue.Enqueue([this](){
+    while(p_Session->m_IsConnected && p_Session->m_Timer.ScheduleTask(m_RetransmissionInterval, [this](){
+        const auto Priority = (p_Session->m_MinBlockSequenceNumber == m_BlockSequenceNumber?TransmissionSession::MIDDLE_PRIORITY:TransmissionSession::LOW_PRIORITY);
+        while(p_Session->m_IsConnected && p_Session->m_TaskQueue.Enqueue([this](){
             Retransmission();
-        }, (p_Session->m_MinBlockSequenceNumber == m_BlockSequenceNumber?TransmissionSession::MIDDLE_PRIORITY:TransmissionSession::LOW_PRIORITY))==false);
+        }, Priority)==false);
     })==false);
 }
 
@@ -296,8 +299,8 @@ void TransmissionSession::SendPing()
     RemoteAddress.sin_addr.s_addr = c_IPv4;
     RemoteAddress.sin_port = c_Port;
     sendto(c_Socket, reinterpret_cast<u08*>(&ping), sizeof(Header::Ping), 0, (sockaddr*)&RemoteAddress, sizeof(RemoteAddress));
-    while(m_Timer.ScheduleTask(Parameter::PING_INTERVAL, [this](){
-        while(m_TaskQueue.Enqueue([this](){
+    while(m_IsConnected && m_Timer.ScheduleTask(Parameter::PING_INTERVAL, [this](){
+        while(m_IsConnected && m_TaskQueue.Enqueue([this](){
             SendPing();
         }, TransmissionSession::HIGH_PRIORITY)==false);
     })==false);
@@ -372,8 +375,8 @@ bool Transmission::Connect(u32 IPv4, u16 Port, u32 ConnectionTimeout, Parameter:
     {
         return false;
     }
-    while(newsession->m_Timer.ScheduleTask(0, [newsession](){
-        while(newsession->m_TaskQueue.Enqueue([newsession](){
+    while(newsession->m_IsConnected && newsession->m_Timer.ScheduleTask(0, [newsession](){
+        while(newsession->m_IsConnected && newsession->m_TaskQueue.Enqueue([newsession](){
             newsession->SendPing();
         }, TransmissionSession::HIGH_PRIORITY)==false);
     })==false);
@@ -406,6 +409,10 @@ bool Transmission::Send(u32 IPv4, u16 Port, u08* buffer, u16 buffersize, bool re
     std::atomic<bool> TransmissionResult(false);
     while((u16)(p_session->m_MaxBlockSequenceNumber - p_session->m_MinBlockSequenceNumber) >= Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION)
     {
+        if(!p_session->m_IsConnected)
+        {
+            return false;
+        }
         std::this_thread::sleep_for (std::chrono::milliseconds(1));
     }
     const bool TransmissionIsScheduled = p_session->m_TaskQueue.Enqueue([buffer, buffersize, reqack, p_session, &TransmissionIsCompleted, &TransmissionResult](){
@@ -459,7 +466,14 @@ bool Transmission::Disconnect(u32 IPv4, u16 Port)
     {
         return false;
     }
+    (*pp_session)->m_IsConnected = false;
+    for(auto i = 0 ; i < Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION*2 ; i++)
+    {
+        (*pp_session)->m_AckList[i] = true;
+    }
     m_Sessions.Remove(key, [](TransmissionSession*&session){
+        session->m_Timer.Stop();
+        session->m_TaskQueue.Stop();
         delete session;
     });
     return true;
