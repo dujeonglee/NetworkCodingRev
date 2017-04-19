@@ -13,22 +13,14 @@ int main(int argc, char *argv[])
     NetworkCoding::NCSocket socket1(htons(1004), 500, 500, RxCallback);
     NetworkCoding::NCSocket socket2(htons(1005), 500, 500, RxCallback);
     u08 buffer[1024] = {0};
+    while(false == socket1.Connect(inet_addr("127.0.0.1"),
+                      htons(1005),
+                      1000,
+                      NetworkCoding::Parameter::RELIABLE_TRANSMISSION_MODE,
+                      NetworkCoding::Parameter::BLOCK_SIZE_04,
+                      (u16)0))
     {
-        if(socket1.Connect(inet_addr("127.0.0.1"),
-                          htons(1005),
-                          3000,
-                          NetworkCoding::Parameter::RELIABLE_TRANSMISSION_MODE,
-                          NetworkCoding::Parameter::BLOCK_SIZE_04,
-                          (u16)0,
-                          (u16)10) == false)
-        {
-            std::cout<<"Failed\n";
-            return -1;
-        }
-        else
-        {
-            std::cout<<"Connected\n";
-        }
+        std::cout<<"Retry connect..."<<std::endl;
     }
     while(1)
     {
@@ -38,8 +30,9 @@ int main(int argc, char *argv[])
         {
             std::cout<<"Send failed\n";
             socket1.Disconnect(inet_addr("127.0.0.1"), htons(1005));
+            break;
         }
-        std::this_thread::sleep_for (std::chrono::milliseconds(100));
+        std::this_thread::sleep_for (std::chrono::milliseconds(5));
     }
     return 0;
 }

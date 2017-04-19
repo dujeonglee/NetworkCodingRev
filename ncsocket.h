@@ -106,7 +106,7 @@ public:
                         {
                             continue;
                         }
-                        TEST_DROP(4);
+                        TEST_DROP(2);
                         if(reinterpret_cast<Header::Common*>(rxbuffer)->m_Type == Header::Common::HeaderType::DATA ||
                                 reinterpret_cast<Header::Common*>(rxbuffer)->m_Type == Header::Common::HeaderType::SYNC ||
                                 reinterpret_cast<Header::Common*>(rxbuffer)->m_Type == Header::Common::HeaderType::PING)
@@ -175,13 +175,13 @@ private:
     std::thread* m_RxThread;
     bool m_RxThreadIsRunning;
 public:
-    bool Connect(u32 ip, u16 port, u32 timeout, Parameter::TRANSMISSION_MODE TransmissionMode, Parameter::BLOCK_SIZE BlockSize, u16 RetransmissionRedundancy, u16 RetransmissionInterval)
+    bool Connect(u32 ip, u16 port, u32 timeout, Parameter::TRANSMISSION_MODE TransmissionMode, Parameter::BLOCK_SIZE BlockSize, u16 RetransmissionRedundancy)
     {
         if(m_State == INIT_FAILURE)
         {
             return false;
         }
-        return m_Tx->Connect(ip, port, timeout, TransmissionMode, BlockSize, RetransmissionRedundancy, RetransmissionInterval);
+        return m_Tx->Connect(ip, port, timeout, TransmissionMode, BlockSize, RetransmissionRedundancy);
     }
 
     void Disconnect(u32 ip, u16 port)

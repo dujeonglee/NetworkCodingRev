@@ -12,8 +12,7 @@ TransmissionBlock::TransmissionBlock(TransmissionSession *p_session) :
     m_BlockSize(p_session->m_BlockSize),
     m_TransmissionMode(p_session->m_TransmissionMode),
     m_BlockSequenceNumber(p_session->m_MaxBlockSequenceNumber.fetch_add(1, std::memory_order_relaxed)),
-    m_RetransmissionRedundancy(p_session->m_RetransmissionRedundancy),
-    m_RetransmissionInterval(p_session->m_RetransmissionInterval)
+    m_RetransmissionRedundancy(p_session->m_RetransmissionRedundancy)
 {
     p_Session->m_ConcurrentRetransmissions++;
     m_LargestOriginalPacketSize = 0;
@@ -101,7 +100,7 @@ bool TransmissionBlock::Send(u08* buffer, u16 buffersize, bool reqack)
     if((m_TransmissionCount == m_BlockSize) || reqack == true)
     {
         p_Session->p_TransmissionBlock = nullptr;
-        while(p_Session->m_IsConnected && p_Session->m_Timer.ScheduleTask(m_RetransmissionInterval, [this](){
+        while(p_Session->m_IsConnected && p_Session->m_Timer.ScheduleTask(p_Session->m_RetransmissionInterval, [this](){
             const auto Priority = (p_Session->m_MinBlockSequenceNumber == m_BlockSequenceNumber?TransmissionSession::MIDDLE_PRIORITY:TransmissionSession::LOW_PRIORITY);
             while(p_Session->m_IsConnected && p_Session->m_TaskQueue.Enqueue([this](){
                 Retransmission();
@@ -192,7 +191,7 @@ void TransmissionBlock::Retransmission()
         }
         sendto(p_Session->c_Socket, m_RemedyPacketBuffer, ntohs(RemedyHeader->m_TotalSize), 0, (sockaddr*)&RemoteAddress, sizeof(RemoteAddress));
     }
-    while(p_Session->m_IsConnected && p_Session->m_Timer.ScheduleTask(m_RetransmissionInterval, [this](){
+    while(p_Session->m_IsConnected && p_Session->m_Timer.ScheduleTask(p_Session->m_RetransmissionInterval, [this](){
         const auto Priority = (p_Session->m_MinBlockSequenceNumber == m_BlockSequenceNumber?TransmissionSession::MIDDLE_PRIORITY:TransmissionSession::LOW_PRIORITY);
         while(p_Session->m_IsConnected && p_Session->m_TaskQueue.Enqueue([this](){
             Retransmission();
@@ -203,12 +202,12 @@ void TransmissionBlock::Retransmission()
 ////////////////////////////////////////////////////////////
 /////////////// TransmissionSession
 /*OK*/
-TransmissionSession::TransmissionSession(Transmission* const transmission, s32 Socket, u32 IPv4, u16 Port, Parameter::TRANSMISSION_MODE TransmissionMode, Parameter::BLOCK_SIZE BlockSize, u16 RetransmissionRedundancy, u16 RetransmissionInterval): c_Transmission(transmission), c_Socket(Socket),c_IPv4(IPv4), c_Port(Port)
+TransmissionSession::TransmissionSession(Transmission* const transmission, s32 Socket, u32 IPv4, u16 Port, Parameter::TRANSMISSION_MODE TransmissionMode, Parameter::BLOCK_SIZE BlockSize, u16 RetransmissionRedundancy): c_Transmission(transmission), c_Socket(Socket),c_IPv4(IPv4), c_Port(Port)
 {
     m_TransmissionMode = TransmissionMode;
     m_BlockSize = BlockSize;
     m_RetransmissionRedundancy = RetransmissionRedundancy;
-    m_RetransmissionInterval = RetransmissionInterval;
+    m_RetransmissionInterval = Parameter::MINIMUM_RETRANSMISSION_INTERVAL;
     m_MinBlockSequenceNumber = 0;
     m_MaxBlockSequenceNumber = 0;
     p_TransmissionBlock = nullptr;
@@ -217,7 +216,6 @@ TransmissionSession::TransmissionSession(Transmission* const transmission, s32 S
         m_AckList[i] = true;
     }
     m_ConcurrentRetransmissions = 0;
-    m_LastPongTime = std::chrono::steady_clock::now().time_since_epoch().count();
 }
 
 
@@ -256,23 +254,13 @@ void TransmissionSession::ChangeRetransmissionRedundancy(const u16 Retransmissio
 }
 
 /*OK*/
-void TransmissionSession::ChangeRetransmissionInterval(const u16 RetransmissionInterval)
+void TransmissionSession::ChangeSessionParameter(const Parameter::TRANSMISSION_MODE TransmissionMode, const Parameter::BLOCK_SIZE BlockSize, const u16 RetransmissionRedundancy)
 {
-    m_TaskQueue.Enqueue([this, RetransmissionInterval]()
-    {
-        m_RetransmissionInterval = RetransmissionInterval;
-    });
-}
-
-/*OK*/
-void TransmissionSession::ChangeSessionParameter(const Parameter::TRANSMISSION_MODE TransmissionMode, const Parameter::BLOCK_SIZE BlockSize, const u16 RetransmissionRedundancy, const u16 RetransmissionInterval)
-{
-    m_TaskQueue.Enqueue([this, TransmissionMode, BlockSize, RetransmissionRedundancy, RetransmissionInterval]()
+    m_TaskQueue.Enqueue([this, TransmissionMode, BlockSize, RetransmissionRedundancy]()
     {
         m_TransmissionMode = TransmissionMode;
         m_BlockSize = BlockSize;
         m_RetransmissionRedundancy = RetransmissionRedundancy;
-        m_RetransmissionInterval = RetransmissionInterval;
     });
 }
 
@@ -287,6 +275,7 @@ void TransmissionSession::SendPing()
     std::chrono::duration<double> TimeSinceLastPongTime = std::chrono::duration_cast<std::chrono::duration<double>> (CurrentTime - LastPongRecvTime);
     if(TimeSinceLastPongTime.count() > Parameter::CONNECTION_TIMEOUT)
     {
+        std::cout<<"Pong Timeout...Client is disconnected.["<<TimeSinceLastPongTime.count()<<"]"<<std::endl;
         std::thread DisconnectThread = std::thread([this](){
             c_Transmission->Disconnect(c_IPv4, c_Port);
         });
@@ -306,6 +295,14 @@ void TransmissionSession::SendPing()
     })==false);
 }
 
+void TransmissionSession::UpdateRetransmissionInterval(const u16 rtt)
+{
+    m_TaskQueue.Enqueue([this, rtt]()
+    {
+        m_RetransmissionInterval = (m_RetransmissionInterval + rtt)/2;
+    });
+}
+
 ////////////////////////////////////////////////////////////
 /////////////// Transmission
 /* OK */
@@ -319,7 +316,7 @@ Transmission::~Transmission()
 }
 
 /* OK */
-bool Transmission::Connect(u32 IPv4, u16 Port, u32 ConnectionTimeout, Parameter::TRANSMISSION_MODE TransmissionMode, Parameter::BLOCK_SIZE BlockSize, u16 RetransmissionRedundancy, u16 RetransmissionInterval)
+bool Transmission::Connect(u32 IPv4, u16 Port, u32 ConnectionTimeout, Parameter::TRANSMISSION_MODE TransmissionMode, Parameter::BLOCK_SIZE BlockSize, u16 RetransmissionRedundancy)
 {
     TransmissionSession* newsession = nullptr;
     {
@@ -335,7 +332,7 @@ bool Transmission::Connect(u32 IPv4, u16 Port, u32 ConnectionTimeout, Parameter:
             try
             {
                 TEST_EXCEPTION(std::bad_alloc(), 20);
-                newsession = new TransmissionSession(this, c_Socket, IPv4, Port, TransmissionMode, BlockSize, RetransmissionRedundancy, RetransmissionInterval);
+                newsession = new TransmissionSession(this, c_Socket, IPv4, Port, TransmissionMode, BlockSize, RetransmissionRedundancy);
             }
             catch(const std::bad_alloc& ex)
             {
@@ -375,6 +372,7 @@ bool Transmission::Connect(u32 IPv4, u16 Port, u32 ConnectionTimeout, Parameter:
     {
         return false;
     }
+    newsession->m_LastPongTime = std::chrono::steady_clock::now().time_since_epoch().count();
     while(newsession->m_IsConnected && newsession->m_Timer.ScheduleTask(0, [newsession](){
         while(newsession->m_IsConnected && newsession->m_TaskQueue.Enqueue([newsession](){
             newsession->SendPing();
@@ -495,8 +493,15 @@ void Transmission::RxHandler(u08* buffer, u16 size, const sockaddr_in * const se
             {
                 TransmissionSession* const SessionAddress = (*pp_session);
                 u16 Sequence = ntohs(Ack->m_Sequence);
-                (*pp_session)->m_TaskQueue.Enqueue([SessionAddress,Sequence](){
+                u08 Loss = Ack->m_Losses;
+                (*pp_session)->m_TaskQueue.Enqueue([SessionAddress,Sequence,Loss](){
+                    if(SessionAddress->m_AckList[Sequence%(Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION*2)] == true)
+                    {
+                        return;
+                    }
                     SessionAddress->m_AckList[Sequence%(Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION*2)] = true;
+                    /* To-Do */
+                    // Update the Avg. loss rate.
                 }, TransmissionSession::HIGH_PRIORITY);
             }
         }
@@ -530,14 +535,13 @@ void Transmission::RxHandler(u08* buffer, u16 size, const sockaddr_in * const se
                 (*pp_session)->m_LastPongTime = std::chrono::steady_clock::now().time_since_epoch().count();
                 std::chrono::steady_clock::time_point const RecvTime(std::chrono::steady_clock::duration((*pp_session)->m_LastPongTime));
                 std::chrono::duration<double> rtt = std::chrono::duration_cast<std::chrono::duration<double>>(RecvTime - SentTime);
-                std::cout<<"RTT :"<<rtt.count()<<std::endl;
                 if(rtt.count() * 1000 < Parameter::MINIMUM_RETRANSMISSION_INTERVAL)
                 {
-                    (*pp_session)->ChangeRetransmissionInterval(Parameter::MINIMUM_RETRANSMISSION_INTERVAL);
+                    (*pp_session)->UpdateRetransmissionInterval(Parameter::MINIMUM_RETRANSMISSION_INTERVAL);
                 }
                 else
                 {
-                    (*pp_session)->ChangeRetransmissionInterval((u16)(rtt.count()*1000.));
+                    (*pp_session)->UpdateRetransmissionInterval((u16)(rtt.count()*1000.));
                 }
             }
         }

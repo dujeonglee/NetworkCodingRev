@@ -17,7 +17,6 @@ public:
     const u08 m_TransmissionMode;
     const u16 m_BlockSequenceNumber;
     const u16 m_RetransmissionRedundancy;
-    const u16 m_RetransmissionInterval;
     u16 m_LargestOriginalPacketSize;
     u08 m_TransmissionCount;
 
@@ -71,7 +70,7 @@ public:
     TransmissionSession(Transmission* const transmission, s32 Socket, u32 IPv4, u16 Port,
                         Parameter::TRANSMISSION_MODE TransmissionMode = Parameter::TRANSMISSION_MODE::RELIABLE_TRANSMISSION_MODE,
                         Parameter::BLOCK_SIZE BlockSize = Parameter::BLOCK_SIZE::BLOCK_SIZE_04,
-                        u16 RetransmissionRedundancy = 0, u16 RetransmissionInterval = 10);
+                        u16 RetransmissionRedundancy = 0);
     TransmissionSession() = delete;
     TransmissionSession(const TransmissionSession&) = delete;
     TransmissionSession(TransmissionSession&&) = delete;
@@ -82,9 +81,9 @@ public:
     void ChangeTransmissionMode(const Parameter::TRANSMISSION_MODE TransmissionMode);
     void ChangeBlockSize(const Parameter::BLOCK_SIZE BlockSize);
     void ChangeRetransmissionRedundancy(const u16 RetransmissionRedundancy);
-    void ChangeRetransmissionInterval(const u16 RetransmissionInterval);
-    void ChangeSessionParameter(const Parameter::TRANSMISSION_MODE TransmissionMode, const Parameter::BLOCK_SIZE BlockSize, const u16 RetransmissionRedundancy, const u16 RetransmissionInterval);
+    void ChangeSessionParameter(const Parameter::TRANSMISSION_MODE TransmissionMode, const Parameter::BLOCK_SIZE BlockSize, const u16 RetransmissionRedundancy);
     void SendPing();
+    void UpdateRetransmissionInterval(const u16 rtt);
 };
 
 class Transmission
@@ -97,7 +96,11 @@ public:
     Transmission(s32 Socket);
     ~Transmission();
 public:
-    bool Connect(u32 IPv4, u16 Port, u32 ConnectionTimeout, Parameter::TRANSMISSION_MODE TransmissionMode, Parameter::BLOCK_SIZE BlockSize, u16 RetransmissionRedundancy, u16 RetransmissionInterval);
+    bool Connect(u32 IPv4, u16 Port,
+                 u32 ConnectionTimeout,
+                 Parameter::TRANSMISSION_MODE TransmissionMode,
+                 Parameter::BLOCK_SIZE BlockSize,
+                 u16 RetransmissionRedundancy = 0);
     bool Send(u32 IPv4, u16 Port, u08* buffer, u16 buffersize, bool reqack);
     bool Disconnect(u32 IPv4, u16 Port);
 public:
