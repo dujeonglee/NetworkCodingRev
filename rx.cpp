@@ -398,26 +398,31 @@ void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const 
             if(c_Session->m_SequenceNumberForService == ntohs(DataHeader->m_CurrentBlockSequenceNumber)&&
                     DataHeader->m_ExpectedRank == m_DecodedPacketBuffer.size())
             {
-                u08* pkt;
-                try
+                do
                 {
-                    TEST_EXCEPTION(std::bad_alloc());
-                    pkt = new u08[length];
-                    memcpy(pkt, buffer, length);
-                    while(c_Session->m_RxTaskQueue.Enqueue([this, pkt](){
-                        c_Reception->m_RxCallback(pkt+sizeof(Header::Data)+reinterpret_cast<Header::Data*>(pkt)->m_MaximumRank-1, ntohs(reinterpret_cast<Header::Data*>(pkt)->m_PayloadSize), &c_Session->m_SenderAddress, sizeof(c_Session->m_SenderAddress));
-                        delete [] pkt;
-                    })==false);
-                    reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer.back().get())->m_Flags |= Header::Data::DataHeaderFlag::FLAGS_CONSUMED;
-                    if(reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer.back().get())->m_Flags & Header::Data::DataHeaderFlag::FLAGS_END_OF_BLK)
+                    u08* pkt;
+                    try
                     {
-                        c_Session->m_SequenceNumberForService++;
+                        TEST_EXCEPTION(std::bad_alloc());
+                        pkt = new u08[length];
+                        memcpy(pkt, buffer, length);
+                        while(c_Session->m_RxTaskQueue.Enqueue([this, pkt](){
+                            c_Reception->m_RxCallback(pkt+sizeof(Header::Data)+reinterpret_cast<Header::Data*>(pkt)->m_MaximumRank-1, ntohs(reinterpret_cast<Header::Data*>(pkt)->m_PayloadSize), &c_Session->m_SenderAddress, sizeof(c_Session->m_SenderAddress));
+                            delete [] pkt;
+                        })==false);
+                        reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer.back().get())->m_Flags |= Header::Data::DataHeaderFlag::FLAGS_CONSUMED;
+                        if(reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer.back().get())->m_Flags & Header::Data::DataHeaderFlag::FLAGS_END_OF_BLK)
+                        {
+                            c_Session->m_SequenceNumberForService++;
+                        }
+                        break;
+                    }
+                    catch(const std::bad_alloc& ex)
+                    {
+                        EXCEPTION_PRINT;
                     }
                 }
-                catch(const std::bad_alloc& ex)
-                {
-                    EXCEPTION_PRINT;
-                }
+                while (1);
             }
         }
         else
@@ -447,14 +452,48 @@ void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const 
                 ReceptionBlock** pp_block;
                 ReceptionBlock* p_block;
                 while(c_Session->m_SequenceNumberForService != c_Session->m_MaxSequenceNumberAwaitingAck&&
-                      (pp_block = c_Session->m_Blocks.GetPtr(c_Session->m_SequenceNumberForService))&&
-                      (*pp_block)->m_DecodingReady
+                      (pp_block = c_Session->m_Blocks.GetPtr(c_Session->m_SequenceNumberForService))
                       )
                 {
-                    p_block = (*pp_block);
-                    if(p_block->Decoding())
+                    if((*pp_block)->m_DecodingReady)
                     {
-                        c_Session->m_SequenceNumberForService++;
+                        p_block = (*pp_block);
+                        if(p_block->Decoding())
+                        {
+                            c_Session->m_SequenceNumberForService++;
+                        }
+                    }
+                    else
+                    {
+                        for(u08 i = 0 ; i < (*pp_block)->m_DecodedPacketBuffer.size() ; i++)
+                        {
+                            if(i != reinterpret_cast<Header::Data*>((*pp_block)->m_DecodedPacketBuffer[i].get())->m_ExpectedRank-1)
+                            {
+                                break;
+                            }
+                            do
+                            {
+                                u08* pkt;
+                                try
+                                {
+                                    TEST_EXCEPTION(std::bad_alloc());
+                                    pkt = new u08[reinterpret_cast<Header::Data*>((*pp_block)->m_DecodedPacketBuffer[i].get())->m_TotalSize];
+                                    memcpy(pkt, (*pp_block)->m_DecodedPacketBuffer[i].get(), reinterpret_cast<Header::Data*>((*pp_block)->m_DecodedPacketBuffer[i].get())->m_TotalSize);
+                                    while(c_Session->m_RxTaskQueue.Enqueue([this, pkt](){
+                                        c_Reception->m_RxCallback(pkt+sizeof(Header::Data)+reinterpret_cast<Header::Data*>(pkt)->m_MaximumRank-1, ntohs(reinterpret_cast<Header::Data*>(pkt)->m_PayloadSize), &c_Session->m_SenderAddress, sizeof(c_Session->m_SenderAddress));
+                                        delete [] pkt;
+                                    })==false);
+                                    reinterpret_cast<Header::Data*>((*pp_block)->m_DecodedPacketBuffer[i].get())->m_Flags |= Header::Data::DataHeaderFlag::FLAGS_CONSUMED;
+                                    break;
+                                }
+                                catch (const std::bad_alloc& ex)
+                                {
+                                    EXCEPTION_PRINT;
+                                }
+                            }
+                            while(1);
+                        }
+                        break;
                     }
                 }
             }
