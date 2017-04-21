@@ -540,6 +540,11 @@ void ReceptionSession::Receive(u08* buffer, u16 length, const sockaddr_in * cons
                         for(u08 i = 0 ; i < p_block->m_DecodedPacketBuffer.size() ; i++)
                         {
                             u08* pkt = p_block->m_DecodedPacketBuffer[i].release();
+                            if(reinterpret_cast<Header::Data*>(pkt)->m_Flags & Header::Data::DataHeaderFlag::FLAGS_CONSUMED)
+                            {
+                                delete pkt;
+                                continue;
+                            }
                             while(m_RxTaskQueue.Enqueue([this, pkt](){
                                 c_Reception->m_RxCallback(pkt+sizeof(Header::Data)+reinterpret_cast<Header::Data*>(pkt)->m_MaximumRank-1, ntohs(reinterpret_cast<Header::Data*>(pkt)->m_PayloadSize), &m_SenderAddress, sizeof(m_SenderAddress));
                                 delete pkt;
