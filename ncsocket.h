@@ -116,15 +116,19 @@ public:
                             continue;
                         }
                         TEST_DROP;
-                        if(reinterpret_cast<Header::Common*>(rxbuffer)->m_Type == Header::Common::HeaderType::DATA ||
-                                reinterpret_cast<Header::Common*>(rxbuffer)->m_Type == Header::Common::HeaderType::SYNC ||
-                                reinterpret_cast<Header::Common*>(rxbuffer)->m_Type == Header::Common::HeaderType::PING)
+                        switch(reinterpret_cast<Header::Common*>(rxbuffer)->m_Type)
                         {
-                            m_Rx->RxHandler(rxbuffer, (u16)ret, &sender_addr, sender_addr_length);
-                        }
-                        else
-                        {
-                            m_Tx->RxHandler(rxbuffer, (u16)ret, &sender_addr, sender_addr_length);
+                            case Header::Common::HeaderType::DATA:
+                            case Header::Common::HeaderType::SYNC:
+                            case Header::Common::HeaderType::PING:
+                                m_Rx->RxHandler(rxbuffer, (u16)ret, &sender_addr, sender_addr_length);
+                            break;
+                            case Header::Common::HeaderType::DATA_ACK:
+                            case Header::Common::HeaderType::SYNC_ACK:
+                            case Header::Common::HeaderType::PONG:
+                                m_Tx->RxHandler(rxbuffer, (u16)ret, &sender_addr, sender_addr_length);
+                            break;
+
                         }
                     }
                 }
