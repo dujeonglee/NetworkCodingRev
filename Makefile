@@ -23,11 +23,11 @@ $(TARGET) : $(OBJECTS)
 clean :
 	rm -rf $(OBJECTS) $(TARGET) *~ gmon.out *.bak *.stackdump
 
-debug : CPPFLAGS := -g -pg -c -Wall -std=c++11 -fopenmp
+debug : CPPFLAGS := -g -c -Wall -std=c++11
 debug : ./basiclibrary/.git/config
 debug : $(TARGET)
 
-release : CPPFLAGS := -O3 -pg -c -Wall -std=c++11 -fopenmp
+release : CPPFLAGS := -O3 -c -Wall -std=c++11
 release : ./basiclibrary/.git/config
 release : $(TARGET)
 #	./$(TARGET)
