@@ -477,8 +477,8 @@ void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const 
                                 try
                                 {
                                     TEST_EXCEPTION(std::bad_alloc());
-                                    pkt = new u08[reinterpret_cast<Header::Data*>((*pp_block)->m_DecodedPacketBuffer[i].get())->m_TotalSize];
-                                    memcpy(pkt, (*pp_block)->m_DecodedPacketBuffer[i].get(), reinterpret_cast<Header::Data*>((*pp_block)->m_DecodedPacketBuffer[i].get())->m_TotalSize);
+                                    pkt = new u08[ntohs(reinterpret_cast<Header::Data*>((*pp_block)->m_DecodedPacketBuffer[i].get())->m_TotalSize)];
+                                    memcpy(pkt, (*pp_block)->m_DecodedPacketBuffer[i].get(), ntohs(reinterpret_cast<Header::Data*>((*pp_block)->m_DecodedPacketBuffer[i].get())->m_TotalSize));
                                     while(c_Session->m_RxTaskQueue.Enqueue([this, pkt](){
                                         c_Reception->m_RxCallback(pkt+sizeof(Header::Data)+reinterpret_cast<Header::Data*>(pkt)->m_MaximumRank-1, ntohs(reinterpret_cast<Header::Data*>(pkt)->m_PayloadSize), &c_Session->m_SenderAddress, sizeof(c_Session->m_SenderAddress));
                                         delete [] pkt;
