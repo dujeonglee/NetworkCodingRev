@@ -12,7 +12,7 @@ TARGET = run
 all : debug
 
 $(TARGET) : $(OBJECTS)
-	$(CPP) -o $@  $^ -pg $(LIBRARY)
+	$(CPP) -o $@  $^ $(LIBRARY)
 
 .cpp.o : $(SOURCES) 
 	$(CPP) $(SOURCES) $(CPPFLAGS) -DNONPRIMITIVE_KEY $(INCLUDES) $(LIBRARY)
