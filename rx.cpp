@@ -568,11 +568,17 @@ void ReceptionSession::Receive(u08* buffer, u16 length, const sockaddr_in * cons
     if(STRICTLY_ASCENDING_ORDER(ntohs(DataHeader->m_CurrentBlockSequenceNumber), m_MinSequenceNumberAwaitingAck, m_MaxSequenceNumberAwaitingAck))
     {
         // If the sequence is less than min seq send ack and return.
-        Header::DataAck ack;
-        ack.m_Type = Header::Common::HeaderType::DATA_ACK;
-        ack.m_Sequence = DataHeader->m_CurrentBlockSequenceNumber;
-        ack.m_Losses = DataHeader->m_TxCount - DataHeader->m_ExpectedRank;
-        sendto(c_Reception->c_Socket, (u08*)&ack, sizeof(ack), 0, (sockaddr*)sender_addr, sender_addr_len);
+        // But some packets can be received with significant delay.
+        // Therefore, We must check if this packet is associated with the blocks in m_Blocks.
+        ReceptionBlock** const pp_block = m_Blocks.GetPtr(ntohs(DataHeader->m_CurrentBlockSequenceNumber));
+        if(pp_block && (*pp_block)->m_DecodingReady)
+        {
+            Header::DataAck ack;
+            ack.m_Type = Header::Common::HeaderType::DATA_ACK;
+            ack.m_Sequence = DataHeader->m_CurrentBlockSequenceNumber;
+            ack.m_Losses = DataHeader->m_TxCount - DataHeader->m_ExpectedRank;
+            sendto(c_Reception->c_Socket, (u08*)&ack, sizeof(ack), 0, (sockaddr*)sender_addr, sender_addr_len);
+        }
         return;
     }
 
