@@ -6,7 +6,7 @@
 #define ENABLE_EXCEPTION_LOG       (1)
 
 #if ENABLE_TEST_DROP
-#define DROP_RATE                  (2)
+#define DROP_RATE                  (20)
 #define TEST_DROP                  if(std::rand()%(DROP_RATE) == (DROP_RATE-1)){continue;}
 #else
 #define TEST_DROP                  while(0)
