@@ -61,7 +61,7 @@ public:
         LOW_PRIORITY,
         PRIORITY_LEVELS
     };
-    std::atomic<std::chrono::steady_clock::time_point::duration::rep> m_LastPongTime;
+    std::atomic<CLOCK::time_point::duration::rep> m_LastPongTime;
 
     ThreadPool<TaskPriority::PRIORITY_LEVELS, 1> m_TaskQueue;
     TransmissionBlock* p_TransmissionBlock;
@@ -108,6 +108,5 @@ public:
 };
 
 }
-
 
 #endif // TX_H

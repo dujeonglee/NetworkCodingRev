@@ -270,10 +270,10 @@ void TransmissionSession::SendPing()
 {
     Header::Ping ping;
     ping.m_Type = Header::Data::HeaderType::PING;
-    ping.m_PingTime = std::chrono::steady_clock::now().time_since_epoch().count();
+    ping.m_PingTime = CLOCK::now().time_since_epoch().count();
 
-    std::chrono::steady_clock::time_point const CurrentTime(std::chrono::steady_clock::duration(ping.m_PingTime));
-    std::chrono::steady_clock::time_point const LastPongRecvTime(std::chrono::steady_clock::duration(m_LastPongTime.load()));
+    CLOCK::time_point const CurrentTime(CLOCK::duration(ping.m_PingTime));
+    CLOCK::time_point const LastPongRecvTime(CLOCK::duration(m_LastPongTime.load()));
     std::chrono::duration<double> TimeSinceLastPongTime = std::chrono::duration_cast<std::chrono::duration<double>> (CurrentTime - LastPongRecvTime);
     if(TimeSinceLastPongTime.count() > Parameter::CONNECTION_TIMEOUT)
     {
@@ -374,7 +374,7 @@ bool Transmission::Connect(u32 IPv4, u16 Port, u32 ConnectionTimeout, Parameter:
     {
         return false;
     }
-    newsession->m_LastPongTime = std::chrono::steady_clock::now().time_since_epoch().count();
+    newsession->m_LastPongTime = CLOCK::now().time_since_epoch().count();
     while(newsession->m_IsConnected && newsession->m_Timer.ScheduleTask(0, [newsession](){
         while(newsession->m_IsConnected && newsession->m_TaskQueue.Enqueue([newsession](){
             newsession->SendPing();
@@ -535,9 +535,9 @@ void Transmission::RxHandler(u08* buffer, u16 size, const sockaddr_in * const se
             TransmissionSession** const pp_session = m_Sessions.GetPtr(key);
             if(pp_session)
             {
-                std::chrono::steady_clock::time_point const SentTime(std::chrono::steady_clock::duration(pong->m_PingTime));
-                (*pp_session)->m_LastPongTime = std::chrono::steady_clock::now().time_since_epoch().count();
-                std::chrono::steady_clock::time_point const RecvTime(std::chrono::steady_clock::duration((*pp_session)->m_LastPongTime));
+                CLOCK::time_point const SentTime(CLOCK::duration(pong->m_PingTime));
+                (*pp_session)->m_LastPongTime = CLOCK::now().time_since_epoch().count();
+                CLOCK::time_point const RecvTime(CLOCK::duration((*pp_session)->m_LastPongTime));
                 std::chrono::duration<double> rtt = std::chrono::duration_cast<std::chrono::duration<double>>(RecvTime - SentTime);
                 if(rtt.count() * 1000 < Parameter::MINIMUM_RETRANSMISSION_INTERVAL)
                 {
