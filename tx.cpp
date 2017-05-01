@@ -277,9 +277,10 @@ void TransmissionSession::SendPing()
     std::chrono::duration<double> TimeSinceLastPongTime = std::chrono::duration_cast<std::chrono::duration<double>> (CurrentTime - LastPongRecvTime);
     if(TimeSinceLastPongTime.count() > Parameter::CONNECTION_TIMEOUT)
     {
+        TransmissionSession const * self = this;
         std::cout<<"Pong Timeout...Client is disconnected.["<<TimeSinceLastPongTime.count()<<"]"<<std::endl;
-        std::thread DisconnectThread = std::thread([this](){
-            c_Transmission->Disconnect(c_IPv4, c_Port);
+        std::thread DisconnectThread = std::thread([self](){
+            self->c_Transmission->Disconnect(self->c_IPv4, self->c_Port);
         });
         DisconnectThread.detach();
         return;

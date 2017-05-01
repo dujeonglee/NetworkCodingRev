@@ -96,21 +96,22 @@ public:
 #if ENABLE_CRITICAL_EXCEPTIONS
             TEST_EXCEPTION(std::bad_alloc());
 #endif
-            m_RxThread = new std::thread([this, RXTIMEOUT](){
+            NCSocket const * self = this;
+            m_RxThread = new std::thread([self, RXTIMEOUT](){
                 u08 rxbuffer[Parameter::MAXIMUM_BUFFER_SIZE];
-                while(m_RxThreadIsRunning)
+                while(self->m_RxThreadIsRunning)
                 {
                     sockaddr_in sender_addr = {0,};
                     socklen_t sender_addr_length = sizeof(sockaddr_in);
                     fd_set ReadFD;
                     FD_ZERO(&ReadFD);
-                    FD_SET(m_Socket, &ReadFD);
-                    const int MaxFD = m_Socket;
+                    FD_SET(self->m_Socket, &ReadFD);
+                    const int MaxFD = self->m_Socket;
                     timeval rx_to = {RXTIMEOUT/1000, (RXTIMEOUT%1000)*1000};
                     const int state = select(MaxFD + 1 , &ReadFD, NULL, NULL, &rx_to);
-                    if(state == 1 && FD_ISSET(m_Socket, &ReadFD))
+                    if(state == 1 && FD_ISSET(self->m_Socket, &ReadFD))
                     {
-                        const int ret = recvfrom(m_Socket, rxbuffer, sizeof(rxbuffer), 0, (sockaddr*)&sender_addr, &sender_addr_length);
+                        const int ret = recvfrom(self->m_Socket, rxbuffer, sizeof(rxbuffer), 0, (sockaddr*)&sender_addr, &sender_addr_length);
                         if(ret <= 0)
                         {
                             continue;
@@ -121,12 +122,12 @@ public:
                             case Header::Common::HeaderType::DATA:
                             case Header::Common::HeaderType::SYNC:
                             case Header::Common::HeaderType::PING:
-                                m_Rx->RxHandler(rxbuffer, (u16)ret, &sender_addr, sender_addr_length);
+                                self->m_Rx->RxHandler(rxbuffer, (u16)ret, &sender_addr, sender_addr_length);
                             break;
                             case Header::Common::HeaderType::DATA_ACK:
                             case Header::Common::HeaderType::SYNC_ACK:
                             case Header::Common::HeaderType::PONG:
-                                m_Tx->RxHandler(rxbuffer, (u16)ret, &sender_addr, sender_addr_length);
+                                self->m_Tx->RxHandler(rxbuffer, (u16)ret, &sender_addr, sender_addr_length);
                             break;
 
                         }
