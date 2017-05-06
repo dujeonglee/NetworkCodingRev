@@ -140,37 +140,59 @@ void TransmissionBlock::Retransmission()
     }
     if(p_Session->m_IsConnected == false)
     {
+        delete this;
         return;
     }
     sockaddr_in RemoteAddress = {0};
     RemoteAddress.sin_family = AF_INET;
     RemoteAddress.sin_addr.s_addr = p_Session->c_IPv4;
     RemoteAddress.sin_port = p_Session->c_Port;
-    if(m_OriginalPacketBuffer.size() == 1)
-    {
-        Header::Data* DataHeader = reinterpret_cast<Header::Data*>(m_OriginalPacketBuffer[0].get());
-        DataHeader->m_Type = Header::Common::HeaderType::DATA;
-        /* Must be the same *///DataHeader->m_TotalSize = sizeof(Header::Data) + (m_BlockSize-1) + m_LargestOriginalPacketSize;
-        DataHeader->m_MinBlockSequenceNumber = htons(p_Session->m_MinBlockSequenceNumber);
-        /* Must be the same *///DataHeader->m_CurrentBlockSequenceNumber = m_BlockSequenceNumber;
-        DataHeader->m_MaxBlockSequenceNumber = htons(p_Session->m_MaxBlockSequenceNumber);
-        /* Must be the same *///DataHeader->m_ExpectedRank = m_BlockSize;
-        /* Must be the same *///DataHeader->m_MaximumRank = m_BlockSize;
-        DataHeader->m_Flags = Header::Data::FLAGS_ORIGINAL | Header::Data::FLAGS_END_OF_BLK;
-        DataHeader->m_TxCount = ++m_TransmissionCount;
-        sendto(p_Session->c_Socket, m_OriginalPacketBuffer[0].get(), ntohs(DataHeader->m_TotalSize), 0, (sockaddr*)&RemoteAddress, sizeof(RemoteAddress));
-    }
-    else
+
     {
         std::vector<u08> RandomCoefficients;
         Header::Data* RemedyHeader = reinterpret_cast<Header::Data*>(m_RemedyPacketBuffer);
-
-        for(u08 Coef = 0 ; Coef < m_BlockSize ; Coef++)
+        if(m_OriginalPacketBuffer.size() == 1)
         {
-            RandomCoefficients.push_back((rand()%255)+1);
+            // No encoding if only one packet is in m_OriginalPacketBuffer.
+            do
+            {
+                try
+                {
+                    TEST_EXCEPTION(std::bad_alloc());
+                    RandomCoefficients.push_back(1);
+                }
+                catch(const std::bad_alloc& ex)
+                {
+                    EXCEPTION_PRINT;
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                    continue;
+                }
+                break;
+            }while(1);
+            RandomCoefficients.push_back(1);
+        }
+        else
+        {
+            for(u08 Coef = 0 ; Coef < m_OriginalPacketBuffer.size() ; Coef++)
+            {
+                do
+                {
+                    try
+                    {
+                        TEST_EXCEPTION(std::bad_alloc());
+                        RandomCoefficients.push_back((rand()%255)+1);
+                    }
+                    catch(const std::bad_alloc& ex)
+                    {
+                        EXCEPTION_PRINT;
+                        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                        continue;
+                    }
+                    break;
+                }while(1);
+            }
         }
 
-        RandomCoefficients.resize(m_BlockSize, (rand()%255)+1);
         RemedyHeader->m_Type = Header::Common::HeaderType::DATA;
         RemedyHeader->m_TotalSize = htons(sizeof(Header::Data) + (m_BlockSize-1) + m_LargestOriginalPacketSize);
         RemedyHeader->m_MinBlockSequenceNumber = htons(p_Session->m_MinBlockSequenceNumber.load());
@@ -185,7 +207,7 @@ void TransmissionBlock::Retransmission()
             CodingOffset++)
         {
             m_RemedyPacketBuffer[CodingOffset] = 0;
-            for(u08 PacketIndex = 0 ; PacketIndex < m_BlockSize ; PacketIndex++)
+            for(u08 PacketIndex = 0 ; PacketIndex < m_OriginalPacketBuffer.size() ; PacketIndex++)
             {
                 u08* OriginalBuffer = reinterpret_cast<u08*>(m_OriginalPacketBuffer[PacketIndex].get());
                 m_RemedyPacketBuffer[CodingOffset] ^= FiniteField::instance()->mul(OriginalBuffer[CodingOffset], RandomCoefficients[PacketIndex]);
@@ -408,7 +430,8 @@ bool Transmission::Send(u32 IPv4, u16 Port, u08* buffer, u16 buffersize, bool re
 
     std::atomic<bool> TransmissionIsCompleted(false);
     std::atomic<bool> TransmissionResult(false);
-    while((u16)(p_session->m_MaxBlockSequenceNumber - p_session->m_MinBlockSequenceNumber) >= Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION)
+    while(p_session->m_ConcurrentRetransmissions >= Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION ||
+          (u16)(p_session->m_MaxBlockSequenceNumber - p_session->m_MinBlockSequenceNumber) >= (u16)Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION)
     {
         if(!p_session->m_IsConnected)
         {

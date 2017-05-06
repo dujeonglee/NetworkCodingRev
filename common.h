@@ -115,11 +115,11 @@ struct Pong : Common
 
 namespace Parameter
 {
-const u08 MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION = 128;
-const u16 MAXIMUM_BUFFER_SIZE = 1500;
-const u16 PING_INTERVAL = 500; /* 500 ms */
-const double CONNECTION_TIMEOUT = 10.0; /* 10 s */
-const u16 MINIMUM_RETRANSMISSION_INTERVAL = 10;/* 10 ms */
+const u08 MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION = 2; /* 2 Blocks   */
+const u16 MAXIMUM_BUFFER_SIZE = 1500;                      /* 1500 Bytes */
+const u16 PING_INTERVAL = 500;                             /* 500 ms     */
+const double CONNECTION_TIMEOUT = 10.0;                    /* 10 s       */
+const u16 MINIMUM_RETRANSMISSION_INTERVAL = 0;             /* 0 ms       */
 enum TRANSMISSION_MODE: u08
 {
     RELIABLE_TRANSMISSION_MODE = 0,
@@ -128,14 +128,15 @@ enum TRANSMISSION_MODE: u08
 enum BLOCK_SIZE: u08
 {
     INVALID_BLOCK_SIZE = 0,
-    BLOCK_SIZE_02 = 2,
-    BLOCK_SIZE_04 = 4,
-    BLOCK_SIZE_08 = 8,
-    BLOCK_SIZE_16 = 16,
-    BLOCK_SIZE_32 = 32,
-    BLOCK_SIZE_64 = 64
+    BLOCK_SIZE_02      = 2,
+    BLOCK_SIZE_04      = 4,
+    BLOCK_SIZE_08      = 8,
+    BLOCK_SIZE_16      = 16,
+    BLOCK_SIZE_32      = 32,
+    BLOCK_SIZE_64      = 64,
+    BLOCK_SIZE_128     = 128
 };
-const u08 MAX_BLOCK_SIZE = BLOCK_SIZE_64;
+const u08 MAX_BLOCK_SIZE = BLOCK_SIZE_128;
 }
 
 namespace DataStructures{
