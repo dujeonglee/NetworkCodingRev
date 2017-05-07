@@ -5,7 +5,7 @@ using namespace std;
 #define RELIABLE_TRANSMISSION_TEST    (1)
 #define BEST_EFFORT_TRANSMISSION_TEST (1)
 #if BEST_EFFORT_TRANSMISSION_TEST
-#define REDUNDANCY                    (12)
+#define REDUNDANCY                    (3)
 #endif
 
 unsigned char reliable_exptected_data = 1;
@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
 #if RELIABLE_TRANSMISSION_TEST
                 if(!reliable_disconnected)
                 {
-                    if(socket1.Send(inet_addr("127.0.0.1"), htons(1005), buffer, sizeof(buffer), false) == false)
+                    if(socket1.Send(inet_addr("127.0.0.1"), htons(1005), buffer, sizeof(buffer)) == false)
                     {
                         std::cout<<"Socket 1 failed\n";
                         reliable_disconnected = true;
@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
 #if BEST_EFFORT_TRANSMISSION_TEST
                 if(!best_effort_disconnected)
                 {
-                    if(socket2.Send(inet_addr("127.0.0.1"), htons(1004), buffer, sizeof(buffer), false) == false)
+                    if(socket2.Send(inet_addr("127.0.0.1"), htons(1004), buffer, sizeof(buffer)) == false)
                     {
                         std::cout<<"Socket 2 failed\n";
                         best_effort_disconnected = true;

@@ -207,13 +207,22 @@ public:
         m_Tx->Disconnect(ip, port);
     }
 
-    bool Send(u32 ip, u16 port, u08* buff, u16 size, bool reqack)
+    bool Send(u32 ip, u16 port, u08* buff, u16 size/*, bool reqack*/)
     {
         if(m_State == INIT_FAILURE)
         {
             return false;
         }
-        return m_Tx->Send(ip, port, buff, size, reqack);
+        return m_Tx->Send(ip, port, buff, size/*, reqack*/);
+    }
+
+    bool Flush(u32 ip, u16 port)
+    {
+        if(m_State == INIT_FAILURE)
+        {
+            return false;
+        }
+        return m_Tx->Flush(ip, port);
     }
 };
 
