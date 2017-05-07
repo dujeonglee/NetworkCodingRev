@@ -33,11 +33,6 @@ const u16 TransmissionBlock::AckIndex()
     return m_BlockSequenceNumber%(Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION*2);
 }
 
-const bool TransmissionBlock::IsAcked()
-{
-    return p_Session->m_AckList[AckIndex()];
-}
-
 bool TransmissionBlock::Send(u08* buffer, u16 buffersize, bool reqack)
 {
     if(p_Session->m_IsConnected == false)
@@ -122,7 +117,7 @@ void TransmissionBlock::Retransmission()
             p_Session->m_AckList[c_AckIndex] = true;
         }
     }
-    if(IsAcked() == true)
+    if(p_Session->m_AckList[c_AckIndex] == true)
     {
         for(u16 i = p_Session->m_MinBlockSequenceNumber ; i != p_Session->m_MaxBlockSequenceNumber ; i++)
         {
