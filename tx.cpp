@@ -510,19 +510,25 @@ bool Transmission::Flush(u32 IPv4, u16 Port)
 
 bool Transmission::Disconnect(u32 IPv4, u16 Port)
 {
-    std::unique_lock< std::mutex > lock(m_Lock);
-
     const DataStructures::IPv4PortKey key = {IPv4, Port};
-    TransmissionSession** const pp_session = m_Sessions.GetPtr(key);
-    if(pp_session == nullptr)
+    TransmissionSession** pp_session = nullptr;
     {
-        return false;
+        std::unique_lock< std::mutex > lock(m_Lock);
+
+        pp_session = m_Sessions.GetPtr(key);
+        if(pp_session == nullptr)
+        {
+            return false;
+        }
     }
-    (*pp_session)->m_IsConnected = false;
-    for(auto i = 0 ; i < Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION*2 ; i++)
+    do
     {
-        (*pp_session)->m_AckList[i] = true;
-    }
+        (*pp_session)->m_IsConnected = false;
+        for(auto i = 0 ; i < Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION*2 ; i++)
+        {
+            (*pp_session)->m_AckList[i] = true;
+        }
+    }while(0 < (*pp_session)->m_ConcurrentRetransmissions);
     m_Sessions.Remove(key, [](TransmissionSession*&session){
         session->m_Timer.Stop();
         session->m_TaskQueue.Stop();
