@@ -83,19 +83,7 @@ ReceptionBlock::ReceiveAction ReceptionBlock::FindAction(u08* buffer, u16 length
     const bool MAKE_DECODING_MATRIX = (OLD_RANK+1 == MAX_RANK && FindEndOfBlock(reinterpret_cast<Header::Data*>(buffer)));
 
     std::vector< std::unique_ptr< u08[] > > EncodingMatrix;
-    if(OLD_RANK == 0)
-    {
-        // First packet is always innovative.
-        return ENQUEUE_AND_DECODING;
-    }
-    else if(m_DecodedPacketBuffer.size() == 0 &&
-            reinterpret_cast <Header::Data*>(buffer)->m_Flags & Header::Data::DataHeaderFlag::FLAGS_ORIGINAL)
-    {
-        // When there is only original packet in the buffer, and the received packet is Decoded packet,
-        // we can guarnatee this packet is always innovative.
-        return ENQUEUE_AND_DECODING;
-    }
-    else if(OLD_RANK == MAX_RANK)
+    if(OLD_RANK == MAX_RANK)
     {
         return DECODING;
     }
