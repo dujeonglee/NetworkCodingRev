@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
 		NetworkCoding::NCSocket socket(htons(local_port), 500, 500, ReliableRxCallback);
 		while(1);
 	}
-	else if(argc == 4)
+    else if(argc == 5)
 	{
 		unsigned short local_port;
 		char* remote_ip = nullptr;
