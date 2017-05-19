@@ -655,6 +655,11 @@ void Reception::RxHandler(u08* buffer, u16 size, const sockaddr_in * const sende
             p_Session->m_SequenceNumberForService = ntohs(sync->m_Sequence);
             p_Session->m_MinSequenceNumberAwaitingAck = ntohs(sync->m_Sequence);
             p_Session->m_MaxSequenceNumberAwaitingAck = ntohs(sync->m_Sequence);
+            if(p_Session->m_Blocks.Size() > 0)
+            {
+                p_Session->m_Blocks.DoSomethingOnAllData([](ReceptionBlock* &block){delete block;});
+                p_Session->m_Blocks.Clear();
+            }
             sync->m_Type = Header::Common::HeaderType::SYNC_ACK;
             sendto(c_Socket, buffer, size, 0, (sockaddr*)sender_addr, sender_addr_len);
         }
