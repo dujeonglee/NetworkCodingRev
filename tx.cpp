@@ -164,7 +164,6 @@ void TransmissionBlock::Retransmission()
                 }
                 break;
             }while(1);
-            RandomCoefficients.push_back(1);
         }
         else
         {
