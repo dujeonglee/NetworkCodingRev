@@ -6,7 +6,6 @@ INCLUDES := -I./basiclibrary/avltree -I./basiclibrary/threadpool -I./basiclibrar
 OBJECTS  := $(SOURCES:.cpp=.o)
 LIBRARY := -lpthread
 CPP := g++
-#CPP := arm-linux-gnueabihf-g++
 TARGET = run
 
 all : debug
@@ -27,8 +26,10 @@ debug : CPPFLAGS := -g -c -Wall -std=c++11
 debug : ./basiclibrary/.git/config
 debug : $(TARGET)
 
-release : CPPFLAGS := -O3 -c -Wall -std=c++11
-release : ./basiclibrary/.git/config
-release : $(TARGET)
-#	./$(TARGET)
-#	gprof ./$(TARGET) gmon.out
+c++11 : CPPFLAGS := -O3 -c -Wall -std=c++11
+c++11 : ./basiclibrary/.git/config
+c++11 : $(TARGET)
+
+c++0x : CPPFLAGS := -O3 -c -Wall -std=c++0x
+c++0x : ./basiclibrary/.git/config
+c++0x : $(TARGET)
