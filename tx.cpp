@@ -507,6 +507,31 @@ bool Transmission::Flush(u32 IPv4, u16 Port)
     }, TransmissionSession::LOW_PRIORITY);
 }
 
+void Transmission::WaitUntilTxIsCompleted(u32 IPv4, u16 Port)
+{
+    TransmissionSession* p_session = nullptr;
+    {
+        std::unique_lock< std::mutex > lock(m_Lock);
+        const DataStructures::IPv4PortKey key = {IPv4, Port};
+        TransmissionSession** const pp_session = m_Sessions.GetPtr(key);
+        if(pp_session)
+        {
+            p_session = (*pp_session);
+        }
+    }
+    if(p_session == nullptr)
+    {
+        return;
+    }
+    if(p_session->m_IsConnected == false)
+    {
+        return;
+    }
+	while(p_session->m_ConcurrentRetransmissions > 0)
+	{
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	}
+}
 
 bool Transmission::Disconnect(u32 IPv4, u16 Port)
 {

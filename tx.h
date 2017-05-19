@@ -102,6 +102,7 @@ public:
                  u16 RetransmissionRedundancy = 0);
     bool Send(u32 IPv4, u16 Port, u08* buffer, u16 buffersize/*, bool reqack*/);
     bool Flush(u32 IPv4, u16 Port);
+    void WaitUntilTxIsCompleted(u32 IPv4, u16 Port);
     bool Disconnect(u32 IPv4, u16 Port);
 public:
     void RxHandler(u08* buffer, u16 size, const sockaddr_in * const sender_addr, const u32 sender_addr_len);

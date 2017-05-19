@@ -224,6 +224,15 @@ public:
         }
         return m_Tx->Flush(ip, port);
     }
+
+    void WaitUntilTxIsCompleted(u32 ip, u16 port)
+    {
+        if(m_State == INIT_FAILURE)
+        {
+            return;
+        }
+        m_Tx->WaitUntilTxIsCompleted(ip, port);
+    }
 };
 
 }
