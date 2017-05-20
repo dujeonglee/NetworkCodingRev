@@ -5,7 +5,10 @@ using namespace std;
 
 void ReliableRxCallback(unsigned char* buffer, unsigned int length, const sockaddr_in * const sender_addr, const u32 sender_addr_len)
 {
-	std::cout<<"Receive Pakcet: "<<length<<std::endl;
+    if(length == 1 && buffer[0] == 0xff)
+    {
+        std::cout<<"Done"<<std::endl;
+    }
 }
 
 int main(int argc, char *argv[])
@@ -45,7 +48,9 @@ int main(int argc, char *argv[])
 		{
 			socket.Send(inet_addr(remote_ip), htons(remote_port), buffer, readbytes);
 		}
-		socket.Flush(inet_addr(remote_ip), htons(remote_port));
+
+        buffer[0] = 0xff;
+        socket.Send(inet_addr(remote_ip), htons(remote_port), buffer, 1);
 		socket.WaitUntilTxIsCompleted(inet_addr(remote_ip), htons(remote_port));
     }
 	else

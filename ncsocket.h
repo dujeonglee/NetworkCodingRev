@@ -231,6 +231,7 @@ public:
         {
             return;
         }
+        m_Tx->Flush(ip, port);
         m_Tx->WaitUntilTxIsCompleted(ip, port);
     }
 };
