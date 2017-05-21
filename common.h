@@ -115,11 +115,11 @@ struct Pong : Common
 
 namespace Parameter
 {
-const u08 MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION = 3; /* 3 Blocks   */
+const u08 MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION = 8; /* 8 Blocks   */
 const u16 MAXIMUM_BUFFER_SIZE = 1500;                      /* 1500 Bytes */
 const u16 PING_INTERVAL = 500;                             /* 500 ms     */
 const double CONNECTION_TIMEOUT = 10.0;                    /* 10 s       */
-const u16 MINIMUM_RETRANSMISSION_INTERVAL = 0;             /* 0 ms       */
+const u16 MINIMUM_RETRANSMISSION_INTERVAL = 5;             /* 5 ms       */
 enum TRANSMISSION_MODE: u08
 {
     RELIABLE_TRANSMISSION_MODE = 0,
