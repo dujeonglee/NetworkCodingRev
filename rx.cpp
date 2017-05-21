@@ -326,7 +326,10 @@ bool ReceptionBlock::Decoding()
         if(!(reinterpret_cast<Header::Data*>(pkt)->m_Flags & Header::Data::DataHeaderFlag::FLAGS_CONSUMED))
         {
             while(c_Session->m_RxTaskQueue.Enqueue([this, pkt](){
-                c_Reception->m_RxCallback(pkt+sizeof(Header::Data)+reinterpret_cast<Header::Data*>(pkt)->m_MaximumRank-1, ntohs(reinterpret_cast<Header::Data*>(pkt)->m_PayloadSize), &c_Session->m_SenderAddress, sizeof(c_Session->m_SenderAddress));
+                if(c_Reception->m_RxCallback)
+                {
+                    c_Reception->m_RxCallback(pkt+sizeof(Header::Data)+reinterpret_cast<Header::Data*>(pkt)->m_MaximumRank-1, ntohs(reinterpret_cast<Header::Data*>(pkt)->m_PayloadSize), &c_Session->m_SenderAddress, sizeof(c_Session->m_SenderAddress));
+                }
                 delete [] pkt;
             })==false);
         }
@@ -395,7 +398,10 @@ void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const 
                         pkt = new u08[length];
                         memcpy(pkt, buffer, length);
                         while(c_Session->m_RxTaskQueue.Enqueue([this, pkt](){
-                            c_Reception->m_RxCallback(pkt+sizeof(Header::Data)+reinterpret_cast<Header::Data*>(pkt)->m_MaximumRank-1, ntohs(reinterpret_cast<Header::Data*>(pkt)->m_PayloadSize), &c_Session->m_SenderAddress, sizeof(c_Session->m_SenderAddress));
+                            if(c_Reception->m_RxCallback)
+                            {
+                                c_Reception->m_RxCallback(pkt+sizeof(Header::Data)+reinterpret_cast<Header::Data*>(pkt)->m_MaximumRank-1, ntohs(reinterpret_cast<Header::Data*>(pkt)->m_PayloadSize), &c_Session->m_SenderAddress, sizeof(c_Session->m_SenderAddress));
+                            }
                             delete [] pkt;
                         })==false);
                         reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer.back().get())->m_Flags |= Header::Data::DataHeaderFlag::FLAGS_CONSUMED;
@@ -468,7 +474,10 @@ void ReceptionBlock::Receive(u08 *buffer, u16 length, const sockaddr_in * const 
                                     pkt = new u08[ntohs(reinterpret_cast<Header::Data*>((*pp_block)->m_DecodedPacketBuffer[i].get())->m_TotalSize)];
                                     memcpy(pkt, (*pp_block)->m_DecodedPacketBuffer[i].get(), ntohs(reinterpret_cast<Header::Data*>((*pp_block)->m_DecodedPacketBuffer[i].get())->m_TotalSize));
                                     while(c_Session->m_RxTaskQueue.Enqueue([this, pkt](){
-                                        c_Reception->m_RxCallback(pkt+sizeof(Header::Data)+reinterpret_cast<Header::Data*>(pkt)->m_MaximumRank-1, ntohs(reinterpret_cast<Header::Data*>(pkt)->m_PayloadSize), &c_Session->m_SenderAddress, sizeof(c_Session->m_SenderAddress));
+                                        if(c_Reception->m_RxCallback)
+                                        {
+                                            c_Reception->m_RxCallback(pkt+sizeof(Header::Data)+reinterpret_cast<Header::Data*>(pkt)->m_MaximumRank-1, ntohs(reinterpret_cast<Header::Data*>(pkt)->m_PayloadSize), &c_Session->m_SenderAddress, sizeof(c_Session->m_SenderAddress));
+                                        }
                                         delete [] pkt;
                                     })==false);
                                     reinterpret_cast<Header::Data*>((*pp_block)->m_DecodedPacketBuffer[i].get())->m_Flags |= Header::Data::DataHeaderFlag::FLAGS_CONSUMED;
@@ -534,7 +543,10 @@ void ReceptionSession::Receive(u08* buffer, u16 length, const sockaddr_in * cons
                                 continue;
                             }
                             while(m_RxTaskQueue.Enqueue([this, pkt](){
-                                c_Reception->m_RxCallback(pkt+sizeof(Header::Data)+reinterpret_cast<Header::Data*>(pkt)->m_MaximumRank-1, ntohs(reinterpret_cast<Header::Data*>(pkt)->m_PayloadSize), &m_SenderAddress, sizeof(m_SenderAddress));
+                                if(c_Reception->m_RxCallback)
+                                {
+                                    c_Reception->m_RxCallback(pkt+sizeof(Header::Data)+reinterpret_cast<Header::Data*>(pkt)->m_MaximumRank-1, ntohs(reinterpret_cast<Header::Data*>(pkt)->m_PayloadSize), &m_SenderAddress, sizeof(m_SenderAddress));
+                                }
                                 delete [] pkt;
                             })==false);
                         }
