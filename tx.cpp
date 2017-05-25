@@ -197,7 +197,7 @@ void TransmissionBlock::Retransmission()
         RemedyHeader->m_Flags = Header::Data::FLAGS_END_OF_BLK;
         RemedyHeader->m_TxCount = ++m_TransmissionCount;
         for(u16 CodingOffset = Header::Data::OffSets::CodingOffset ;
-            CodingOffset < m_LargestOriginalPacketSize ;
+            CodingOffset < sizeof(Header::Data) + (m_BlockSize-1) + m_LargestOriginalPacketSize ;
             CodingOffset++)
         {
             m_RemedyPacketBuffer[CodingOffset] = 0;
