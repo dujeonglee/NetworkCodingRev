@@ -204,6 +204,11 @@ void TransmissionBlock::Retransmission()
             for(u08 PacketIndex = 0 ; PacketIndex < m_OriginalPacketBuffer.size() ; PacketIndex++)
             {
                 u08* OriginalBuffer = reinterpret_cast<u08*>(m_OriginalPacketBuffer[PacketIndex].get());
+                Header::Data* OriginalHeader = reinterpret_cast<Header::Data*>(OriginalBuffer);
+                if(CodingOffset >= ntohs(OriginalHeader->m_TotalSize))
+                {
+                    continue;
+                }
                 m_RemedyPacketBuffer[CodingOffset] ^= FiniteField::instance()->mul(OriginalBuffer[CodingOffset], RandomCoefficients[PacketIndex]);
             }
         }

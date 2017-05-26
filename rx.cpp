@@ -25,6 +25,11 @@ void PRINT(Header::Data* data)
         printf(" %3hhu ", data->m_Codes[i]);
     }
     printf("]\n");
+    for(unsigned long i = 0 ; i < ntohs(data->m_PayloadSize) ; i++)
+    {
+        std::cout<<(data->m_Codes+(data->m_MaximumRank-1))[i];
+    }
+    std::cout<<std::endl;
 }
 
 const u08 ReceptionBlock::FindMaximumRank(Header::Data* hdr)
@@ -303,7 +308,10 @@ bool ReceptionBlock::Decoding()
             tmp = 0;
             for(u08 i = 0 ; i < MAX_RANK ; i++)
             {
-                tmp ^= FiniteField::instance()->mul(m_DecodingMatrix[row].get()[i], m_DecodedPacketBuffer[i].get()[decodingposition]);
+                if(decodingposition < ntohs(reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[i].get())->m_TotalSize))
+                {
+                    tmp ^= FiniteField::instance()->mul(m_DecodingMatrix[row].get()[i], m_DecodedPacketBuffer[i].get()[decodingposition]);
+                }
             }
             DecodeOut.back().get()[decodingposition] = tmp;
         }
