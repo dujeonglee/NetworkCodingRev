@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
         NetworkCoding::NCSocket socket(htons(local_port), 500, 500, [&p_File, &rxsize](unsigned char* buffer, unsigned int length, const sockaddr_in * const sender_addr, const u32 sender_addr_len){
             if(p_File == nullptr)
             {
-                buffer[length] = '\n';
+                buffer[length] = 0;
                 p_File = fopen((char*)buffer, "w");
             }
             else if(length == 1 && buffer[0] == 0xff)
