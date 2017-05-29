@@ -187,6 +187,7 @@ void TransmissionBlock::Retransmission()
             }
         }
 
+        memset(m_RemedyPacketBuffer, 0x0, sizeof(m_RemedyPacketBuffer));
         RemedyHeader->m_Type = Header::Common::HeaderType::DATA;
         RemedyHeader->m_TotalSize = htons(sizeof(Header::Data) + (m_BlockSize-1) + m_LargestOriginalPacketSize);
         RemedyHeader->m_MinBlockSequenceNumber = htons(p_Session->m_MinBlockSequenceNumber.load());
@@ -196,19 +197,13 @@ void TransmissionBlock::Retransmission()
         RemedyHeader->m_MaximumRank = m_BlockSize;
         RemedyHeader->m_Flags = Header::Data::FLAGS_END_OF_BLK;
         RemedyHeader->m_TxCount = ++m_TransmissionCount;
-        for(u16 CodingOffset = Header::Data::OffSets::CodingOffset ;
-            CodingOffset < sizeof(Header::Data) + (m_BlockSize-1) + m_LargestOriginalPacketSize ;
-            CodingOffset++)
+        for(u08 PacketIndex = 0 ; PacketIndex < m_OriginalPacketBuffer.size() ; PacketIndex++)
         {
-            m_RemedyPacketBuffer[CodingOffset] = 0;
-            for(u08 PacketIndex = 0 ; PacketIndex < m_OriginalPacketBuffer.size() ; PacketIndex++)
+            u08* OriginalBuffer = reinterpret_cast<u08*>(m_OriginalPacketBuffer[PacketIndex].get());
+            Header::Data* OriginalHeader = reinterpret_cast<Header::Data*>(OriginalBuffer);
+            const u16 length = ntohs(OriginalHeader->m_TotalSize);
+            for(u16 CodingOffset = Header::Data::OffSets::CodingOffset ; CodingOffset < length ; CodingOffset++)
             {
-                u08* OriginalBuffer = reinterpret_cast<u08*>(m_OriginalPacketBuffer[PacketIndex].get());
-                Header::Data* OriginalHeader = reinterpret_cast<Header::Data*>(OriginalBuffer);
-                if(CodingOffset >= ntohs(OriginalHeader->m_TotalSize))
-                {
-                    continue;
-                }
                 m_RemedyPacketBuffer[CodingOffset] ^= FiniteField::instance()->mul(OriginalBuffer[CodingOffset], RandomCoefficients[PacketIndex]);
             }
         }
