@@ -1,7 +1,9 @@
 #include "finite_field.h"
 #include "common.h"
 
-SINGLETON_PATTERN_INITIALIZATION_CPP(FiniteField)
+FiniteField* FiniteField::_instance = new FiniteField;
+
+void FiniteField::init()
 {
     try
     {

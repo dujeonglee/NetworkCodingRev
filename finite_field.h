@@ -1,11 +1,22 @@
 #ifndef FINITE_FEILD
 #define FINITE_FEILD
-#include "design_pattern.h"
 #define INLINE_MUL_INV
 typedef unsigned char byte;
 
 class FiniteField{
-    SINGLETON_PATTERN_DECLARATION_H(FiniteField)
+private:
+    static FiniteField* _instance;
+    void init();
+    FiniteField()
+    {
+        init();
+    }
+    ~FiniteField(){}
+public:
+    static inline FiniteField* instance()
+    {
+        return _instance;
+    }
 private:
     /**
      * @brief _mul_table: multiplication lookup table
