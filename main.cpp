@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
         unsigned short local_port;
         char* remote_ip = nullptr;
         unsigned short remote_port;
-        unsigned char buffer[1024];
+        unsigned char buffer[1424];
         size_t readbytes;
         FILE* p_File = nullptr;
         std::cout<<"Send Mode"<<std::endl;
@@ -71,7 +71,9 @@ int main(int argc, char *argv[])
         }
 
         NetworkCoding::NCSocket socket(htons(local_port), 500, 500, nullptr);
-        while(false == socket.Connect(inet_addr(remote_ip), htons(remote_port), 1000, NetworkCoding::Parameter::RELIABLE_TRANSMISSION_MODE, NetworkCoding::Parameter::BLOCK_SIZE_16, (u16)0));
+        while(false == socket.Connect(inet_addr(remote_ip), htons(remote_port), 1000,
+                                      NetworkCoding::Parameter::RELIABLE_TRANSMISSION_MODE,
+                                      NetworkCoding::Parameter::BLOCK_SIZE_32, (u16)0));
         socket.Send(inet_addr(remote_ip), htons(remote_port), (unsigned char*)argv[4], strlen(argv[4]));
         while((readbytes = fread(buffer, 1, sizeof(buffer), p_File)) > 0)
         {
