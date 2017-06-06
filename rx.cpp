@@ -1,4 +1,5 @@
 #include "rx.h"
+#include "encoding_decoding_macro.h"
 #include <cstdlib>
 
 #define STRICTLY_ASCENDING_ORDER(a,b,c) ((u16)((u16)(c) - (u16)(a)) > (u16)((u16)(c) - (u16)(b)))
@@ -263,7 +264,6 @@ bool ReceptionBlock::Decoding()
     for(u08 row = 0 ; row < MAX_RANK ; row++)
     {
         Header::Data* const pkt = reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[row].get());
-        u08 tmp;
         if(pkt->m_Flags & Header::Data::DataHeaderFlag::FLAGS_ORIGINAL)
         {
             do
@@ -299,21 +299,72 @@ bool ReceptionBlock::Decoding()
             break;
         }while(1);
 
+        memset(DecodeOut.back().get(), 0x0, ntohs(pkt->m_TotalSize));
         for(u32 decodingposition = 0 ; decodingposition < Header::Data::CodingOffset ; decodingposition++)
         {
             DecodeOut.back().get()[decodingposition] = m_DecodedPacketBuffer[row].get()[decodingposition];
         }
-        for(u32 decodingposition = Header::Data::CodingOffset ; decodingposition < ntohs(pkt->m_TotalSize) ; decodingposition++)
+        for(u08 i = 0 ; i < MAX_RANK ; i++)
         {
-            tmp = 0;
-            for(u08 i = 0 ; i < MAX_RANK ; i++)
+            const u16 length = (ntohs(reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[i].get())->m_TotalSize) < ntohs(pkt->m_TotalSize)?
+                                    ntohs(reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[i].get())->m_TotalSize):
+                                    ntohs(pkt->m_TotalSize));
+#if 0
+            for(u32 decodingposition = Header::Data::CodingOffset ; decodingposition < length ; decodingposition++)
             {
-                if(decodingposition < ntohs(reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer[i].get())->m_TotalSize))
+                DecodeOut.back().get()[decodingposition] ^= FiniteField::instance()->mul(m_DecodingMatrix[row].get()[i], m_DecodedPacketBuffer[i].get()[decodingposition]);
+            }
+#else
+            u32 decodingposition = Header::Data::CodingOffset;
+            while(decodingposition < length)
+            {
+                if(length - decodingposition > 1024)
                 {
-                    tmp ^= FiniteField::instance()->mul(m_DecodingMatrix[row].get()[i], m_DecodedPacketBuffer[i].get()[decodingposition]);
+                    Decoding1024(DecodeOut.back().get(), m_DecodedPacketBuffer, m_DecodingMatrix, decodingposition, i, row);
+                }
+                else if(length - decodingposition > 512)
+                {
+                    Decoding512(DecodeOut.back().get(), m_DecodedPacketBuffer, m_DecodingMatrix, decodingposition, i, row);
+                }
+                else if(length - decodingposition > 256)
+                {
+                    Decoding256(DecodeOut.back().get(), m_DecodedPacketBuffer, m_DecodingMatrix, decodingposition, i, row);
+                }
+                else if(length - decodingposition > 128)
+                {
+                    Decoding128(DecodeOut.back().get(), m_DecodedPacketBuffer, m_DecodingMatrix, decodingposition, i, row);
+                }
+                else if(length - decodingposition > 64)
+                {
+                    Decoding64(DecodeOut.back().get(), m_DecodedPacketBuffer, m_DecodingMatrix, decodingposition, i, row);
+                }
+                else if(length - decodingposition > 32)
+                {
+                    Decoding32(DecodeOut.back().get(), m_DecodedPacketBuffer, m_DecodingMatrix, decodingposition, i, row);
+                }
+                else if(length - decodingposition > 16)
+                {
+                    Decoding16(DecodeOut.back().get(), m_DecodedPacketBuffer, m_DecodingMatrix, decodingposition, i, row);
+                }
+                else if(length - decodingposition > 8)
+                {
+                    Decoding8(DecodeOut.back().get(), m_DecodedPacketBuffer, m_DecodingMatrix, decodingposition, i, row);
+                }
+                else if(length - decodingposition > 4)
+                {
+                    Decoding4(DecodeOut.back().get(), m_DecodedPacketBuffer, m_DecodingMatrix, decodingposition, i, row);
+                }
+                else if(length - decodingposition > 2)
+                {
+                    Decoding2(DecodeOut.back().get(), m_DecodedPacketBuffer, m_DecodingMatrix, decodingposition, i, row);
+                }
+                else
+                {
+                    DecodeOut.back().get()[decodingposition] ^= FiniteField::instance()->mul(m_DecodingMatrix[row].get()[i], m_DecodedPacketBuffer[i].get()[decodingposition]);
+                    decodingposition++;
                 }
             }
-            DecodeOut.back().get()[decodingposition] = tmp;
+#endif
         }
         if(reinterpret_cast<Header::Data*>(DecodeOut.back().get())->m_Codes[row] != 1)
         {
