@@ -1,4 +1,5 @@
 #include "tx.h"
+#include "encoding_decoding_macro.h"
 
 using namespace NetworkCoding;
 
@@ -202,10 +203,62 @@ void TransmissionBlock::Retransmission()
             u08* OriginalBuffer = reinterpret_cast<u08*>(m_OriginalPacketBuffer[PacketIndex].get());
             Header::Data* OriginalHeader = reinterpret_cast<Header::Data*>(OriginalBuffer);
             const u16 length = ntohs(OriginalHeader->m_TotalSize);
+#if 0
             for(u16 CodingOffset = Header::Data::OffSets::CodingOffset ; CodingOffset < length ; CodingOffset++)
             {
                 m_RemedyPacketBuffer[CodingOffset] ^= FiniteField::instance()->mul(OriginalBuffer[CodingOffset], RandomCoefficients[PacketIndex]);
             }
+#else
+            u16 CodingOffset = Header::Data::OffSets::CodingOffset;
+            while(CodingOffset < length)
+            {
+                if(length - CodingOffset > 1024)
+                {
+                    Encoding1024(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
+                }
+                else if(length - CodingOffset > 512)
+                {
+                    Encoding512(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
+                }
+                else if(length - CodingOffset > 256)
+                {
+                    Encoding256(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
+                }
+                else if(length - CodingOffset > 128)
+                {
+                    Encoding128(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
+                }
+                else if(length - CodingOffset > 64)
+                {
+                    Encoding64(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
+                }
+                else if(length - CodingOffset > 32)
+                {
+                    Encoding32(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
+                }
+                else if(length - CodingOffset > 16)
+                {
+                    Encoding16(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
+                }
+                else if(length - CodingOffset > 8)
+                {
+                    Encoding8(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
+                }
+                else if(length - CodingOffset > 4)
+                {
+                    Encoding4(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
+                }
+                else if(length - CodingOffset > 2)
+                {
+                    Encoding2(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
+                }
+                else
+                {
+                    m_RemedyPacketBuffer[CodingOffset] ^= FiniteField::instance()->mul(OriginalBuffer[CodingOffset], RandomCoefficients[PacketIndex]);
+                    CodingOffset++;
+                }
+            }
+#endif
         }
         sendto(p_Session->c_Socket, m_RemedyPacketBuffer, ntohs(RemedyHeader->m_TotalSize), 0, (sockaddr*)&RemoteAddress, sizeof(RemoteAddress));
     }
