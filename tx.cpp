@@ -212,7 +212,7 @@ void TransmissionBlock::Retransmission()
             u16 CodingOffset = Header::Data::OffSets::CodingOffset;
             while(CodingOffset < length)
             {
-                if(length - CodingOffset > 1024)
+                /*if(length - CodingOffset > 1024)
                 {
                     Encoding1024(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
                 }
@@ -224,7 +224,7 @@ void TransmissionBlock::Retransmission()
                 {
                     Encoding256(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
                 }
-                else if(length - CodingOffset > 128)
+                else */if(length - CodingOffset > 128)
                 {
                     Encoding128(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
                 }
@@ -254,8 +254,10 @@ void TransmissionBlock::Retransmission()
                 }
                 else
                 {
-                    m_RemedyPacketBuffer[CodingOffset] ^= FiniteField::instance()->mul(OriginalBuffer[CodingOffset], RandomCoefficients[PacketIndex]);
-                    CodingOffset++;
+                    for(; CodingOffset < length ; CodingOffset++)
+                    {
+                        m_RemedyPacketBuffer[CodingOffset] ^= FiniteField::instance()->mul(OriginalBuffer[CodingOffset], RandomCoefficients[PacketIndex]);
+                    }
                 }
             }
 #endif

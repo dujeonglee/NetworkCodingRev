@@ -318,7 +318,7 @@ bool ReceptionBlock::Decoding()
             u32 decodingposition = Header::Data::CodingOffset;
             while(decodingposition < length)
             {
-                if(length - decodingposition > 1024)
+                /*if(length - decodingposition > 1024)
                 {
                     Decoding1024(DecodeOut.back().get(), m_DecodedPacketBuffer, m_DecodingMatrix, decodingposition, i, row);
                 }
@@ -330,7 +330,7 @@ bool ReceptionBlock::Decoding()
                 {
                     Decoding256(DecodeOut.back().get(), m_DecodedPacketBuffer, m_DecodingMatrix, decodingposition, i, row);
                 }
-                else if(length - decodingposition > 128)
+                else */if(length - decodingposition > 128)
                 {
                     Decoding128(DecodeOut.back().get(), m_DecodedPacketBuffer, m_DecodingMatrix, decodingposition, i, row);
                 }
@@ -360,8 +360,10 @@ bool ReceptionBlock::Decoding()
                 }
                 else
                 {
-                    DecodeOut.back().get()[decodingposition] ^= FiniteField::instance()->mul(m_DecodingMatrix[row].get()[i], m_DecodedPacketBuffer[i].get()[decodingposition]);
-                    decodingposition++;
+                    for(; decodingposition < length ; decodingposition++)
+                    {
+                        DecodeOut.back().get()[decodingposition] ^= FiniteField::instance()->mul(m_DecodingMatrix[row].get()[i], m_DecodedPacketBuffer[i].get()[decodingposition]);
+                    }
                 }
             }
 #endif
