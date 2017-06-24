@@ -98,19 +98,19 @@ public:
 #endif
             NCSocket const * self = this;
             m_RxThread = new std::thread([self, RXTIMEOUT](){
+                fd_set ReadFD;
+                FD_ZERO(&ReadFD);
+                FD_SET(self->m_Socket, &ReadFD);
+                const int MaxFD = self->m_Socket;
+                timeval rx_to = {RXTIMEOUT/1000, (RXTIMEOUT%1000)*1000};
                 u08 rxbuffer[Parameter::MAXIMUM_BUFFER_SIZE];
                 while(self->m_RxThreadIsRunning)
                 {
-                    sockaddr_in sender_addr = {0,};
-                    socklen_t sender_addr_length = sizeof(sockaddr_in);
-                    fd_set ReadFD;
-                    FD_ZERO(&ReadFD);
-                    FD_SET(self->m_Socket, &ReadFD);
-                    const int MaxFD = self->m_Socket;
-                    timeval rx_to = {RXTIMEOUT/1000, (RXTIMEOUT%1000)*1000};
                     const int state = select(MaxFD + 1 , &ReadFD, NULL, NULL, &rx_to);
                     if(state == 1 && FD_ISSET(self->m_Socket, &ReadFD))
                     {
+                        sockaddr_in sender_addr = {0,};
+                        socklen_t sender_addr_length = sizeof(sockaddr_in);
                         const int ret = recvfrom(self->m_Socket, rxbuffer, sizeof(rxbuffer), 0, (sockaddr*)&sender_addr, &sender_addr_length);
                         if(ret <= 0)
                         {
