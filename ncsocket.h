@@ -106,8 +106,9 @@ public:
                 u08 rxbuffer[Parameter::MAXIMUM_BUFFER_SIZE];
                 while(self->m_RxThreadIsRunning)
                 {
-                    const int state = select(MaxFD + 1 , &ReadFD, NULL, NULL, &rx_to);
-                    if(state == 1 && FD_ISSET(self->m_Socket, &ReadFD))
+                    fd_set AllFD = ReadFD;
+                    const int state = select(MaxFD + 1 , &AllFD, NULL, NULL, &rx_to);
+                    if(state == 1 && FD_ISSET(self->m_Socket, &AllFD))
                     {
                         sockaddr_in sender_addr = {0,};
                         socklen_t sender_addr_length = sizeof(sockaddr_in);
