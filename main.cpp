@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
         std::cout<<"Recv Mode"<<std::endl;
         sscanf(argv[1], "%hu", &local_port);
 
-        NetworkCoding::NCSocket socket(htons(local_port), 500, 500, [&p_File, &rxsize](unsigned char* buffer, unsigned int length, const sockaddr_in * const sender_addr, const u32 sender_addr_len){
+        NetworkCoding::NCSocket socket(local_port, 500, 500, [&p_File, &rxsize](unsigned char* buffer, unsigned int length, const sockaddr* const sender_addr, const uint32_t sender_addr_len){
             if(p_File == nullptr)
             {
                 buffer[length] = 0;
@@ -70,19 +70,19 @@ int main(int argc, char *argv[])
             return -1;
         }
 
-        NetworkCoding::NCSocket socket(htons(local_port), 500, 500, nullptr);
-        while(false == socket.Connect(inet_addr(remote_ip), htons(remote_port), 1000,
+        NetworkCoding::NCSocket socket(local_port, 500, 500, nullptr);
+        while(false == socket.Connect(std::string(remote_ip), std::to_string(remote_port), 1000,
                                       NetworkCoding::Parameter::RELIABLE_TRANSMISSION_MODE,
-                                      NetworkCoding::Parameter::BLOCK_SIZE_32, (u16)0));
-        socket.Send(inet_addr(remote_ip), htons(remote_port), (unsigned char*)argv[4], strlen(argv[4]));
+                                      NetworkCoding::Parameter::BLOCK_SIZE_32, (uint16_t)0));
+        socket.Send(std::string(remote_ip), std::to_string(remote_port), (unsigned char*)argv[4], strlen(argv[4]));
         while((readbytes = fread(buffer, 1, sizeof(buffer), p_File)) > 0)
         {
-            socket.Send(inet_addr(remote_ip), htons(remote_port), buffer, readbytes);
+            socket.Send(std::string(remote_ip), std::to_string(remote_port), buffer, readbytes);
         }
 
         buffer[0] = 0xff;
-        socket.Send(inet_addr(remote_ip), htons(remote_port), buffer, 1);
-        socket.WaitUntilTxIsCompleted(inet_addr(remote_ip), htons(remote_port));
+        socket.Send(std::string(remote_ip), std::to_string(remote_port), buffer, 1);
+        socket.WaitUntilTxIsCompleted(std::string(remote_ip), std::to_string(remote_port));
         fclose(p_File);
     }
     else
