@@ -29,12 +29,12 @@ TransmissionBlock::~TransmissionBlock()
 }
 
 
-const u16 TransmissionBlock::AckIndex()
+const uint16_t TransmissionBlock::AckIndex()
 {
     return m_BlockSequenceNumber%(Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION*2);
 }
 
-bool TransmissionBlock::Send(u08* buffer, u16 buffersize)
+bool TransmissionBlock::Send(uint8_t* buffer, uint16_t buffersize)
 {
     if(p_Session->m_IsConnected == false)
     {
@@ -47,7 +47,7 @@ bool TransmissionBlock::Send(u08* buffer, u16 buffersize)
 #if ENABLE_CRITICAL_EXCEPTIONS
         TEST_EXCEPTION(std::bad_alloc());
 #endif
-        m_OriginalPacketBuffer.emplace_back(std::unique_ptr<u08[]>(new u08[sizeof(Header::Data) + (m_BlockSize - 1) + buffersize]));
+        m_OriginalPacketBuffer.emplace_back(std::unique_ptr<uint8_t[]>(new uint8_t[sizeof(Header::Data) + (m_BlockSize - 1) + buffersize]));
     }
     catch(const std::bad_alloc& ex)
     {
@@ -77,7 +77,7 @@ bool TransmissionBlock::Send(u08* buffer, u16 buffersize)
         m_LargestOriginalPacketSize = buffersize;
     }
     DataHeader->m_LastIndicator = 1;/* This field is reserved to support fragmentation */
-    for(u08 i = 0 ; i < m_BlockSize ; i++)
+    for(uint8_t i = 0 ; i < m_BlockSize ; i++)
     {
         if(i != m_TransmissionCount)
         {
@@ -89,11 +89,7 @@ bool TransmissionBlock::Send(u08* buffer, u16 buffersize)
         }
     }
     memcpy(DataHeader->m_Codes + m_BlockSize, buffer, buffersize);
-    sockaddr_in RemoteAddress = {0};
-    RemoteAddress.sin_family = AF_INET;
-    RemoteAddress.sin_addr.s_addr = p_Session->c_IPv4;
-    RemoteAddress.sin_port = p_Session->c_Port;
-    sendto(p_Session->c_Socket, m_OriginalPacketBuffer[m_TransmissionCount++].get(), ntohs(DataHeader->m_TotalSize), 0, (sockaddr*)&RemoteAddress, sizeof(RemoteAddress));
+    sendto(p_Session->c_Socket, m_OriginalPacketBuffer[m_TransmissionCount++].get(), ntohs(DataHeader->m_TotalSize), 0, (sockaddr*)&p_Session->c_Addr.Addr, p_Session->c_Addr.AddrLength);
 
     if((m_TransmissionCount == m_BlockSize)/* || reqack == true*/)
     {
@@ -110,7 +106,7 @@ bool TransmissionBlock::Send(u08* buffer, u16 buffersize)
 
 void TransmissionBlock::Retransmission()
 {
-    const u08 c_AckIndex = AckIndex();
+    const uint8_t c_AckIndex = AckIndex();
     if(m_TransmissionMode == Parameter::BEST_EFFORT_TRANSMISSION_MODE)
     {
         if(m_TransmissionCount >= m_OriginalPacketBuffer.size() + m_RetransmissionRedundancy)
@@ -120,7 +116,7 @@ void TransmissionBlock::Retransmission()
     }
     if(p_Session->m_AckList[c_AckIndex] == true)
     {
-        for(u16 i = p_Session->m_MinBlockSequenceNumber ; i != p_Session->m_MaxBlockSequenceNumber ; i++)
+        for(uint16_t i = p_Session->m_MinBlockSequenceNumber ; i != p_Session->m_MaxBlockSequenceNumber ; i++)
         {
             if(p_Session->m_AckList[i%(Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION*2)] == true)
             {
@@ -139,13 +135,8 @@ void TransmissionBlock::Retransmission()
         delete this;
         return;
     }
-    sockaddr_in RemoteAddress = {0};
-    RemoteAddress.sin_family = AF_INET;
-    RemoteAddress.sin_addr.s_addr = p_Session->c_IPv4;
-    RemoteAddress.sin_port = p_Session->c_Port;
-
     {
-        std::vector<u08> RandomCoefficients;
+        std::vector<uint8_t> RandomCoefficients;
         Header::Data* RemedyHeader = reinterpret_cast<Header::Data*>(m_RemedyPacketBuffer);
         if(m_OriginalPacketBuffer.size() == 1)
         {
@@ -168,7 +159,7 @@ void TransmissionBlock::Retransmission()
         }
         else
         {
-            for(u08 Coef = 0 ; Coef < m_OriginalPacketBuffer.size() ; Coef++)
+            for(uint8_t Coef = 0 ; Coef < m_OriginalPacketBuffer.size() ; Coef++)
             {
                 do
                 {
@@ -198,18 +189,18 @@ void TransmissionBlock::Retransmission()
         RemedyHeader->m_MaximumRank = m_BlockSize;
         RemedyHeader->m_Flags = Header::Data::FLAGS_END_OF_BLK;
         RemedyHeader->m_TxCount = ++m_TransmissionCount;
-        for(u08 PacketIndex = 0 ; PacketIndex < m_OriginalPacketBuffer.size() ; PacketIndex++)
+        for(uint8_t PacketIndex = 0 ; PacketIndex < m_OriginalPacketBuffer.size() ; PacketIndex++)
         {
-            u08* OriginalBuffer = reinterpret_cast<u08*>(m_OriginalPacketBuffer[PacketIndex].get());
+            uint8_t* OriginalBuffer = reinterpret_cast<uint8_t*>(m_OriginalPacketBuffer[PacketIndex].get());
             Header::Data* OriginalHeader = reinterpret_cast<Header::Data*>(OriginalBuffer);
-            const u16 length = ntohs(OriginalHeader->m_TotalSize);
+            const uint16_t length = ntohs(OriginalHeader->m_TotalSize);
 #if 0
-            for(u16 CodingOffset = Header::Data::OffSets::CodingOffset ; CodingOffset < length ; CodingOffset++)
+            for(uint16_t CodingOffset = Header::Data::OffSets::CodingOffset ; CodingOffset < length ; CodingOffset++)
             {
                 m_RemedyPacketBuffer[CodingOffset] ^= FiniteField::instance()->mul(OriginalBuffer[CodingOffset], RandomCoefficients[PacketIndex]);
             }
 #else
-            u16 CodingOffset = Header::Data::OffSets::CodingOffset;
+            uint16_t CodingOffset = Header::Data::OffSets::CodingOffset;
             while(CodingOffset < length)
             {
                 /*if(length - CodingOffset > 1024)
@@ -262,7 +253,7 @@ void TransmissionBlock::Retransmission()
             }
 #endif
         }
-        sendto(p_Session->c_Socket, m_RemedyPacketBuffer, ntohs(RemedyHeader->m_TotalSize), 0, (sockaddr*)&RemoteAddress, sizeof(RemoteAddress));
+        sendto(p_Session->c_Socket, m_RemedyPacketBuffer, ntohs(RemedyHeader->m_TotalSize), 0, (sockaddr*)&p_Session->c_Addr.Addr, p_Session->c_Addr.AddrLength);
     }
     while(p_Session->m_IsConnected && p_Session->m_Timer.ScheduleTask(p_Session->m_RetransmissionInterval, [this](){
         const auto Priority = (p_Session->m_MinBlockSequenceNumber == m_BlockSequenceNumber?TransmissionSession::MIDDLE_PRIORITY:TransmissionSession::LOW_PRIORITY);
@@ -275,7 +266,7 @@ void TransmissionBlock::Retransmission()
 ////////////////////////////////////////////////////////////
 /////////////// TransmissionSession
 /*OK*/
-TransmissionSession::TransmissionSession(Transmission* const transmission, s32 Socket, u32 IPv4, u16 Port, Parameter::TRANSMISSION_MODE TransmissionMode, Parameter::BLOCK_SIZE BlockSize, u16 RetransmissionRedundancy): c_Transmission(transmission), c_Socket(Socket),c_IPv4(IPv4), c_Port(Port)
+TransmissionSession::TransmissionSession(Transmission* const transmission, int32_t Socket, const DataStructures::AddressType Addr, Parameter::TRANSMISSION_MODE TransmissionMode, Parameter::BLOCK_SIZE BlockSize, uint16_t RetransmissionRedundancy): c_Transmission(transmission), c_Socket(Socket), c_Addr(Addr)
 {
     m_TransmissionMode = TransmissionMode;
     m_BlockSize = BlockSize;
@@ -284,11 +275,12 @@ TransmissionSession::TransmissionSession(Transmission* const transmission, s32 S
     m_MinBlockSequenceNumber = 0;
     m_MaxBlockSequenceNumber = 0;
     p_TransmissionBlock = nullptr;
-    for(u32 i = 0 ; i < (Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION*2) ; i++)
+    for(uint32_t i = 0 ; i < (Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION*2) ; i++)
     {
         m_AckList[i] = true;
     }
     m_ConcurrentRetransmissions = 0;
+    m_IsConnected = false;
 }
 
 
@@ -318,7 +310,7 @@ void TransmissionSession::ChangeBlockSize(const Parameter::BLOCK_SIZE BlockSize)
 }
 
 /*OK*/
-void TransmissionSession::ChangeRetransmissionRedundancy(const u16 RetransmissionRedundancy)
+void TransmissionSession::ChangeRetransmissionRedundancy(const uint16_t RetransmissionRedundancy)
 {
     m_TaskQueue.Enqueue([this, RetransmissionRedundancy]()
     {
@@ -327,7 +319,7 @@ void TransmissionSession::ChangeRetransmissionRedundancy(const u16 Retransmissio
 }
 
 /*OK*/
-void TransmissionSession::ChangeSessionParameter(const Parameter::TRANSMISSION_MODE TransmissionMode, const Parameter::BLOCK_SIZE BlockSize, const u16 RetransmissionRedundancy)
+void TransmissionSession::ChangeSessionParameter(const Parameter::TRANSMISSION_MODE TransmissionMode, const Parameter::BLOCK_SIZE BlockSize, const uint16_t RetransmissionRedundancy)
 {
     m_TaskQueue.Enqueue([this, TransmissionMode, BlockSize, RetransmissionRedundancy]()
     {
@@ -351,17 +343,13 @@ void TransmissionSession::SendPing()
         TransmissionSession const * self = this;
         std::cout<<"Pong Timeout...Client is disconnected.["<<TimeSinceLastPongTime.count()<<"]"<<std::endl;
         std::thread DisconnectThread = std::thread([self](){
-            self->c_Transmission->Disconnect(self->c_IPv4, self->c_Port);
+            //self->c_Transmission->Disconnect(self->c_IPv4, self->c_Port);
         });
         DisconnectThread.detach();
         return;
     }
 
-    sockaddr_in RemoteAddress = {0};
-    RemoteAddress.sin_family = AF_INET;
-    RemoteAddress.sin_addr.s_addr = c_IPv4;
-    RemoteAddress.sin_port = c_Port;
-    sendto(c_Socket, reinterpret_cast<u08*>(&ping), sizeof(Header::Ping), 0, (sockaddr*)&RemoteAddress, sizeof(RemoteAddress));
+    sendto(c_Socket, reinterpret_cast<uint8_t*>(&ping), sizeof(Header::Ping), 0, (sockaddr*)&c_Addr.Addr, c_Addr.AddrLength);
     while(m_IsConnected && m_Timer.ScheduleTask(Parameter::PING_INTERVAL, [this](){
         while(m_IsConnected && m_TaskQueue.Enqueue([this](){
             SendPing();
@@ -369,7 +357,7 @@ void TransmissionSession::SendPing()
     })==false);
 }
 
-void TransmissionSession::UpdateRetransmissionInterval(const u16 rtt)
+void TransmissionSession::UpdateRetransmissionInterval(const uint16_t rtt)
 {
     m_TaskQueue.Enqueue([this, rtt]()
     {
@@ -380,7 +368,7 @@ void TransmissionSession::UpdateRetransmissionInterval(const u16 rtt)
 ////////////////////////////////////////////////////////////
 /////////////// Transmission
 /* OK */
-Transmission::Transmission(s32 Socket) : c_Socket(Socket){}
+Transmission::Transmission(int32_t Socket) : c_Socket(Socket){}
 
 /* OK */
 Transmission::~Transmission()
@@ -390,12 +378,12 @@ Transmission::~Transmission()
 }
 
 /* OK */
-bool Transmission::Connect(u32 IPv4, u16 Port, u32 ConnectionTimeout, Parameter::TRANSMISSION_MODE TransmissionMode, Parameter::BLOCK_SIZE BlockSize, u16 RetransmissionRedundancy)
+bool Transmission::Connect(const DataStructures::AddressType Addr, uint32_t ConnectionTimeout, Parameter::TRANSMISSION_MODE TransmissionMode, Parameter::BLOCK_SIZE BlockSize, uint16_t RetransmissionRedundancy)
 {
     TransmissionSession* newsession = nullptr;
     {
         std::unique_lock< std::mutex > lock(m_Lock);
-        const DataStructures::IPv4PortKey key = {IPv4, Port};
+        const DataStructures::SessionKey key = DataStructures::GetSessionKey((sockaddr*)&Addr.Addr, Addr.AddrLength);
         TransmissionSession** const session = m_Sessions.GetPtr(key);
         if(session != nullptr)
         {
@@ -406,7 +394,7 @@ bool Transmission::Connect(u32 IPv4, u16 Port, u32 ConnectionTimeout, Parameter:
             try
             {
                 TEST_EXCEPTION(std::bad_alloc());
-                newsession = new TransmissionSession(this, c_Socket, IPv4, Port, TransmissionMode, BlockSize, RetransmissionRedundancy);
+                newsession = new TransmissionSession(this, c_Socket, Addr, TransmissionMode, BlockSize, RetransmissionRedundancy);
             }
             catch(const std::bad_alloc& ex)
             {
@@ -429,11 +417,7 @@ bool Transmission::Connect(u32 IPv4, u16 Port, u32 ConnectionTimeout, Parameter:
     SyncPacket.m_Type = Header::Common::HeaderType::SYNC;
     SyncPacket.m_Sequence = htons(newsession->m_MaxBlockSequenceNumber);
 
-    sockaddr_in RemoteAddress = {0};
-    RemoteAddress.sin_family = AF_INET;
-    RemoteAddress.sin_addr.s_addr = newsession->c_IPv4;
-    RemoteAddress.sin_port = newsession->c_Port;
-    if(sendto(c_Socket, (u08*)&SyncPacket, sizeof(SyncPacket), 0, (sockaddr*)&RemoteAddress, sizeof(RemoteAddress)) != sizeof(SyncPacket))
+    if(sendto(c_Socket, (uint8_t*)&SyncPacket, sizeof(SyncPacket), 0, (sockaddr*)(&newsession->c_Addr.Addr), newsession->c_Addr.AddrLength) != sizeof(SyncPacket))
     {
         return false;
     }
@@ -456,12 +440,12 @@ bool Transmission::Connect(u32 IPv4, u16 Port, u32 ConnectionTimeout, Parameter:
 }
 
 /* OK */
-bool Transmission::Send(u32 IPv4, u16 Port, u08* buffer, u16 buffersize)
+bool Transmission::Send(const DataStructures::AddressType Addr, uint8_t* buffer, uint16_t buffersize)
 {
     TransmissionSession* p_session = nullptr;
     {
         std::unique_lock< std::mutex > lock(m_Lock);
-        const DataStructures::IPv4PortKey key = {IPv4, Port};
+        const DataStructures::SessionKey key = DataStructures::GetSessionKey((sockaddr*)&Addr.Addr, Addr.AddrLength);
         TransmissionSession** const pp_session = m_Sessions.GetPtr(key);
         if(pp_session)
         {
@@ -480,7 +464,7 @@ bool Transmission::Send(u32 IPv4, u16 Port, u08* buffer, u16 buffersize)
     std::atomic<bool> TransmissionIsCompleted(false);
     std::atomic<bool> TransmissionResult(false);
     while(p_session->m_ConcurrentRetransmissions >= Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION ||
-          (u16)(p_session->m_MaxBlockSequenceNumber - p_session->m_MinBlockSequenceNumber) >= (u16)Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION)
+          (uint16_t)(p_session->m_MaxBlockSequenceNumber - p_session->m_MinBlockSequenceNumber) >= (uint16_t)Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION)
     {
         if(!p_session->m_IsConnected)
         {
@@ -531,12 +515,12 @@ bool Transmission::Send(u32 IPv4, u16 Port, u08* buffer, u16 buffersize)
     return TransmissionResult;
 }
 
-bool Transmission::Flush(u32 IPv4, u16 Port)
+bool Transmission::Flush(const DataStructures::AddressType Addr)
 {
     TransmissionSession* p_session = nullptr;
     {
         std::unique_lock< std::mutex > lock(m_Lock);
-        const DataStructures::IPv4PortKey key = {IPv4, Port};
+        const DataStructures::SessionKey key = DataStructures::GetSessionKey((sockaddr*)&Addr.Addr, Addr.AddrLength);
         TransmissionSession** const pp_session = m_Sessions.GetPtr(key);
         if(pp_session)
         {
@@ -561,12 +545,12 @@ bool Transmission::Flush(u32 IPv4, u16 Port)
     }, TransmissionSession::LOW_PRIORITY);
 }
 
-void Transmission::WaitUntilTxIsCompleted(u32 IPv4, u16 Port)
+void Transmission::WaitUntilTxIsCompleted(const DataStructures::AddressType Addr)
 {
     TransmissionSession* p_session = nullptr;
     {
         std::unique_lock< std::mutex > lock(m_Lock);
-        const DataStructures::IPv4PortKey key = {IPv4, Port};
+        const DataStructures::SessionKey key = DataStructures::GetSessionKey((sockaddr*)&Addr.Addr, Addr.AddrLength);
         TransmissionSession** const pp_session = m_Sessions.GetPtr(key);
         if(pp_session)
         {
@@ -587,9 +571,9 @@ void Transmission::WaitUntilTxIsCompleted(u32 IPv4, u16 Port)
 	}
 }
 
-bool Transmission::Disconnect(u32 IPv4, u16 Port)
+bool Transmission::Disconnect(const DataStructures::AddressType Addr)
 {
-    const DataStructures::IPv4PortKey key = {IPv4, Port};
+    const DataStructures::SessionKey key = DataStructures::GetSessionKey((sockaddr*)&Addr.Addr, Addr.AddrLength);
     TransmissionSession** pp_session = nullptr;
     {
         std::unique_lock< std::mutex > lock(m_Lock);
@@ -617,7 +601,7 @@ bool Transmission::Disconnect(u32 IPv4, u16 Port)
 }
 
 /* OK */
-void Transmission::RxHandler(u08* buffer, u16 size, const sockaddr_in * const sender_addr, const u32 sender_addr_len)
+void Transmission::RxHandler(uint8_t* buffer, uint16_t size, const sockaddr* const sender_addr, const uint32_t sender_addr_len)
 {
     Header::Common* CommonHeader = reinterpret_cast< Header::Common* >(buffer);
     switch(CommonHeader->m_Type)
@@ -625,14 +609,14 @@ void Transmission::RxHandler(u08* buffer, u16 size, const sockaddr_in * const se
         case Header::Common::HeaderType::DATA_ACK:
         {
             const Header::DataAck* Ack = reinterpret_cast< Header::DataAck* >(buffer);
-            const DataStructures::IPv4PortKey key = {sender_addr->sin_addr.s_addr, sender_addr->sin_port};
+            const DataStructures::SessionKey key = DataStructures::GetSessionKey(sender_addr, sender_addr_len);
             std::unique_lock< std::mutex > lock(m_Lock);
             TransmissionSession** const pp_session = m_Sessions.GetPtr(key);
             if(pp_session)
             {
                 TransmissionSession* const SessionAddress = (*pp_session);
-                u16 Sequence = ntohs(Ack->m_Sequence);
-                u08 Loss = Ack->m_Losses;
+                uint16_t Sequence = ntohs(Ack->m_Sequence);
+                uint8_t Loss = Ack->m_Losses;
                 (*pp_session)->m_TaskQueue.Enqueue([SessionAddress,Sequence,Loss](){
                     if(SessionAddress->m_AckList[Sequence%(Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION*2)] == true)
                     {
@@ -649,7 +633,7 @@ void Transmission::RxHandler(u08* buffer, u16 size, const sockaddr_in * const se
         case Header::Common::HeaderType::SYNC_ACK:
         {
             const Header::Sync* sync = reinterpret_cast< Header::Sync* >(buffer);
-            const DataStructures::IPv4PortKey key = {sender_addr->sin_addr.s_addr, sender_addr->sin_port};
+            const DataStructures::SessionKey key = DataStructures::GetSessionKey(sender_addr, sender_addr_len);
             std::unique_lock< std::mutex > lock(m_Lock);
             TransmissionSession** const pp_session = m_Sessions.GetPtr(key);
             if(pp_session)
@@ -665,7 +649,7 @@ void Transmission::RxHandler(u08* buffer, u16 size, const sockaddr_in * const se
         case Header::Common::PONG:
         {
             const Header::Pong* pong = reinterpret_cast< Header::Pong* >(buffer);
-            const DataStructures::IPv4PortKey key = {sender_addr->sin_addr.s_addr, sender_addr->sin_port};
+            const DataStructures::SessionKey key = DataStructures::GetSessionKey(sender_addr, sender_addr_len);
             std::unique_lock< std::mutex > lock(m_Lock);
             TransmissionSession** const pp_session = m_Sessions.GetPtr(key);
             if(pp_session)
@@ -680,7 +664,7 @@ void Transmission::RxHandler(u08* buffer, u16 size, const sockaddr_in * const se
                 }
                 else
                 {
-                    (*pp_session)->UpdateRetransmissionInterval((u16)(rtt.count()*1000.));
+                    (*pp_session)->UpdateRetransmissionInterval((uint16_t)(rtt.count()*1000.));
                 }
             }
         }
