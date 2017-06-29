@@ -13,15 +13,15 @@ class TransmissionBlock
 {
 public:
     TransmissionSession* const p_Session;
-    const u08 m_BlockSize;
-    const u08 m_TransmissionMode;
-    const u16 m_BlockSequenceNumber;
-    const u16 m_RetransmissionRedundancy;
-    u16 m_LargestOriginalPacketSize;
-    u08 m_TransmissionCount;
+    const uint8_t m_BlockSize;
+    const uint8_t m_TransmissionMode;
+    const uint16_t m_BlockSequenceNumber;
+    const uint16_t m_RetransmissionRedundancy;
+    uint16_t m_LargestOriginalPacketSize;
+    uint8_t m_TransmissionCount;
 
-    u08 m_RemedyPacketBuffer[Parameter::MAXIMUM_BUFFER_SIZE];
-    std::vector< std::unique_ptr< u08[] > > m_OriginalPacketBuffer;
+    uint8_t m_RemedyPacketBuffer[Parameter::MAXIMUM_BUFFER_SIZE];
+    std::vector< std::unique_ptr< uint8_t[] > > m_OriginalPacketBuffer;
 
     TransmissionBlock() = delete;
     TransmissionBlock(const TransmissionBlock&) = delete;
@@ -32,8 +32,8 @@ public:
     TransmissionBlock& operator=(const TransmissionBlock&) = delete;
     TransmissionBlock& operator=(TransmissionBlock&&) = delete;
 
-    const u16 AckIndex();
-    bool Send(u08 *buffer, u16 buffersize/*, bool reqack*/);
+    const uint16_t AckIndex();
+    bool Send(uint8_t *buffer, uint16_t buffersize/*, bool reqack*/);
     void Retransmission();
 };
 
@@ -41,17 +41,16 @@ class TransmissionSession
 {
 public:
     Transmission* const c_Transmission;
-    const s32 c_Socket;
-    const u32 c_IPv4;
-    const u16 c_Port;
+    const int32_t c_Socket;
+    const DataStructures::AddressType c_Addr;
     std::atomic<bool> m_IsConnected;
-    std::atomic<u16> m_MinBlockSequenceNumber;
-    std::atomic<u16> m_MaxBlockSequenceNumber;
+    std::atomic<uint16_t> m_MinBlockSequenceNumber;
+    std::atomic<uint16_t> m_MaxBlockSequenceNumber;
     std::atomic<bool> m_AckList[Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION*2];
-    u16 m_RetransmissionRedundancy;
-    u16 m_RetransmissionInterval;
-    u08 m_TransmissionMode;
-    u08 m_BlockSize;
+    uint16_t m_RetransmissionRedundancy;
+    uint16_t m_RetransmissionInterval;
+    uint8_t m_TransmissionMode;
+    uint8_t m_BlockSize;
     SingleShotTimer<1, 1> m_Timer;
     enum TaskPriority
     {
@@ -66,10 +65,10 @@ public:
     TransmissionBlock* p_TransmissionBlock;
     std::atomic<unsigned long> m_ConcurrentRetransmissions;
 
-    TransmissionSession(Transmission* const transmission, s32 Socket, u32 IPv4, u16 Port,
+    TransmissionSession(Transmission* const transmission, int32_t Socket, const DataStructures::AddressType Addr,
                         Parameter::TRANSMISSION_MODE TransmissionMode = Parameter::TRANSMISSION_MODE::RELIABLE_TRANSMISSION_MODE,
                         Parameter::BLOCK_SIZE BlockSize = Parameter::BLOCK_SIZE::BLOCK_SIZE_04,
-                        u16 RetransmissionRedundancy = 0);
+                        uint16_t RetransmissionRedundancy = 0);
     TransmissionSession() = delete;
     TransmissionSession(const TransmissionSession&) = delete;
     TransmissionSession(TransmissionSession&&) = delete;
@@ -79,33 +78,33 @@ public:
 
     void ChangeTransmissionMode(const Parameter::TRANSMISSION_MODE TransmissionMode);
     void ChangeBlockSize(const Parameter::BLOCK_SIZE BlockSize);
-    void ChangeRetransmissionRedundancy(const u16 RetransmissionRedundancy);
-    void ChangeSessionParameter(const Parameter::TRANSMISSION_MODE TransmissionMode, const Parameter::BLOCK_SIZE BlockSize, const u16 RetransmissionRedundancy);
+    void ChangeRetransmissionRedundancy(const uint16_t RetransmissionRedundancy);
+    void ChangeSessionParameter(const Parameter::TRANSMISSION_MODE TransmissionMode, const Parameter::BLOCK_SIZE BlockSize, const uint16_t RetransmissionRedundancy);
     void SendPing();
-    void UpdateRetransmissionInterval(const u16 rtt);
+    void UpdateRetransmissionInterval(const uint16_t rtt);
 };
 
 class Transmission
 {
 private:
-    const s32 c_Socket;
-    AVLTree< DataStructures::IPv4PortKey , TransmissionSession* > m_Sessions;
+    const int32_t c_Socket;
+    AVLTree< DataStructures::SessionKey , TransmissionSession* > m_Sessions;
     std::mutex m_Lock;
 public:
-    Transmission(s32 Socket);
+    Transmission(int32_t Socket);
     ~Transmission();
 public:
-    bool Connect(u32 IPv4, u16 Port,
-                 u32 ConnectionTimeout,
+    bool Connect(const DataStructures::AddressType Addr,
+                 uint32_t ConnectionTimeout,
                  Parameter::TRANSMISSION_MODE TransmissionMode,
                  Parameter::BLOCK_SIZE BlockSize,
-                 u16 RetransmissionRedundancy = 0);
-    bool Send(u32 IPv4, u16 Port, u08* buffer, u16 buffersize/*, bool reqack*/);
-    bool Flush(u32 IPv4, u16 Port);
-    void WaitUntilTxIsCompleted(u32 IPv4, u16 Port);
-    bool Disconnect(u32 IPv4, u16 Port);
+                 uint16_t RetransmissionRedundancy = 0);
+    bool Send(const DataStructures::AddressType Addr, uint8_t* buffer, uint16_t buffersize/*, bool reqack*/);
+    bool Flush(const DataStructures::AddressType Addr);
+    void WaitUntilTxIsCompleted(const DataStructures::AddressType Addr);
+    bool Disconnect(const DataStructures::AddressType Addr);
 public:
-    void RxHandler(u08* buffer, u16 size, const sockaddr_in * const sender_addr, const u32 sender_addr_len);
+    void RxHandler(uint8_t* buffer, uint16_t size, const sockaddr* const sender_addr, const uint32_t sender_addr_len);
 };
 
 }
