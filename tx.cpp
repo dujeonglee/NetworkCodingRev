@@ -565,7 +565,7 @@ void Transmission::WaitUntilTxIsCompleted(const DataStructures::AddressType Addr
     {
         return;
     }
-	while(p_session->m_ConcurrentRetransmissions > 0)
+	while(p_session->m_ConcurrentRetransmissions > 0 && p_session->m_IsConnected)
 	{
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
