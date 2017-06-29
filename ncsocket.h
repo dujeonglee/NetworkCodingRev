@@ -12,84 +12,176 @@ public:
     NCSocket() = delete;
     NCSocket(const NCSocket&) = delete;
     NCSocket(NCSocket&&) = delete;
-    NCSocket(const u16 PORT, const long int RXTIMEOUT, const long int TXTIMEOUT, const std::function <void (u08* buffer, u16 length, const sockaddr_in * const sender_addr, const u32 sender_addr_len)> rx)
+    NCSocket(const uint16_t PORT, const long int RXTIMEOUT, const long int TXTIMEOUT, const std::function <void (uint8_t* buffer, uint16_t length, const sockaddr* const sender_addr, const uint32_t sender_addr_len)> rx)
     {
         m_State = INIT_FAILURE;
-        m_Socket = -1;
-        m_Rx = nullptr;
-        m_Tx = nullptr;
+        m_Socket[IPVERSION_4] = -1;
+        m_Socket[IPVERSION_6] = -1;
+        m_Rx[IPVERSION_4] = nullptr;
+        m_Rx[IPVERSION_6] = nullptr;
+        m_Tx[IPVERSION_4] = nullptr;
+        m_Tx[IPVERSION_6] = nullptr;
         m_RxThread = nullptr;
-        m_Socket = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
-        if(m_Socket == -1)
-        {
-            return;
-        }
-        const int opt = 1;
-        if(setsockopt(m_Socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1)
-        {
-            close(m_Socket);
-            m_Socket = -1;
-            return;
-        }
-        const timeval tx_to = {TXTIMEOUT/1000, (TXTIMEOUT%1000)*1000};
-        if(setsockopt(m_Socket, SOL_SOCKET, SO_SNDTIMEO, &tx_to, sizeof(tx_to)) == -1)
-        {
-            close(m_Socket);
-            m_Socket = -1;
-            return;
-        }
-        const timeval rx_to = {RXTIMEOUT/1000, (RXTIMEOUT%1000)*1000};
-        if(setsockopt(m_Socket, SOL_SOCKET, SO_RCVTIMEO, &rx_to, sizeof(rx_to)) == -1)
-        {
-            close(m_Socket);
-            m_Socket = -1;
-            return;
-        }
 
-        sockaddr_in BindAddress = {0};
-        BindAddress.sin_family = AF_INET;
-        BindAddress.sin_addr.s_addr = INADDR_ANY;
-        BindAddress.sin_port = PORT;
-        if(bind(m_Socket, (sockaddr*)&BindAddress, sizeof(BindAddress)) == -1)
         {
-            close(m_Socket);
-            m_Socket = -1;
-            return;
-        }
+            addrinfo hints;
+            addrinfo *ret = nullptr;
 
-        try
-        {
+            m_Socket[IPVERSION_4] = -1;
+            m_Socket[IPVERSION_6] = -1;
+            
+            memset(&hints, 0x00, sizeof(hints));
+            hints.ai_flags = AI_PASSIVE;
+            hints.ai_family = AF_UNSPEC;    // Accept IPv4 and IPv6 
+            hints.ai_socktype = SOCK_DGRAM; // UDP
+            if(0 != getaddrinfo(nullptr, std::to_string(PORT).c_str(), &hints, &ret)) 
+            { 
+                exit(-1); 
+            }
+            for(addrinfo *iter = ret; iter != nullptr; iter = iter->ai_next) 
+            {
+                if(iter->ai_family == AF_INET)
+                {
+                    m_Socket[IPVERSION_4] = socket(iter->ai_family, iter->ai_socktype, iter->ai_protocol);
+                    if(m_Socket[IPVERSION_4] == -1)
+                    {
+                        return;
+                    }
+                    const int opt = 1;
+                    if(setsockopt(m_Socket[IPVERSION_4], SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1)
+                    {
+                        close(m_Socket[IPVERSION_4]);
+                        m_Socket[IPVERSION_4] = -1;
+                        return;
+                    }
+                    const timeval tx_to = {TXTIMEOUT/1000, (TXTIMEOUT%1000)*1000};
+                    if(setsockopt(m_Socket[IPVERSION_4], SOL_SOCKET, SO_SNDTIMEO, &tx_to, sizeof(tx_to)) == -1)
+                    {
+                        close(m_Socket[IPVERSION_4]);
+                        m_Socket[IPVERSION_4] = -1;
+                        return;
+                    }
+                    const timeval rx_to = {RXTIMEOUT/1000, (RXTIMEOUT%1000)*1000};
+                    if(setsockopt(m_Socket[IPVERSION_4], SOL_SOCKET, SO_RCVTIMEO, &rx_to, sizeof(rx_to)) == -1)
+                    {
+                        close(m_Socket[IPVERSION_4]);
+                        m_Socket[IPVERSION_4] = -1;
+                        return;
+                    }
+
+                    if(bind(m_Socket[IPVERSION_4], (sockaddr*)iter->ai_addr, iter->ai_addrlen) == -1)
+                    {
+                        close(m_Socket[IPVERSION_4]);
+                        m_Socket[IPVERSION_4] = -1;
+                        return;
+                    }
+                    try
+                    {
 #if ENABLE_CRITICAL_EXCEPTIONS
-            TEST_EXCEPTION(std::bad_alloc());
+                        TEST_EXCEPTION(std::bad_alloc());
 #endif
-            m_Rx = new Reception(m_Socket, rx);
-        }
-        catch(const std::bad_alloc& ex)
-        {
-            EXCEPTION_PRINT;
-            close(m_Socket);
-            m_Rx = nullptr;
-            m_Socket = -1;
-            return;
-        }
-        try
-        {
+                        m_Rx[IPVERSION_4] = new Reception(m_Socket[IPVERSION_4], rx);
+                    }
+                    catch(const std::bad_alloc& ex)
+                    {
+                        EXCEPTION_PRINT;
+                        close(m_Socket[IPVERSION_4]);
+                        m_Socket[IPVERSION_4] = -1;
+                        m_Rx[IPVERSION_4] = nullptr;
+                        return;
+                    }
+                    try
+                    {
 #if ENABLE_CRITICAL_EXCEPTIONS
-            TEST_EXCEPTION(std::bad_alloc());
+                        TEST_EXCEPTION(std::bad_alloc());
 #endif
-            m_Tx = new Transmission(m_Socket);
+                        m_Tx[IPVERSION_4] = new Transmission(m_Socket[IPVERSION_4]);
+                    }
+                    catch(const std::bad_alloc& ex)
+                    {
+                        EXCEPTION_PRINT;
+                        delete m_Rx[IPVERSION_4];
+                        close(m_Socket[IPVERSION_4]);
+                        m_Socket[IPVERSION_4] = -1;
+                        m_Tx[IPVERSION_4] = nullptr;
+                        m_Rx[IPVERSION_4] = nullptr;
+                        return;
+                    }
+                }
+                else if(iter->ai_family == AF_INET6)
+                {
+                    m_Socket[IPVERSION_6] = socket(iter->ai_family, iter->ai_socktype, iter->ai_protocol);
+                    if(m_Socket[IPVERSION_6] == -1)
+                    {
+                        return;
+                    }
+                    const int opt = 1;
+                    if(setsockopt(m_Socket[IPVERSION_6], SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1)
+                    {
+                        close(m_Socket[IPVERSION_6]);
+                        m_Socket[IPVERSION_6] = -1;
+                        return;
+                    }
+                    const timeval tx_to = {TXTIMEOUT/1000, (TXTIMEOUT%1000)*1000};
+                    if(setsockopt(m_Socket[IPVERSION_6], SOL_SOCKET, SO_SNDTIMEO, &tx_to, sizeof(tx_to)) == -1)
+                    {
+                        close(m_Socket[IPVERSION_6]);
+                        m_Socket[IPVERSION_6] = -1;
+                        return;
+                    }
+                    const timeval rx_to = {RXTIMEOUT/1000, (RXTIMEOUT%1000)*1000};
+                    if(setsockopt(m_Socket[IPVERSION_6], SOL_SOCKET, SO_RCVTIMEO, &rx_to, sizeof(rx_to)) == -1)
+                    {
+                        close(m_Socket[IPVERSION_6]);
+                        m_Socket[IPVERSION_6] = -1;
+                        return;
+                    }
+                    setsockopt(m_Socket[IPVERSION_6], IPPROTO_IPV6, IPV6_V6ONLY, (char *)&opt, sizeof(opt)); 
+                    if(bind(m_Socket[IPVERSION_6], (sockaddr*)iter->ai_addr, iter->ai_addrlen) == -1)
+                    {
+                        close(m_Socket[IPVERSION_6]);
+                        m_Socket[IPVERSION_6] = -1;
+                        return;
+                    }
+                    try
+                    {
+#if ENABLE_CRITICAL_EXCEPTIONS
+                        TEST_EXCEPTION(std::bad_alloc());
+#endif
+                        m_Rx[IPVERSION_6] = new Reception(m_Socket[IPVERSION_6], rx);
+                    }
+                    catch(const std::bad_alloc& ex)
+                    {
+                        EXCEPTION_PRINT;
+                        close(m_Socket[IPVERSION_6]);
+                        m_Socket[IPVERSION_6] = -1;
+                        m_Rx[IPVERSION_6] = nullptr;
+                        return;
+                    }
+                    try
+                    {
+#if ENABLE_CRITICAL_EXCEPTIONS
+                        TEST_EXCEPTION(std::bad_alloc());
+#endif
+                        m_Tx[IPVERSION_6] = new Transmission(m_Socket[IPVERSION_6]);
+                    }
+                    catch(const std::bad_alloc& ex)
+                    {
+                        EXCEPTION_PRINT;
+                        delete m_Rx[IPVERSION_6];
+                        close(m_Socket[IPVERSION_6]);
+                        m_Socket[IPVERSION_6] = -1;
+                        m_Tx[IPVERSION_6] = nullptr;
+                        m_Rx[IPVERSION_6] = nullptr;
+                        return;
+                    }
+                }
+            }
+            if(ret)
+            {
+                freeaddrinfo(ret);
+            }
         }
-        catch(const std::bad_alloc& ex)
-        {
-            EXCEPTION_PRINT;
-            delete m_Rx;
-            close(m_Socket);
-            m_Tx = nullptr;
-            m_Rx = nullptr;
-            m_Socket = -1;
-            return;
-        }
-
         m_RxThreadIsRunning = true;
         try
         {
@@ -100,19 +192,26 @@ public:
             m_RxThread = new std::thread([self, RXTIMEOUT](){
                 fd_set ReadFD;
                 FD_ZERO(&ReadFD);
-                FD_SET(self->m_Socket, &ReadFD);
-                const int MaxFD = self->m_Socket;
+                if(self->m_Socket[IPVERSION_4] != -1)
+                {
+                    FD_SET(self->m_Socket[IPVERSION_4], &ReadFD);
+                }
+                if(self->m_Socket[IPVERSION_6] != -1)
+                {
+                    FD_SET(self->m_Socket[IPVERSION_6], &ReadFD);
+                }
+                const int MaxFD = (self->m_Socket[IPVERSION_4] > self->m_Socket[IPVERSION_6]?self->m_Socket[IPVERSION_4]:self->m_Socket[IPVERSION_6]);
                 timeval rx_to = {RXTIMEOUT/1000, (RXTIMEOUT%1000)*1000};
-                u08 rxbuffer[Parameter::MAXIMUM_BUFFER_SIZE];
+                uint8_t rxbuffer[Parameter::MAXIMUM_BUFFER_SIZE];
                 while(self->m_RxThreadIsRunning)
                 {
                     fd_set AllFD = ReadFD;
                     const int state = select(MaxFD + 1 , &AllFD, NULL, NULL, &rx_to);
-                    if(state == 1 && FD_ISSET(self->m_Socket, &AllFD))
+                    if(state && FD_ISSET(self->m_Socket[IPVERSION_4], &AllFD))
                     {
                         sockaddr_in sender_addr = {0,};
                         socklen_t sender_addr_length = sizeof(sockaddr_in);
-                        const int ret = recvfrom(self->m_Socket, rxbuffer, sizeof(rxbuffer), 0, (sockaddr*)&sender_addr, &sender_addr_length);
+                        const int ret = recvfrom(self->m_Socket[IPVERSION_4], rxbuffer, sizeof(rxbuffer), 0, (sockaddr*)&sender_addr, &sender_addr_length);
                         if(ret <= 0)
                         {
                             continue;
@@ -123,12 +222,37 @@ public:
                             case Header::Common::HeaderType::DATA:
                             case Header::Common::HeaderType::SYNC:
                             case Header::Common::HeaderType::PING:
-                                self->m_Rx->RxHandler(rxbuffer, (u16)ret, &sender_addr, sender_addr_length);
+                                self->m_Rx[IPVERSION_4]->RxHandler(rxbuffer, (uint16_t)ret, (sockaddr*)&sender_addr, sender_addr_length);
                             break;
                             case Header::Common::HeaderType::DATA_ACK:
                             case Header::Common::HeaderType::SYNC_ACK:
                             case Header::Common::HeaderType::PONG:
-                                self->m_Tx->RxHandler(rxbuffer, (u16)ret, &sender_addr, sender_addr_length);
+                                self->m_Tx[IPVERSION_4]->RxHandler(rxbuffer, (uint16_t)ret, (sockaddr*)&sender_addr, sender_addr_length);
+                            break;
+
+                        }
+                    }
+                    if(state && FD_ISSET(self->m_Socket[IPVERSION_6], &AllFD))
+                    {
+                        sockaddr_in6 sender_addr = {0,};
+                        socklen_t sender_addr_length = sizeof(sockaddr_in6);
+                        const int ret = recvfrom(self->m_Socket[IPVERSION_6], rxbuffer, sizeof(rxbuffer), 0, (sockaddr*)&sender_addr, &sender_addr_length);
+                        if(ret <= 0)
+                        {
+                            continue;
+                        }
+                        TEST_DROP;
+                        switch(reinterpret_cast<Header::Common*>(rxbuffer)->m_Type)
+                        {
+                            case Header::Common::HeaderType::DATA:
+                            case Header::Common::HeaderType::SYNC:
+                            case Header::Common::HeaderType::PING:
+                                self->m_Rx[IPVERSION_6]->RxHandler(rxbuffer, (uint16_t)ret, (sockaddr*)&sender_addr, sender_addr_length);
+                            break;
+                            case Header::Common::HeaderType::DATA_ACK:
+                            case Header::Common::HeaderType::SYNC_ACK:
+                            case Header::Common::HeaderType::PONG:
+                                self->m_Tx[IPVERSION_6]->RxHandler(rxbuffer, (uint16_t)ret, (sockaddr*)&sender_addr, sender_addr_length);
                             break;
 
                         }
@@ -139,13 +263,38 @@ public:
         catch(const std::bad_alloc& ex)
         {
             EXCEPTION_PRINT;
-            delete m_Tx;
-            delete m_Rx;
-            close(m_Socket);
+            if(m_Tx[IPVERSION_4])
+            {
+                delete m_Tx[IPVERSION_4];
+                m_Tx[IPVERSION_4] = nullptr;
+            }
+            if(m_Tx[IPVERSION_6])
+            {
+                delete m_Tx[IPVERSION_6];
+                m_Tx[IPVERSION_6] = nullptr;
+            }
+            if(m_Rx[IPVERSION_4])
+            {
+                delete m_Rx[IPVERSION_4];
+                m_Rx[IPVERSION_4] = nullptr;
+            }
+            if(m_Rx[IPVERSION_6])
+            {
+                delete m_Rx[IPVERSION_6];
+                m_Rx[IPVERSION_6] = nullptr;
+            }
+            if(m_Socket[IPVERSION_4] != -1)
+            {
+                close(m_Socket[IPVERSION_4]);
+                m_Socket[IPVERSION_4] = -1;
+
+            }
+            if(m_Socket[IPVERSION_6] != -1)
+            {
+                close(m_Socket[IPVERSION_6]);
+                m_Socket[IPVERSION_6] = -1;
+            }
             m_RxThread = nullptr;
-            m_Tx = nullptr;
-            m_Rx = nullptr;
-            m_Socket = -1;
             return;
         }
         m_State = INIT_SUCCESS;
@@ -162,17 +311,31 @@ public:
             }
             delete m_RxThread;
         }
-        if(m_Tx)
+        if(m_Tx[IPVERSION_4])
         {
-            delete m_Tx;
+            delete m_Tx[IPVERSION_4];
         }
-        if(m_Rx)
+        if(m_Tx[IPVERSION_6])
         {
-            delete m_Rx;
+            delete m_Tx[IPVERSION_6];
         }
-        if(m_Socket != -1)
+        if(m_Rx[IPVERSION_4])
         {
-            close(m_Socket);
+            delete m_Rx[IPVERSION_4];
+        }
+        if(m_Rx[IPVERSION_6])
+        {
+            delete m_Rx[IPVERSION_6];
+        }
+        if(m_Socket[IPVERSION_4] != -1)
+        {
+            close(m_Socket[IPVERSION_4]);
+            m_Socket[IPVERSION_4] = -1;
+        }
+        if(m_Socket[IPVERSION_6] != -1)
+        {
+            close(m_Socket[IPVERSION_6]);
+            m_Socket[IPVERSION_6] = -1;
         }
     }
 
@@ -183,57 +346,103 @@ private:
         INIT_FAILURE,
         INIT_SUCCESS
     };
+    enum IPVERSION: unsigned char{
+        IPVERSION_4 = 0,
+        IPVERSION_6
+    };
     STATE m_State;
-    int m_Socket;
-    Reception* m_Rx;
-    Transmission* m_Tx;
+    int m_Socket[2];
+    Reception* m_Rx[2];
+    Transmission* m_Tx[2];
     std::thread* m_RxThread;
     bool m_RxThreadIsRunning;
 public:
-    bool Connect(u32 ip, u16 port, u32 timeout, Parameter::TRANSMISSION_MODE TransmissionMode, Parameter::BLOCK_SIZE BlockSize, u16 RetransmissionRedundancy)
+    bool Connect(const std::string ip, const std::string port, uint32_t timeout, Parameter::TRANSMISSION_MODE TransmissionMode, Parameter::BLOCK_SIZE BlockSize, uint16_t RetransmissionRedundancy)
     {
         if(m_State == INIT_FAILURE)
         {
             return false;
         }
-        return m_Tx->Connect(ip, port, timeout, TransmissionMode, BlockSize, RetransmissionRedundancy);
+        const DataStructures::AddressType Addr = DataStructures::GetAddressType(ip, port);
+        if(Addr.AddrLength == sizeof(sockaddr_in))
+        {
+            return m_Tx[IPVERSION_4]->Connect(Addr, timeout, TransmissionMode, BlockSize, RetransmissionRedundancy);
+        }
+        else if(Addr.AddrLength == sizeof(sockaddr_in6))
+        {
+            return m_Tx[IPVERSION_6]->Connect(Addr, timeout, TransmissionMode, BlockSize, RetransmissionRedundancy);
+        }
+        return false;
     }
 
-    void Disconnect(u32 ip, u16 port)
+    void Disconnect(const std::string ip, const std::string port)
     {
         if(m_State == INIT_FAILURE)
         {
             return;
         }
-        m_Tx->Disconnect(ip, port);
+        const DataStructures::AddressType Addr = DataStructures::GetAddressType(ip, port);
+        if(Addr.AddrLength == sizeof(sockaddr_in))
+        {
+            m_Tx[IPVERSION_4]->Disconnect(Addr);
+        }
+        else
+        {
+            m_Tx[IPVERSION_6]->Disconnect(Addr);
+        }
     }
 
-    bool Send(u32 ip, u16 port, u08* buff, u16 size/*, bool reqack*/)
+    bool Send(const std::string ip, const std::string port, uint8_t* buff, uint16_t size/*, bool reqack*/)
     {
         if(m_State == INIT_FAILURE)
         {
             return false;
         }
-        return m_Tx->Send(ip, port, buff, size/*, reqack*/);
+        const DataStructures::AddressType Addr = DataStructures::GetAddressType(ip, port);
+        if(Addr.AddrLength == sizeof(sockaddr_in))
+        {
+            return m_Tx[IPVERSION_4]->Send(DataStructures::GetAddressType(ip, port), buff, size/*, reqack*/);
+        }
+        else
+        {
+            return m_Tx[IPVERSION_6]->Send(DataStructures::GetAddressType(ip, port), buff, size/*, reqack*/);
+        }
     }
 
-    bool Flush(u32 ip, u16 port)
+    bool Flush(const std::string ip, const std::string port)
     {
         if(m_State == INIT_FAILURE)
         {
             return false;
         }
-        return m_Tx->Flush(ip, port);
+        const DataStructures::AddressType Addr = DataStructures::GetAddressType(ip, port);
+        if(Addr.AddrLength == sizeof(sockaddr_in))
+        {
+            return m_Tx[IPVERSION_4]->Flush(DataStructures::GetAddressType(ip, port));
+        }
+        else
+        {
+            return m_Tx[IPVERSION_6]->Flush(DataStructures::GetAddressType(ip, port));
+        }
     }
 
-    void WaitUntilTxIsCompleted(u32 ip, u16 port)
+    void WaitUntilTxIsCompleted(const std::string ip, const std::string port)
     {
         if(m_State == INIT_FAILURE)
         {
             return;
         }
-        m_Tx->Flush(ip, port);
-        m_Tx->WaitUntilTxIsCompleted(ip, port);
+        const DataStructures::AddressType Addr = DataStructures::GetAddressType(ip, port);
+        if(Addr.AddrLength == sizeof(sockaddr_in))
+        {
+            m_Tx[IPVERSION_4]->Flush(DataStructures::GetAddressType(ip, port));
+            m_Tx[IPVERSION_4]->WaitUntilTxIsCompleted(DataStructures::GetAddressType(ip, port));
+        }
+        else
+        {
+            m_Tx[IPVERSION_6]->Flush(DataStructures::GetAddressType(ip, port));
+            m_Tx[IPVERSION_6]->WaitUntilTxIsCompleted(DataStructures::GetAddressType(ip, port));
+        }
     }
 };
 
