@@ -1,26 +1,6 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-// C++ Standard Library Header
-//// IO
-#include <iostream>
-
-//// Containers
-#include <map>
-#include <vector>
-#include <queue>
-
-//// Multi-threading
-#include <atomic>
-#include <mutex>
-#include <condition_variable>
-#include <functional>
-
-//// DataStructures
-#include <exception>
-#include <new>
-#include <stdexcept>
-
 // C Standard Library
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -28,6 +8,21 @@
 #include <time.h>
 #include <stddef.h>
 #include <arpa/inet.h>
+#include <netdb.h>
+
+// C++ Standard Library Header
+#include <iostream>
+#include <map>
+#include <vector>
+#include <queue>
+#include <atomic>
+#include <mutex>
+#include <condition_variable>
+#include <functional>
+#include <exception>
+#include <new>
+#include <stdexcept>
+#include <cstdint>
 
 // C++ Library Header
 #include "ThreadPool.h"
@@ -37,22 +32,12 @@
 
 #include "debug.h"
 
-typedef unsigned char u08;
-typedef unsigned short u16;
-typedef unsigned int u32;
-typedef unsigned long long u64;
-typedef signed char s08;
-typedef signed short s16;
-typedef signed int s32;
-typedef signed long long s64;
-typedef long laddr;
-
 namespace NetworkCoding{
 namespace Header{
 struct Common
 {
-    u08 m_Type;
-    enum HeaderType : u08
+    uint8_t m_Type;
+    enum HeaderType : uint8_t
     {
         DATA = 1,
         SYNC,
@@ -65,40 +50,40 @@ struct Common
 
 struct Data : Common
 {
-    u16 m_TotalSize;
-    u16 m_MinBlockSequenceNumber;
-    u16 m_CurrentBlockSequenceNumber;
-    u16 m_MaxBlockSequenceNumber;
-    u08 m_ExpectedRank;
-    u08 m_MaximumRank;
-    u08 m_Flags;
-    enum DataHeaderFlag : u08
+    uint16_t m_TotalSize;
+    uint16_t m_MinBlockSequenceNumber;
+    uint16_t m_CurrentBlockSequenceNumber;
+    uint16_t m_MaxBlockSequenceNumber;
+    uint8_t m_ExpectedRank;
+    uint8_t m_MaximumRank;
+    uint8_t m_Flags;
+    enum DataHeaderFlag : uint8_t
     {
         FLAGS_ORIGINAL = 0x1,
         FLAGS_END_OF_BLK = 0x2,
         FLAGS_CONSUMED = 0x4
     };
-    u08 m_TxCount;
-    enum OffSets : u08
+    uint8_t m_TxCount;
+    enum OffSets : uint8_t
     {
         CodingOffset = (1+2+2+2+2+1+1+1+1)
     };
     // ^^^ This part is not encoded ^^^ //
-    u16 m_PayloadSize;
-    u08 m_LastIndicator;
-    u08 m_Codes[1];
+    uint16_t m_PayloadSize;
+    uint8_t m_LastIndicator;
+    uint8_t m_Codes[1];
     // ^^^ This part is encoded ^^^ //
 }__attribute__((packed, may_alias));
 
 struct DataAck : Common
 {
-    u16 m_Sequence;
-    u08 m_Losses;           /*1*/
+    uint16_t m_Sequence;
+    uint8_t m_Losses;           /*1*/
 }__attribute__((packed, may_alias));
 
 struct Sync : Common
 {
-    u16 m_Sequence;
+    uint16_t m_Sequence;
 }__attribute__((packed, may_alias));
 
 struct Ping : Common
@@ -115,17 +100,17 @@ struct Pong : Common
 
 namespace Parameter
 {
-const u08 MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION = 6; /* 6 Blocks   */
-const u16 MAXIMUM_BUFFER_SIZE = 1500;                      /* 1500 Bytes */
-const u16 PING_INTERVAL = 100;                             /* 100 ms     */
+const uint8_t MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION = 6; /* 6 Blocks   */
+const uint16_t MAXIMUM_BUFFER_SIZE = 1500;                      /* 1500 Bytes */
+const uint16_t PING_INTERVAL = 100;                             /* 100 ms     */
 const double CONNECTION_TIMEOUT = 10.0;                    /* 10 s       */
-const u16 MINIMUM_RETRANSMISSION_INTERVAL = 0;             /* 5 ms       */
-enum TRANSMISSION_MODE: u08
+const uint16_t MINIMUM_RETRANSMISSION_INTERVAL = 0;             /* 0 ms       */
+enum TRANSMISSION_MODE: uint8_t
 {
     RELIABLE_TRANSMISSION_MODE = 0,
     BEST_EFFORT_TRANSMISSION_MODE
 };
-enum BLOCK_SIZE: u08
+enum BLOCK_SIZE: uint8_t
 {
     INVALID_BLOCK_SIZE = 0,
     BLOCK_SIZE_04      = 4,
@@ -139,17 +124,77 @@ enum BLOCK_SIZE: u08
     BLOCK_SIZE_64      = 64,
     BLOCK_SIZE_128     = 128
 };
-const u08 MAX_BLOCK_SIZE = BLOCK_SIZE_128;
-}
+const uint8_t MAX_BLOCK_SIZE = BLOCK_SIZE_128;
+}// namespace Parameter
 
 namespace DataStructures{
-class IPv4PortKey
+class SessionKey
 {
 public:
-    u32 m_IPv4;
-    u16 m_Port;
+    uint64_t m_EUI;
+    uint16_t m_Port;
 }__attribute__((packed));
-}// namespace Parameter
+
+inline SessionKey GetSessionKey(const sockaddr* addr, int size)
+{
+    if(size == sizeof(sockaddr_in))
+    {
+        SessionKey ret = {((sockaddr_in*)addr)->sin_addr.s_addr, ((sockaddr_in*)addr)->sin_port};
+        return ret;
+    }
+    else
+    {
+        SessionKey ret = {((uint64_t*)(((sockaddr_in6*)addr)->sin6_addr.s6_addr))[1], ((sockaddr_in6*)addr)->sin6_port};
+        return ret;
+    }
+}
+
+class AddressType
+{
+public:
+    union
+    {
+        sockaddr_in IPv4;
+        sockaddr_in6 IPv6;
+    }Addr;
+    uint32_t AddrLength;
+};
+
+inline AddressType GetAddressType(std::string IP, std::string Port)
+{
+    AddressType ret;
+    addrinfo hints;
+    addrinfo* result = nullptr;
+    addrinfo* iter = nullptr;
+
+    memset(&ret, 0, sizeof(ret));
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_flags = AI_PASSIVE;
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_DGRAM;
+    if(0 == getaddrinfo(IP.c_str(), Port.c_str(), &hints, &result))
+    {
+        for(iter = result ; iter != nullptr ; iter = iter->ai_next)
+        {
+            if(iter->ai_family == AF_INET)
+            {
+                memcpy(&ret.Addr, iter->ai_addr, sizeof(sockaddr_in));
+                ret.AddrLength = sizeof(sockaddr_in);
+            }
+            else if(iter->ai_family == AF_INET6)
+            {
+                memcpy(&ret.Addr, iter->ai_addr, sizeof(sockaddr_in6));
+                ret.AddrLength = sizeof(sockaddr_in6);
+            }
+        }
+    }
+    if(result)
+    {
+        freeaddrinfo(result);
+    }
+    return ret;
+}
+}// namespace DataStructures
 
 }// namespace NetworkCoding
 
