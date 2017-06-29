@@ -10,14 +10,14 @@ int main(int argc, char *argv[])
 
     if(argc == 2)
     {
-        unsigned short local_port;
+        char* local_port;
         FILE* p_File = nullptr;
         float rxsize = 0;
 
         std::cout<<"Recv Mode"<<std::endl;
-        sscanf(argv[1], "%hu", &local_port);
+        local_port = argv[1];
 
-        NetworkCoding::NCSocket socket(local_port, 500, 500, [&p_File, &rxsize](unsigned char* buffer, unsigned int length, const sockaddr* const sender_addr, const uint32_t sender_addr_len){
+        NetworkCoding::NCSocket socket(std::string(local_port), 500, 500, [&p_File, &rxsize](unsigned char* buffer, unsigned int length, const sockaddr* const sender_addr, const uint32_t sender_addr_len){
             if(p_File == nullptr)
             {
                 buffer[length] = 0;
@@ -53,16 +53,16 @@ int main(int argc, char *argv[])
     }
     else if(argc == 5)
     {
-        unsigned short local_port;
+        char* local_port = nullptr;
         char* remote_ip = nullptr;
-        unsigned short remote_port;
+        char* remote_port = nullptr;
         unsigned char buffer[1424];
         size_t readbytes;
         FILE* p_File = nullptr;
         std::cout<<"Send Mode"<<std::endl;
-        sscanf(argv[1], "%hu", &local_port);
+        local_port = argv[1];
         remote_ip = argv[2];
-        sscanf(argv[3], "%hu", &remote_port);
+        remote_port = argv[3];
         p_File = fopen(argv[4], "r");
         if(p_File == nullptr)
         {
@@ -70,19 +70,19 @@ int main(int argc, char *argv[])
             return -1;
         }
 
-        NetworkCoding::NCSocket socket(local_port, 500, 500, nullptr);
-        while(false == socket.Connect(std::string(remote_ip), std::to_string(remote_port), 1000,
+        NetworkCoding::NCSocket socket(std::string(local_port), 500, 500, nullptr);
+        while(false == socket.Connect(std::string(remote_ip), std::string(remote_port), 1000,
                                       NetworkCoding::Parameter::RELIABLE_TRANSMISSION_MODE,
                                       NetworkCoding::Parameter::BLOCK_SIZE_32, (uint16_t)0));
-        socket.Send(std::string(remote_ip), std::to_string(remote_port), (unsigned char*)argv[4], strlen(argv[4]));
+        socket.Send(std::string(remote_ip), std::string(remote_port), (unsigned char*)argv[4], strlen(argv[4]));
         while((readbytes = fread(buffer, 1, sizeof(buffer), p_File)) > 0)
         {
-            socket.Send(std::string(remote_ip), std::to_string(remote_port), buffer, readbytes);
+            socket.Send(std::string(remote_ip), std::string(remote_port), buffer, readbytes);
         }
 
         buffer[0] = 0xff;
-        socket.Send(std::string(remote_ip), std::to_string(remote_port), buffer, 1);
-        socket.WaitUntilTxIsCompleted(std::string(remote_ip), std::to_string(remote_port));
+        socket.Send(std::string(remote_ip), std::string(remote_port), buffer, 1);
+        socket.WaitUntilTxIsCompleted(std::string(remote_ip), std::string(remote_port));
         fclose(p_File);
     }
     else
