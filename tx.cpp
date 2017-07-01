@@ -565,10 +565,10 @@ void Transmission::WaitUntilTxIsCompleted(const DataStructures::AddressType Addr
     {
         return;
     }
-	while(p_session->m_ConcurrentRetransmissions > 0)
-	{
+    while(p_session->m_IsConnected && p_session->m_ConcurrentRetransmissions > 0)
+    {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
-	}
+    }
 }
 
 bool Transmission::Disconnect(const DataStructures::AddressType Addr)

@@ -12,7 +12,7 @@ public:
     NCSocket() = delete;
     NCSocket(const NCSocket&) = delete;
     NCSocket(NCSocket&&) = delete;
-    NCSocket(const uint16_t PORT, const long int RXTIMEOUT, const long int TXTIMEOUT, const std::function <void (uint8_t* buffer, uint16_t length, const sockaddr* const sender_addr, const uint32_t sender_addr_len)> rx)
+    NCSocket(const std::string PORT, const long int RXTIMEOUT, const long int TXTIMEOUT, const std::function <void (uint8_t* buffer, uint16_t length, const sockaddr* const sender_addr, const uint32_t sender_addr_len)> rx)
     {
         m_State = INIT_FAILURE;
         m_Socket[IPVERSION_4] = -1;
@@ -23,7 +23,7 @@ public:
         m_Tx[IPVERSION_6] = nullptr;
         m_RxThread = nullptr;
 
-        {
+        { // Open sockets for IPv4 and IPv6.
             addrinfo hints;
             addrinfo *ret = nullptr;
 
@@ -34,7 +34,7 @@ public:
             hints.ai_flags = AI_PASSIVE;
             hints.ai_family = AF_UNSPEC;    // Accept IPv4 and IPv6 
             hints.ai_socktype = SOCK_DGRAM; // UDP
-            if(0 != getaddrinfo(nullptr, std::to_string(PORT).c_str(), &hints, &ret)) 
+            if(0 != getaddrinfo(nullptr, PORT.c_str(), &hints, &ret)) 
             { 
                 exit(-1); 
             }
@@ -68,7 +68,6 @@ public:
                         m_Socket[IPVERSION_4] = -1;
                         return;
                     }
-
                     if(bind(m_Socket[IPVERSION_4], (sockaddr*)iter->ai_addr, iter->ai_addrlen) == -1)
                     {
                         close(m_Socket[IPVERSION_4]);
@@ -296,18 +295,22 @@ public:
         if(m_Tx[IPVERSION_4])
         {
             delete m_Tx[IPVERSION_4];
+            m_Tx[IPVERSION_4] = nullptr;
         }
         if(m_Tx[IPVERSION_6])
         {
             delete m_Tx[IPVERSION_6];
+            m_Tx[IPVERSION_6] = nullptr;
         }
         if(m_Rx[IPVERSION_4])
         {
             delete m_Rx[IPVERSION_4];
+            m_Rx[IPVERSION_4] = nullptr;
         }
         if(m_Rx[IPVERSION_6])
         {
             delete m_Rx[IPVERSION_6];
+            m_Rx[IPVERSION_6] = nullptr;
         }
         if(m_Socket[IPVERSION_4] != -1)
         {
@@ -324,11 +327,13 @@ public:
     NCSocket& operator=(const NCSocket&) = delete;
     NCSocket& operator=(NCSocket&&) = delete;
 private:
-    enum STATE : unsigned char{
+    enum STATE : unsigned char
+    {
         INIT_FAILURE,
         INIT_SUCCESS
     };
-    enum IPVERSION: unsigned char{
+    enum IPVERSION: unsigned char
+    {
         IPVERSION_4 = 0,
         IPVERSION_6,
         IPVERSIONS
@@ -347,11 +352,11 @@ public:
             return false;
         }
         const DataStructures::AddressType Addr = DataStructures::GetAddressType(ip, port);
-        if(Addr.AddrLength == sizeof(sockaddr_in))
+        if(Addr.AddrLength == sizeof(sockaddr_in) && m_Tx[IPVERSION_4] != nullptr)
         {
             return m_Tx[IPVERSION_4]->Connect(Addr, timeout, TransmissionMode, BlockSize, RetransmissionRedundancy);
         }
-        else if(Addr.AddrLength == sizeof(sockaddr_in6))
+        else if(Addr.AddrLength == sizeof(sockaddr_in6) && m_Tx[IPVERSION_6] != nullptr)
         {
             return m_Tx[IPVERSION_6]->Connect(Addr, timeout, TransmissionMode, BlockSize, RetransmissionRedundancy);
         }
@@ -365,11 +370,11 @@ public:
             return;
         }
         const DataStructures::AddressType Addr = DataStructures::GetAddressType(ip, port);
-        if(Addr.AddrLength == sizeof(sockaddr_in))
+        if(Addr.AddrLength == sizeof(sockaddr_in) && m_Tx[IPVERSION_4] != nullptr)
         {
             m_Tx[IPVERSION_4]->Disconnect(Addr);
         }
-        else
+        else if(Addr.AddrLength == sizeof(sockaddr_in6) && m_Tx[IPVERSION_6] != nullptr)
         {
             m_Tx[IPVERSION_6]->Disconnect(Addr);
         }
@@ -382,14 +387,15 @@ public:
             return false;
         }
         const DataStructures::AddressType Addr = DataStructures::GetAddressType(ip, port);
-        if(Addr.AddrLength == sizeof(sockaddr_in))
+        if(Addr.AddrLength == sizeof(sockaddr_in) && m_Tx[IPVERSION_4] != nullptr)
         {
-            return m_Tx[IPVERSION_4]->Send(DataStructures::GetAddressType(ip, port), buff, size/*, reqack*/);
+            return m_Tx[IPVERSION_4]->Send(Addr, buff, size/*, reqack*/);
         }
-        else
+        else if(Addr.AddrLength == sizeof(sockaddr_in6) && m_Tx[IPVERSION_6] != nullptr)
         {
-            return m_Tx[IPVERSION_6]->Send(DataStructures::GetAddressType(ip, port), buff, size/*, reqack*/);
+            return m_Tx[IPVERSION_6]->Send(Addr, buff, size/*, reqack*/);
         }
+        return false;
     }
 
     bool Flush(const std::string ip, const std::string port)
@@ -399,14 +405,15 @@ public:
             return false;
         }
         const DataStructures::AddressType Addr = DataStructures::GetAddressType(ip, port);
-        if(Addr.AddrLength == sizeof(sockaddr_in))
+        if(Addr.AddrLength == sizeof(sockaddr_in) && m_Tx[IPVERSION_4] != nullptr)
         {
-            return m_Tx[IPVERSION_4]->Flush(DataStructures::GetAddressType(ip, port));
+            return m_Tx[IPVERSION_4]->Flush(Addr);
         }
-        else
+        else if(Addr.AddrLength == sizeof(sockaddr_in6) && m_Tx[IPVERSION_6] != nullptr)
         {
-            return m_Tx[IPVERSION_6]->Flush(DataStructures::GetAddressType(ip, port));
+            return m_Tx[IPVERSION_6]->Flush(Addr);
         }
+        return false;
     }
 
     void WaitUntilTxIsCompleted(const std::string ip, const std::string port)
@@ -416,15 +423,15 @@ public:
             return;
         }
         const DataStructures::AddressType Addr = DataStructures::GetAddressType(ip, port);
-        if(Addr.AddrLength == sizeof(sockaddr_in))
+        if(Addr.AddrLength == sizeof(sockaddr_in) && m_Tx[IPVERSION_4] != nullptr)
         {
-            m_Tx[IPVERSION_4]->Flush(DataStructures::GetAddressType(ip, port));
-            m_Tx[IPVERSION_4]->WaitUntilTxIsCompleted(DataStructures::GetAddressType(ip, port));
+            m_Tx[IPVERSION_4]->Flush(Addr);
+            m_Tx[IPVERSION_4]->WaitUntilTxIsCompleted(Addr);
         }
-        else
+        else if(Addr.AddrLength == sizeof(sockaddr_in6) && m_Tx[IPVERSION_6] != nullptr)
         {
-            m_Tx[IPVERSION_6]->Flush(DataStructures::GetAddressType(ip, port));
-            m_Tx[IPVERSION_6]->WaitUntilTxIsCompleted(DataStructures::GetAddressType(ip, port));
+            m_Tx[IPVERSION_6]->Flush(Addr);
+            m_Tx[IPVERSION_6]->WaitUntilTxIsCompleted(Addr);
         }
     }
 };
