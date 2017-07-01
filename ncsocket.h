@@ -207,54 +207,36 @@ public:
                 {
                     fd_set AllFD = ReadFD;
                     const int state = select(MaxFD + 1 , &AllFD, NULL, NULL, &rx_to);
-                    if(state && FD_ISSET(self->m_Socket[IPVERSION_4], &AllFD))
+                    for(uint8_t ipv = IPVERSION_4 ; ipv < IPVERSIONS ; ipv++)
                     {
-                        sockaddr_in sender_addr = {0,};
-                        socklen_t sender_addr_length = sizeof(sockaddr_in);
-                        const int ret = recvfrom(self->m_Socket[IPVERSION_4], rxbuffer, sizeof(rxbuffer), 0, (sockaddr*)&sender_addr, &sender_addr_length);
-                        if(ret <= 0)
+                        if(state && FD_ISSET(self->m_Socket[ipv], &AllFD))
                         {
-                            continue;
-                        }
-                        TEST_DROP;
-                        switch(reinterpret_cast<Header::Common*>(rxbuffer)->m_Type)
-                        {
-                            case Header::Common::HeaderType::DATA:
-                            case Header::Common::HeaderType::SYNC:
-                            case Header::Common::HeaderType::PING:
-                                self->m_Rx[IPVERSION_4]->RxHandler(rxbuffer, (uint16_t)ret, (sockaddr*)&sender_addr, sender_addr_length);
-                            break;
-                            case Header::Common::HeaderType::DATA_ACK:
-                            case Header::Common::HeaderType::SYNC_ACK:
-                            case Header::Common::HeaderType::PONG:
-                                self->m_Tx[IPVERSION_4]->RxHandler(rxbuffer, (uint16_t)ret, (sockaddr*)&sender_addr, sender_addr_length);
-                            break;
+                            union
+                            {
+                                sockaddr_in IPv4;
+                                sockaddr_in6 IPv6;
+                            }sender_addr;
+                            socklen_t sender_addr_length = (ipv==IPVERSION_4?sizeof(sockaddr_in):sizeof(sockaddr_in6));
+                            const int ret = recvfrom(self->m_Socket[ipv], rxbuffer, sizeof(rxbuffer), 0, (sockaddr*)&sender_addr, &sender_addr_length);
+                            if(ret <= 0)
+                            {
+                                continue;
+                            }
+                            TEST_DROP;
+                            switch(reinterpret_cast<Header::Common*>(rxbuffer)->m_Type)
+                            {
+                                case Header::Common::HeaderType::DATA:
+                                case Header::Common::HeaderType::SYNC:
+                                case Header::Common::HeaderType::PING:
+                                    self->m_Rx[ipv]->RxHandler(rxbuffer, (uint16_t)ret, (sockaddr*)&sender_addr, sender_addr_length);
+                                break;
+                                case Header::Common::HeaderType::DATA_ACK:
+                                case Header::Common::HeaderType::SYNC_ACK:
+                                case Header::Common::HeaderType::PONG:
+                                    self->m_Tx[ipv]->RxHandler(rxbuffer, (uint16_t)ret, (sockaddr*)&sender_addr, sender_addr_length);
+                                break;
 
-                        }
-                    }
-                    if(state && FD_ISSET(self->m_Socket[IPVERSION_6], &AllFD))
-                    {
-                        sockaddr_in6 sender_addr = {0,};
-                        socklen_t sender_addr_length = sizeof(sockaddr_in6);
-                        const int ret = recvfrom(self->m_Socket[IPVERSION_6], rxbuffer, sizeof(rxbuffer), 0, (sockaddr*)&sender_addr, &sender_addr_length);
-                        if(ret <= 0)
-                        {
-                            continue;
-                        }
-                        TEST_DROP;
-                        switch(reinterpret_cast<Header::Common*>(rxbuffer)->m_Type)
-                        {
-                            case Header::Common::HeaderType::DATA:
-                            case Header::Common::HeaderType::SYNC:
-                            case Header::Common::HeaderType::PING:
-                                self->m_Rx[IPVERSION_6]->RxHandler(rxbuffer, (uint16_t)ret, (sockaddr*)&sender_addr, sender_addr_length);
-                            break;
-                            case Header::Common::HeaderType::DATA_ACK:
-                            case Header::Common::HeaderType::SYNC_ACK:
-                            case Header::Common::HeaderType::PONG:
-                                self->m_Tx[IPVERSION_6]->RxHandler(rxbuffer, (uint16_t)ret, (sockaddr*)&sender_addr, sender_addr_length);
-                            break;
-
+                            }
                         }
                     }
                 }
@@ -348,12 +330,13 @@ private:
     };
     enum IPVERSION: unsigned char{
         IPVERSION_4 = 0,
-        IPVERSION_6
+        IPVERSION_6,
+        IPVERSIONS
     };
     STATE m_State;
-    int m_Socket[2];
-    Reception* m_Rx[2];
-    Transmission* m_Tx[2];
+    int m_Socket[IPVERSIONS];
+    Reception* m_Rx[IPVERSIONS];
+    Transmission* m_Tx[IPVERSIONS];
     std::thread* m_RxThread;
     bool m_RxThreadIsRunning;
 public:
