@@ -27,9 +27,6 @@ public:
             addrinfo hints;
             addrinfo *ret = nullptr;
 
-            m_Socket[IPVERSION_4] = -1;
-            m_Socket[IPVERSION_6] = -1;
-            
             memset(&hints, 0x00, sizeof(hints));
             hints.ai_flags = AI_PASSIVE;
             hints.ai_family = AF_UNSPEC;    // Accept IPv4 and IPv6 
@@ -294,6 +291,7 @@ public:
                 m_Socket[IPVERSION_6] = -1;
             }
             m_RxThread = nullptr;
+            m_RxThreadIsRunning = false;
             return;
         }
         m_State = INIT_SUCCESS;
