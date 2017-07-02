@@ -135,7 +135,7 @@ public:
     uint16_t m_Port;
 }__attribute__((packed));
 
-inline const SessionKey GetSessionKey(const sockaddr* addr, int size)
+inline SessionKey GetSessionKey(const sockaddr* addr, int size)
 {
     if(size == sizeof(sockaddr_in))
     {
@@ -160,7 +160,7 @@ public:
     uint32_t AddrLength;
 };
 
-inline const AddressType GetAddressType(std::string IP, std::string Port)
+inline AddressType GetAddressType(std::string IP, std::string Port)
 {
     AddressType ret;
     addrinfo hints;
