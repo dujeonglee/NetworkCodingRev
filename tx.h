@@ -51,7 +51,6 @@ public:
     uint16_t m_RetransmissionInterval;
     uint8_t m_TransmissionMode;
     uint8_t m_BlockSize;
-    SingleShotTimer<1, 1> m_Timer;
     enum TaskPriority
     {
         HIGH_PRIORITY = 0,
@@ -59,9 +58,9 @@ public:
         LOW_PRIORITY,
         PRIORITY_LEVELS
     };
+    SingleShotTimer<TaskPriority::PRIORITY_LEVELS, 1> m_Timer;
     std::atomic<CLOCK::time_point::duration::rep> m_LastPongTime;
 
-    ThreadPool<TaskPriority::PRIORITY_LEVELS, 1> m_TaskQueue;
     TransmissionBlock* p_TransmissionBlock;
     std::atomic<unsigned long> m_ConcurrentRetransmissions;
 

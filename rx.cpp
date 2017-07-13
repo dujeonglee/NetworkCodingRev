@@ -386,13 +386,13 @@ bool ReceptionBlock::Decoding()
         uint8_t* pkt = DecodeOut[i].release();
         if(!(reinterpret_cast<Header::Data*>(pkt)->m_Flags & Header::Data::DataHeaderFlag::FLAGS_CONSUMED))
         {
-            while(c_Session->m_RxTaskQueue.Enqueue([this, pkt](){
+            while(INVALID_TIMER_ID == c_Session->m_RxTaskQueue.Enqueue([this, pkt](){
                 if(c_Reception->m_RxCallback)
                 {
                     c_Reception->m_RxCallback(pkt+sizeof(Header::Data)+reinterpret_cast<Header::Data*>(pkt)->m_MaximumRank-1, ntohs(reinterpret_cast<Header::Data*>(pkt)->m_PayloadSize), (sockaddr*)&c_Session->m_SenderAddress.Addr, c_Session->m_SenderAddress.AddrLength);
                 }
                 delete [] pkt;
-            })==false);
+            }));
         }
         else
         {
@@ -458,13 +458,13 @@ void ReceptionBlock::Receive(uint8_t *buffer, uint16_t length, const sockaddr* c
                         TEST_EXCEPTION(std::bad_alloc());
                         pkt = new uint8_t[length];
                         memcpy(pkt, buffer, length);
-                        while(c_Session->m_RxTaskQueue.Enqueue([this, pkt](){
+                        while(INVALID_TIMER_ID == c_Session->m_RxTaskQueue.Enqueue([this, pkt](){
                             if(c_Reception->m_RxCallback)
                             {
                                 c_Reception->m_RxCallback(pkt+sizeof(Header::Data)+reinterpret_cast<Header::Data*>(pkt)->m_MaximumRank-1, ntohs(reinterpret_cast<Header::Data*>(pkt)->m_PayloadSize), (sockaddr*)&c_Session->m_SenderAddress.Addr, c_Session->m_SenderAddress.AddrLength);
                             }
                             delete [] pkt;
-                        })==false);
+                        }));
                         reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer.back().get())->m_Flags |= Header::Data::DataHeaderFlag::FLAGS_CONSUMED;
                         if(reinterpret_cast<Header::Data*>(m_DecodedPacketBuffer.back().get())->m_Flags & Header::Data::DataHeaderFlag::FLAGS_END_OF_BLK)
                         {
@@ -534,13 +534,13 @@ void ReceptionBlock::Receive(uint8_t *buffer, uint16_t length, const sockaddr* c
                                     TEST_EXCEPTION(std::bad_alloc());
                                     pkt = new uint8_t[ntohs(reinterpret_cast<Header::Data*>((*pp_block)->m_DecodedPacketBuffer[i].get())->m_TotalSize)];
                                     memcpy(pkt, (*pp_block)->m_DecodedPacketBuffer[i].get(), ntohs(reinterpret_cast<Header::Data*>((*pp_block)->m_DecodedPacketBuffer[i].get())->m_TotalSize));
-                                    while(c_Session->m_RxTaskQueue.Enqueue([this, pkt](){
+                                    while(INVALID_TIMER_ID == c_Session->m_RxTaskQueue.Enqueue([this, pkt](){
                                         if(c_Reception->m_RxCallback)
                                         {
                                             c_Reception->m_RxCallback(pkt+sizeof(Header::Data)+reinterpret_cast<Header::Data*>(pkt)->m_MaximumRank-1, ntohs(reinterpret_cast<Header::Data*>(pkt)->m_PayloadSize), (sockaddr*)&c_Session->m_SenderAddress.Addr, c_Session->m_SenderAddress.AddrLength);
                                         }
                                         delete [] pkt;
-                                    })==false);
+                                    }));
                                     reinterpret_cast<Header::Data*>((*pp_block)->m_DecodedPacketBuffer[i].get())->m_Flags |= Header::Data::DataHeaderFlag::FLAGS_CONSUMED;
                                     break;
                                 }
@@ -603,22 +603,22 @@ void ReceptionSession::Receive(uint8_t* buffer, uint16_t length, const sockaddr*
                                 delete [] pkt;
                                 continue;
                             }
-                            while(m_RxTaskQueue.Enqueue([this, pkt](){
+                            while(INVALID_TIMER_ID == m_RxTaskQueue.Enqueue([this, pkt](){
                                 if(c_Reception->m_RxCallback)
                                 {
                                     c_Reception->m_RxCallback(pkt+sizeof(Header::Data)+reinterpret_cast<Header::Data*>(pkt)->m_MaximumRank-1, ntohs(reinterpret_cast<Header::Data*>(pkt)->m_PayloadSize), (sockaddr*)&m_SenderAddress.Addr, m_SenderAddress.AddrLength);
                                 }
                                 delete [] pkt;
-                            })==false);
+                            }));
                         }
                     }
                 }
                 m_SequenceNumberForService++;
             }
             m_Blocks.Remove(m_MinSequenceNumberAwaitingAck, [this](ReceptionBlock* &data){
-                while(m_RxTaskQueue.Enqueue([data](){
+                while(INVALID_TIMER_ID == m_RxTaskQueue.Enqueue([data](){
                     delete data;
-                })==false);
+                }));
             });
         }
     }
