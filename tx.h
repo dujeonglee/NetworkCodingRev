@@ -101,7 +101,7 @@ public:
     bool Send(const DataStructures::AddressType Addr, uint8_t* buffer, uint16_t buffersize/*, bool reqack*/);
     bool Flush(const DataStructures::AddressType Addr);
     void WaitUntilTxIsCompleted(const DataStructures::AddressType Addr);
-    bool Disconnect(const DataStructures::AddressType Addr);
+    void Disconnect(const DataStructures::AddressType Addr);
 public:
     void RxHandler(uint8_t* buffer, uint16_t size, const sockaddr* const sender_addr, const uint32_t sender_addr_len);
 };

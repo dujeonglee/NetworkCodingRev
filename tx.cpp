@@ -336,11 +336,8 @@ void TransmissionSession::SendPing()
     if(TimeSinceLastPongTime.count() > Parameter::CONNECTION_TIMEOUT)
     {
         TransmissionSession const * self = this;
-        std::cout<<"Pong Timeout...Client is disconnected.["<<TimeSinceLastPongTime.count()<<"]"<<std::endl;
-        std::thread DisconnectThread = std::thread([self](){
-            //self->c_Transmission->Disconnect(self->c_IPv4, self->c_Port);
-        });
-        DisconnectThread.detach();
+        std::cout<<"Client is disconnected. No response for "<<TimeSinceLastPongTime.count()<<" sec."<<std::endl;
+        self->c_Transmission->Disconnect(self->c_Addr);
         return;
     }
 
@@ -562,32 +559,36 @@ void Transmission::WaitUntilTxIsCompleted(const DataStructures::AddressType Addr
     }
 }
 
-bool Transmission::Disconnect(const DataStructures::AddressType Addr)
+void Transmission::Disconnect(const DataStructures::AddressType Addr)
 {
-    const DataStructures::SessionKey key = DataStructures::GetSessionKey((sockaddr*)&Addr.Addr, Addr.AddrLength);
-    TransmissionSession** pp_session = nullptr;
-    {
-        std::unique_lock< std::mutex > lock(m_Lock);
+    Transmission* const self = this;
+    std::thread DisconnectThread = std::thread([self, Addr](){
+        const DataStructures::SessionKey key = DataStructures::GetSessionKey((sockaddr*)&Addr.Addr, Addr.AddrLength);
+        TransmissionSession** pp_session = nullptr;
+        {
+            std::unique_lock< std::mutex > lock(self->m_Lock);
 
-        pp_session = m_Sessions.GetPtr(key);
-        if(pp_session == nullptr)
-        {
-            return false;
+            pp_session = self->m_Sessions.GetPtr(key);
+            if(pp_session == nullptr)
+            {
+                return false;
+            }
         }
-    }
-    do
-    {
-        (*pp_session)->m_IsConnected = false;
-        for(auto i = 0 ; i < Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION*2 ; i++)
+        do
         {
-            (*pp_session)->m_AckList[i] = true;
-        }
-    }while(0 < (*pp_session)->m_ConcurrentRetransmissions);
-    m_Sessions.Remove(key, [](TransmissionSession*&session){
-        session->m_Timer.Stop();
-        delete session;
+            (*pp_session)->m_IsConnected = false;
+            for(auto i = 0 ; i < Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION*2 ; i++)
+            {
+                (*pp_session)->m_AckList[i] = true;
+            }
+        }while(0 < (*pp_session)->m_ConcurrentRetransmissions);
+        self->m_Sessions.Remove(key, [](TransmissionSession*&session){
+            session->m_Timer.Stop();
+            delete session;
+        });
+        return true;
     });
-    return true;
+    DisconnectThread.detach();
 }
 
 /* OK */
