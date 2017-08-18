@@ -3,6 +3,7 @@
 
 #include "tx.h"
 #include "rx.h"
+#include "SingleShotTimer.h"
 #include <sys/select.h>
 
 namespace NetworkCoding
@@ -21,7 +22,6 @@ public:
         m_Rx[IPVERSION_6] = nullptr;
         m_Tx[IPVERSION_4] = nullptr;
         m_Tx[IPVERSION_6] = nullptr;
-        m_RxThread = nullptr;
 
         { // Open sockets for IPv4 and IPv6.
             addrinfo hints;
@@ -178,136 +178,80 @@ public:
                 freeaddrinfo(ret);
             }
         }
-        m_RxThreadIsRunning = true;
-        try
-        {
-#if ENABLE_CRITICAL_EXCEPTIONS
-            TEST_EXCEPTION(std::bad_alloc());
-#endif
-            NCSocket const * self = this;
-            m_RxThread = new std::thread([self, RXTIMEOUT](){
-                fd_set ReadFD;
-                FD_ZERO(&ReadFD);
-                if(self->m_Socket[IPVERSION_4] != -1)
-                {
-                    FD_SET(self->m_Socket[IPVERSION_4], &ReadFD);
-                }
-                if(self->m_Socket[IPVERSION_6] != -1)
-                {
-                    FD_SET(self->m_Socket[IPVERSION_6], &ReadFD);
-                }
-                const int MaxFD = (self->m_Socket[IPVERSION_4] > self->m_Socket[IPVERSION_6]?self->m_Socket[IPVERSION_4]:self->m_Socket[IPVERSION_6]);
-                timeval rx_to = {RXTIMEOUT/1000, (RXTIMEOUT%1000)*1000};
-                uint8_t rxbuffer[Parameter::MAXIMUM_BUFFER_SIZE];
-                while(self->m_RxThreadIsRunning)
-                {
-                    fd_set AllFD = ReadFD;
-                    const int state = select(MaxFD + 1 , &AllFD, NULL, NULL, &rx_to);
-                    if(state && FD_ISSET(self->m_Socket[IPVERSION_4], &AllFD))
-                    {
-                        sockaddr_in sender_addr = {0,};
-                        socklen_t sender_addr_length = sizeof(sockaddr_in);
-                        const int ret = recvfrom(self->m_Socket[IPVERSION_4], rxbuffer, sizeof(rxbuffer), 0, (sockaddr*)&sender_addr, &sender_addr_length);
-                        if(ret <= 0)
-                        {
-                            continue;
-                        }
-                        TEST_DROP;
-                        switch(reinterpret_cast<Header::Common*>(rxbuffer)->m_Type)
-                        {
-                            case Header::Common::HeaderType::DATA:
-                            case Header::Common::HeaderType::SYNC:
-                            case Header::Common::HeaderType::PING:
-                                self->m_Rx[IPVERSION_4]->RxHandler(rxbuffer, (uint16_t)ret, (sockaddr*)&sender_addr, sender_addr_length);
-                            break;
-                            case Header::Common::HeaderType::DATA_ACK:
-                            case Header::Common::HeaderType::SYNC_ACK:
-                            case Header::Common::HeaderType::PONG:
-                                self->m_Tx[IPVERSION_4]->RxHandler(rxbuffer, (uint16_t)ret, (sockaddr*)&sender_addr, sender_addr_length);
-                            break;
+        NCSocket const * self = this;
+        m_RxTask.PeriodicTask(0, [self, RXTIMEOUT](){
+            fd_set ReadFD;
+            FD_ZERO(&ReadFD);
+            if(self->m_Socket[IPVERSION_4] != -1)
+            {
+                FD_SET(self->m_Socket[IPVERSION_4], &ReadFD);
+            }
+            if(self->m_Socket[IPVERSION_6] != -1)
+            {
+                FD_SET(self->m_Socket[IPVERSION_6], &ReadFD);
+            }
+            const int MaxFD = (self->m_Socket[IPVERSION_4] > self->m_Socket[IPVERSION_6]?self->m_Socket[IPVERSION_4]:self->m_Socket[IPVERSION_6]);
+            timeval rx_to = {RXTIMEOUT/1000, (RXTIMEOUT%1000)*1000};
+            uint8_t rxbuffer[Parameter::MAXIMUM_BUFFER_SIZE];
 
-                        }
-                    }
-                    if(state && FD_ISSET(self->m_Socket[IPVERSION_6], &AllFD))
+            fd_set AllFD = ReadFD;
+            const int state = select(MaxFD + 1 , &AllFD, NULL, NULL, &rx_to);
+            if(state && FD_ISSET(self->m_Socket[IPVERSION_4], &AllFD))
+            {
+                sockaddr_in sender_addr = {0,};
+                socklen_t sender_addr_length = sizeof(sockaddr_in);
+                const int ret = recvfrom(self->m_Socket[IPVERSION_4], rxbuffer, sizeof(rxbuffer), 0, (sockaddr*)&sender_addr, &sender_addr_length);
+                if(ret > 0)
+                {
+                    TEST_DROP;
+                    switch(reinterpret_cast<Header::Common*>(rxbuffer)->m_Type)
                     {
-                        sockaddr_in6 sender_addr = {0,};
-                        socklen_t sender_addr_length = sizeof(sockaddr_in6);
-                        const int ret = recvfrom(self->m_Socket[IPVERSION_6], rxbuffer, sizeof(rxbuffer), 0, (sockaddr*)&sender_addr, &sender_addr_length);
-                        if(ret <= 0)
-                        {
-                            continue;
-                        }
-                        TEST_DROP;
-                        switch(reinterpret_cast<Header::Common*>(rxbuffer)->m_Type)
-                        {
-                            case Header::Common::HeaderType::DATA:
-                            case Header::Common::HeaderType::SYNC:
-                            case Header::Common::HeaderType::PING:
-                                self->m_Rx[IPVERSION_6]->RxHandler(rxbuffer, (uint16_t)ret, (sockaddr*)&sender_addr, sender_addr_length);
-                            break;
-                            case Header::Common::HeaderType::DATA_ACK:
-                            case Header::Common::HeaderType::SYNC_ACK:
-                            case Header::Common::HeaderType::PONG:
-                                self->m_Tx[IPVERSION_6]->RxHandler(rxbuffer, (uint16_t)ret, (sockaddr*)&sender_addr, sender_addr_length);
-                            break;
+                        case Header::Common::HeaderType::DATA:
+                        case Header::Common::HeaderType::SYNC:
+                        case Header::Common::HeaderType::PING:
+                            self->m_Rx[IPVERSION_4]->RxHandler(rxbuffer, (uint16_t)ret, (sockaddr*)&sender_addr, sender_addr_length);
+                        break;
+                        case Header::Common::HeaderType::DATA_ACK:
+                        case Header::Common::HeaderType::SYNC_ACK:
+                        case Header::Common::HeaderType::PONG:
+                            self->m_Tx[IPVERSION_4]->RxHandler(rxbuffer, (uint16_t)ret, (sockaddr*)&sender_addr, sender_addr_length);
+                        break;
 
-                        }
                     }
                 }
-            });
-        }
-        catch(const std::bad_alloc& ex)
-        {
-            EXCEPTION_PRINT;
-            if(m_Tx[IPVERSION_4])
-            {
-                delete m_Tx[IPVERSION_4];
-                m_Tx[IPVERSION_4] = nullptr;
             }
-            if(m_Tx[IPVERSION_6])
+            if(state && FD_ISSET(self->m_Socket[IPVERSION_6], &AllFD))
             {
-                delete m_Tx[IPVERSION_6];
-                m_Tx[IPVERSION_6] = nullptr;
-            }
-            if(m_Rx[IPVERSION_4])
-            {
-                delete m_Rx[IPVERSION_4];
-                m_Rx[IPVERSION_4] = nullptr;
-            }
-            if(m_Rx[IPVERSION_6])
-            {
-                delete m_Rx[IPVERSION_6];
-                m_Rx[IPVERSION_6] = nullptr;
-            }
-            if(m_Socket[IPVERSION_4] != -1)
-            {
-                close(m_Socket[IPVERSION_4]);
-                m_Socket[IPVERSION_4] = -1;
+                sockaddr_in6 sender_addr = {0,};
+                socklen_t sender_addr_length = sizeof(sockaddr_in6);
+                const int ret = recvfrom(self->m_Socket[IPVERSION_6], rxbuffer, sizeof(rxbuffer), 0, (sockaddr*)&sender_addr, &sender_addr_length);
+                if(ret > 0)
+                {
+                    TEST_DROP;
+                    switch(reinterpret_cast<Header::Common*>(rxbuffer)->m_Type)
+                    {
+                        case Header::Common::HeaderType::DATA:
+                        case Header::Common::HeaderType::SYNC:
+                        case Header::Common::HeaderType::PING:
+                            self->m_Rx[IPVERSION_6]->RxHandler(rxbuffer, (uint16_t)ret, (sockaddr*)&sender_addr, sender_addr_length);
+                        break;
+                        case Header::Common::HeaderType::DATA_ACK:
+                        case Header::Common::HeaderType::SYNC_ACK:
+                        case Header::Common::HeaderType::PONG:
+                            self->m_Tx[IPVERSION_6]->RxHandler(rxbuffer, (uint16_t)ret, (sockaddr*)&sender_addr, sender_addr_length);
+                        break;
 
+                    }
+                }
             }
-            if(m_Socket[IPVERSION_6] != -1)
-            {
-                close(m_Socket[IPVERSION_6]);
-                m_Socket[IPVERSION_6] = -1;
-            }
-            m_RxThread = nullptr;
-            m_RxThreadIsRunning = false;
-            return;
-        }
+            return true;
+        });
         m_State = INIT_SUCCESS;
     }
 
     ~NCSocket()
     {
-        m_RxThreadIsRunning = false;
-        if(m_RxThread)
-        {
-            if(m_RxThread->joinable())
-            {
-                m_RxThread->join();
-            }
-            delete m_RxThread;
-        }
+        m_RxTask.Stop();
         if(m_Tx[IPVERSION_4])
         {
             delete m_Tx[IPVERSION_4];
@@ -358,8 +302,7 @@ private:
     int m_Socket[IPVERSIONS];
     Reception* m_Rx[IPVERSIONS];
     Transmission* m_Tx[IPVERSIONS];
-    std::thread* m_RxThread;
-    bool m_RxThreadIsRunning;
+    SingleShotTimer<1,1> m_RxTask;
 public:
     bool Connect(const std::string ip, const std::string port, uint32_t timeout, Parameter::TRANSMISSION_MODE TransmissionMode, Parameter::BLOCK_SIZE BlockSize, uint16_t RetransmissionRedundancy)
     {
