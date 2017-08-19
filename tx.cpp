@@ -342,9 +342,6 @@ void TransmissionSession::SendPing()
     }
 
     sendto(c_Socket, reinterpret_cast<uint8_t*>(&ping), sizeof(Header::Ping), 0, (sockaddr*)&c_Addr.Addr, c_Addr.AddrLength);
-    while(m_IsConnected && INVALID_TIMER_ID == m_Timer.ScheduleTask(Parameter::PING_INTERVAL, [this](){
-        SendPing();
-    }, TransmissionSession::HIGH_PRIORITY));
 }
 
 void TransmissionSession::UpdateRetransmissionInterval(const uint16_t rtt)
@@ -421,9 +418,11 @@ bool Transmission::Connect(const DataStructures::AddressType Addr, uint32_t Conn
         return false;
     }
     newsession->m_LastPongTime = CLOCK::now().time_since_epoch().count();
-    while(newsession->m_IsConnected && INVALID_TIMER_ID == newsession->m_Timer.ScheduleTask(0, [newsession](){
+    newsession->m_Timer.PeriodicTask(Parameter::PING_INTERVAL, [newsession]()->const bool
+    {
         newsession->SendPing();
-    }, TransmissionSession::HIGH_PRIORITY));
+        return newsession->m_IsConnected;
+    }, TransmissionSession::HIGH_PRIORITY);
     return true;
 }
 
