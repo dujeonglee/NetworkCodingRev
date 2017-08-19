@@ -94,15 +94,17 @@ bool TransmissionBlock::Send(uint8_t* buffer, uint16_t buffersize)
     if((m_TransmissionCount == m_BlockSize)/* || reqack == true*/)
     {
         p_Session->p_TransmissionBlock = nullptr;
-        const auto Priority = (p_Session->m_MinBlockSequenceNumber == m_BlockSequenceNumber?TransmissionSession::MIDDLE_PRIORITY:TransmissionSession::LOW_PRIORITY);
-        while(p_Session->m_IsConnected && INVALID_TIMER_ID == p_Session->m_Timer.ScheduleTask(p_Session->m_RetransmissionInterval, [this](){
-            Retransmission();
-        }, Priority));
+        p_Session->m_Timer.PeriodicTaskAdv([this]()->std::tuple<bool, uint32_t, uint32_t>
+        {
+            const bool schedulenextretransmission = Retransmission();
+            const uint32_t priority = (p_Session->m_MinBlockSequenceNumber == m_BlockSequenceNumber?TransmissionSession::MIDDLE_PRIORITY:TransmissionSession::LOW_PRIORITY);
+            return std::make_tuple(schedulenextretransmission, p_Session->m_RetransmissionInterval, priority);
+        });
     }
     return true;
 }
 
-void TransmissionBlock::Retransmission()
+const bool TransmissionBlock::Retransmission()
 {
     const uint8_t c_AckIndex = AckIndex();
     if(m_TransmissionMode == Parameter::BEST_EFFORT_TRANSMISSION_MODE)
@@ -126,12 +128,12 @@ void TransmissionBlock::Retransmission()
             }
         }
         delete this;
-        return;
+        return false;
     }
     if(p_Session->m_IsConnected == false)
     {
         delete this;
-        return;
+        return false;
     }
     {
         std::vector<uint8_t> RandomCoefficients;
@@ -253,10 +255,7 @@ void TransmissionBlock::Retransmission()
         }
         sendto(p_Session->c_Socket, m_RemedyPacketBuffer, ntohs(RemedyHeader->m_TotalSize), 0, (sockaddr*)&p_Session->c_Addr.Addr, p_Session->c_Addr.AddrLength);
     }
-    const auto Priority = (p_Session->m_MinBlockSequenceNumber == m_BlockSequenceNumber?TransmissionSession::MIDDLE_PRIORITY:TransmissionSession::LOW_PRIORITY);
-    while(p_Session->m_IsConnected && INVALID_TIMER_ID == p_Session->m_Timer.ScheduleTask(p_Session->m_RetransmissionInterval, [this](){
-        Retransmission();
-    }, Priority));
+    return true;
 }
 
 ////////////////////////////////////////////////////////////
@@ -324,7 +323,7 @@ void TransmissionSession::ChangeSessionParameter(const Parameter::TRANSMISSION_M
     });
 }
 
-void TransmissionSession::SendPing()
+const bool TransmissionSession::SendPing()
 {
     Header::Ping ping;
     ping.m_Type = Header::Data::HeaderType::PING;
@@ -335,21 +334,44 @@ void TransmissionSession::SendPing()
     std::chrono::duration<double> TimeSinceLastPongTime = std::chrono::duration_cast<std::chrono::duration<double>> (CurrentTime - LastPongRecvTime);
     if(TimeSinceLastPongTime.count() > Parameter::CONNECTION_TIMEOUT)
     {
-        TransmissionSession const * self = this;
         std::cout<<"Client is disconnected. No response for "<<TimeSinceLastPongTime.count()<<" sec."<<std::endl;
-        self->c_Transmission->Disconnect(self->c_Addr);
-        return;
+        c_Transmission->Disconnect(c_Addr);
+        return false;
     }
 
     sendto(c_Socket, reinterpret_cast<uint8_t*>(&ping), sizeof(Header::Ping), 0, (sockaddr*)&c_Addr.Addr, c_Addr.AddrLength);
+    return true;
 }
 
-void TransmissionSession::UpdateRetransmissionInterval(const uint16_t rtt)
+void TransmissionSession::ProcessPong(const uint16_t rtt)
 {
     m_Timer.ImmediateTask([this, rtt]()
     {
         m_RetransmissionInterval = (m_RetransmissionInterval + rtt)/2;
     });
+}
+
+void TransmissionSession::ProcessDataAck(const uint16_t sequence, const uint8_t loss)
+{
+    m_Timer.ImmediateTask([this,sequence,loss](){
+        if(m_AckList[sequence%(Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION*2)] == true)
+        {
+            return;
+        }
+        m_AckList[sequence%(Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION*2)] = true;
+        /* To-Do */
+        // Update the Avg. loss rate.
+    }, TransmissionSession::HIGH_PRIORITY);
+}
+
+void TransmissionSession::ProcessSyncAck(const uint16_t sequence)
+{
+    m_Timer.ImmediateTask([this,sequence](){
+        if(sequence == m_MaxBlockSequenceNumber)
+        {
+            m_IsConnected = true;
+        }
+    }, TransmissionSession::HIGH_PRIORITY);
 }
 
 ////////////////////////////////////////////////////////////
@@ -420,8 +442,7 @@ bool Transmission::Connect(const DataStructures::AddressType Addr, uint32_t Conn
     newsession->m_LastPongTime = CLOCK::now().time_since_epoch().count();
     newsession->m_Timer.PeriodicTask(Parameter::PING_INTERVAL, [newsession]()->const bool
     {
-        newsession->SendPing();
-        return newsession->m_IsConnected;
+        return newsession->SendPing();
     }, TransmissionSession::HIGH_PRIORITY);
     return true;
 }
@@ -526,7 +547,13 @@ bool Transmission::Flush(const DataStructures::AddressType Addr)
         // 1. Get Transmission Block
         if(p_session->p_TransmissionBlock)
         {
-            p_session->p_TransmissionBlock->Retransmission();
+            TransmissionBlock * const block = p_session->p_TransmissionBlock;
+            p_session->m_Timer.PeriodicTaskAdv([p_session, block]()->std::tuple<bool, uint32_t, uint32_t>
+            {
+                const bool schedulenextretransmission = block->Retransmission();
+                const uint32_t priority = (p_session->m_MinBlockSequenceNumber == block->m_BlockSequenceNumber?TransmissionSession::MIDDLE_PRIORITY:TransmissionSession::LOW_PRIORITY);
+                return std::make_tuple(schedulenextretransmission, p_session->m_RetransmissionInterval, priority);
+            });
             p_session->p_TransmissionBlock = nullptr;
         }
     }, TransmissionSession::LOW_PRIORITY);
@@ -560,14 +587,13 @@ void Transmission::WaitUntilTxIsCompleted(const DataStructures::AddressType Addr
 
 void Transmission::Disconnect(const DataStructures::AddressType Addr)
 {
-    Transmission* const self = this;
-    std::thread DisconnectThread = std::thread([self, Addr](){
+    std::thread DisconnectThread = std::thread([this, Addr](){
         const DataStructures::SessionKey key = DataStructures::GetSessionKey((sockaddr*)&Addr.Addr, Addr.AddrLength);
         TransmissionSession** pp_session = nullptr;
         {
-            std::unique_lock< std::mutex > lock(self->m_Lock);
+            std::unique_lock< std::mutex > lock(m_Lock);
 
-            pp_session = self->m_Sessions.GetPtr(key);
+            pp_session = m_Sessions.GetPtr(key);
             if(pp_session == nullptr)
             {
                 return false;
@@ -581,7 +607,7 @@ void Transmission::Disconnect(const DataStructures::AddressType Addr)
                 (*pp_session)->m_AckList[i] = true;
             }
         }while(0 < (*pp_session)->m_ConcurrentRetransmissions);
-        self->m_Sessions.Remove(key, [](TransmissionSession*&session){
+        m_Sessions.Remove(key, [](TransmissionSession*&session){
             session->m_Timer.Stop();
             delete session;
         });
@@ -604,18 +630,7 @@ void Transmission::RxHandler(uint8_t* buffer, uint16_t size, const sockaddr* con
             TransmissionSession** const pp_session = m_Sessions.GetPtr(key);
             if(pp_session)
             {
-                TransmissionSession* const SessionAddress = (*pp_session);
-                uint16_t Sequence = ntohs(Ack->m_Sequence);
-                uint8_t Loss = Ack->m_Losses;
-                (*pp_session)->m_Timer.ImmediateTask([SessionAddress,Sequence,Loss](){
-                    if(SessionAddress->m_AckList[Sequence%(Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION*2)] == true)
-                    {
-                        return;
-                    }
-                    SessionAddress->m_AckList[Sequence%(Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION*2)] = true;
-                    /* To-Do */
-                    // Update the Avg. loss rate.
-                }, TransmissionSession::HIGH_PRIORITY);
+                (*pp_session)->ProcessDataAck(ntohs(Ack->m_Sequence), Ack->m_Losses);
             }
         }
         break;
@@ -628,10 +643,7 @@ void Transmission::RxHandler(uint8_t* buffer, uint16_t size, const sockaddr* con
             TransmissionSession** const pp_session = m_Sessions.GetPtr(key);
             if(pp_session)
             {
-                if(ntohs(sync->m_Sequence) == (*pp_session)->m_MaxBlockSequenceNumber)
-                {
-                    (*pp_session)->m_IsConnected = true;
-                }
+                (*pp_session)->ProcessSyncAck(ntohs(sync->m_Sequence));
             }
         }
         break;
@@ -650,11 +662,11 @@ void Transmission::RxHandler(uint8_t* buffer, uint16_t size, const sockaddr* con
                 std::chrono::duration<double> rtt = std::chrono::duration_cast<std::chrono::duration<double>>(RecvTime - SentTime);
                 if(rtt.count() * 1000 < Parameter::MINIMUM_RETRANSMISSION_INTERVAL)
                 {
-                    (*pp_session)->UpdateRetransmissionInterval(Parameter::MINIMUM_RETRANSMISSION_INTERVAL);
+                    (*pp_session)->ProcessPong(Parameter::MINIMUM_RETRANSMISSION_INTERVAL);
                 }
                 else
                 {
-                    (*pp_session)->UpdateRetransmissionInterval((uint16_t)(rtt.count()*1000.));
+                    (*pp_session)->ProcessPong((uint16_t)(rtt.count()*1000.));
                 }
             }
         }

@@ -34,7 +34,7 @@ public:
 
     const uint16_t AckIndex();
     bool Send(uint8_t *buffer, uint16_t buffersize/*, bool reqack*/);
-    void Retransmission();
+    const bool Retransmission();
 };
 
 class TransmissionSession
@@ -79,8 +79,10 @@ public:
     void ChangeBlockSize(const Parameter::BLOCK_SIZE BlockSize);
     void ChangeRetransmissionRedundancy(const uint16_t RetransmissionRedundancy);
     void ChangeSessionParameter(const Parameter::TRANSMISSION_MODE TransmissionMode, const Parameter::BLOCK_SIZE BlockSize, const uint16_t RetransmissionRedundancy);
-    void SendPing();
-    void UpdateRetransmissionInterval(const uint16_t rtt);
+    const bool SendPing();
+    void ProcessPong(const uint16_t rtt);
+    void ProcessDataAck(const uint16_t sequence, const uint8_t loss);
+    void ProcessSyncAck(const uint16_t sequence);
 };
 
 class Transmission

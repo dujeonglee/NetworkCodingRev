@@ -14,7 +14,7 @@ $(TARGET) : $(OBJECTS)
 	$(CPP) -o $@  $^ $(LIBRARY)
 
 .cpp.o : $(SOURCES) 
-	$(CPP) $(SOURCES) $(CPPFLAGS) -DNONPRIMITIVE_KEY $(INCLUDES) $(LIBRARY)
+	$(CPP) $(SOURCES) $(CPPFLAGS) $(INCLUDES) $(LIBRARY)
 
 ./basiclibrary/.git/config : 
 	git clone https://github.com/dujeonglee/basiclibrary.git
@@ -22,14 +22,10 @@ $(TARGET) : $(OBJECTS)
 clean :
 	rm -rf $(OBJECTS) $(TARGET) *~ gmon.out *.bak *.stackdump
 
-debug : CPPFLAGS := -g -c -Wall -std=c++11
+debug : CPPFLAGS := -g -c -Wall -std=c++0x
 debug : ./basiclibrary/.git/config
 debug : $(TARGET)
 
-c++11 : CPPFLAGS := -O3 -c -Wall -std=c++11
-c++11 : ./basiclibrary/.git/config
-c++11 : $(TARGET)
-
-c++0x : CPPFLAGS := -O3 -c -Wall -std=c++0x
-c++0x : ./basiclibrary/.git/config
-c++0x : $(TARGET)
+release : CPPFLAGS := -O3 -c -Wall -std=c++0x
+release : ./basiclibrary/.git/config
+release : $(TARGET)
