@@ -599,16 +599,16 @@ void Transmission::Disconnect(const DataStructures::AddressType Addr)
                 return false;
             }
         }
-        do
-        {
+        //do
+        //{
             (*pp_session)->m_IsConnected = false;
-            for(auto i = 0 ; i < Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION*2 ; i++)
-            {
-                (*pp_session)->m_AckList[i] = true;
-            }
-        }while(0 < (*pp_session)->m_ConcurrentRetransmissions);
+            //for(auto i = 0 ; i < Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION*2 ; i++)
+            //{
+            //    (*pp_session)->m_AckList[i] = true;
+            //}
+        //}while(0 < (*pp_session)->m_ConcurrentRetransmissions);
+        while(0 < (*pp_session)->m_ConcurrentRetransmissions);
         m_Sessions.Remove(key, [](TransmissionSession*&session){
-            session->m_Timer.Stop();
             delete session;
         });
         return true;
