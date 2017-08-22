@@ -510,7 +510,7 @@ bool Transmission::Send(const DataStructures::AddressType Addr, uint8_t* buffer,
         TransmissionIsCompleted = true;
     }, TransmissionSession::MIDDLE_PRIORITY);
 
-    if(TransmissionIsScheduled == INVALID_TIMER_ID)
+    if(TransmissionIsScheduled == INVALID_TASK_ID)
     {
         TransmissionResult = false;
         TransmissionIsCompleted = true;
@@ -543,7 +543,7 @@ bool Transmission::Flush(const DataStructures::AddressType Addr)
     {
         return false;
     }
-    return IMMEDIATE_TIMER_ID == p_session->m_Timer.ImmediateTask([p_session](){
+    return IMMEDIATE_TASK_ID == p_session->m_Timer.ImmediateTask([p_session](){
         // 1. Get Transmission Block
         if(p_session->p_TransmissionBlock)
         {
