@@ -8,12 +8,11 @@ using namespace NetworkCoding;
 /*
  * Create TransmissionBlock.
  */
-TransmissionBlock::TransmissionBlock(TransmissionSession *p_session) :
-    p_Session(p_session),
-    m_BlockSize(p_session->m_BlockSize),
-    m_TransmissionMode(p_session->m_TransmissionMode),
-    m_BlockSequenceNumber(p_session->m_MaxBlockSequenceNumber.fetch_add(1, std::memory_order_relaxed)),
-    m_RetransmissionRedundancy(p_session->m_RetransmissionRedundancy)
+TransmissionBlock::TransmissionBlock(TransmissionSession *p_session) : p_Session(p_session),
+                                                                       m_BlockSize(p_session->m_BlockSize),
+                                                                       m_TransmissionMode(p_session->m_TransmissionMode),
+                                                                       m_BlockSequenceNumber(p_session->m_MaxBlockSequenceNumber.fetch_add(1, std::memory_order_relaxed)),
+                                                                       m_RetransmissionRedundancy(p_session->m_RetransmissionRedundancy)
 {
     p_Session->m_ConcurrentRetransmissions++;
     m_LargestOriginalPacketSize = 0;
@@ -28,15 +27,14 @@ TransmissionBlock::~TransmissionBlock()
     p_Session->m_ConcurrentRetransmissions--;
 }
 
-
 const uint16_t TransmissionBlock::AckIndex()
 {
-    return m_BlockSequenceNumber%(Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION*2);
+    return m_BlockSequenceNumber % (Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION * 2);
 }
 
-bool TransmissionBlock::Send(uint8_t* buffer, uint16_t buffersize)
+bool TransmissionBlock::Send(uint8_t *buffer, uint16_t buffersize)
 {
-    if(p_Session->m_IsConnected == false)
+    if (p_Session->m_IsConnected == false)
     {
         delete this;
         return false;
@@ -49,14 +47,14 @@ bool TransmissionBlock::Send(uint8_t* buffer, uint16_t buffersize)
 #endif
         m_OriginalPacketBuffer.emplace_back(std::unique_ptr<uint8_t[]>(new uint8_t[sizeof(Header::Data) + (m_BlockSize - 1) + buffersize]));
     }
-    catch(const std::bad_alloc& ex)
+    catch (const std::bad_alloc &ex)
     {
         EXCEPTION_PRINT;
         return false;
     }
 
     // Fill up the fields
-    Header::Data* const DataHeader = reinterpret_cast <Header::Data*>(m_OriginalPacketBuffer[m_TransmissionCount].get());
+    Header::Data *const DataHeader = reinterpret_cast<Header::Data *>(m_OriginalPacketBuffer[m_TransmissionCount].get());
     DataHeader->m_Type = Header::Common::HeaderType::DATA;
     DataHeader->m_TotalSize = htons(sizeof(Header::Data) + (m_BlockSize - 1) + buffersize);
     DataHeader->m_MinBlockSequenceNumber = htons(p_Session->m_MinBlockSequenceNumber);
@@ -66,20 +64,20 @@ bool TransmissionBlock::Send(uint8_t* buffer, uint16_t buffersize)
     DataHeader->m_MaximumRank = m_BlockSize;
     DataHeader->m_Flags = Header::Data::FLAGS_ORIGINAL;
     DataHeader->m_TxCount = m_TransmissionCount + 1;
-    if(/*reqack || */DataHeader->m_ExpectedRank == m_BlockSize)
+    if (/*reqack || */ DataHeader->m_ExpectedRank == m_BlockSize)
     {
         //Note: Header::Data::FLAGS_END_OF_BLK asks ack from the client
         DataHeader->m_Flags |= Header::Data::FLAGS_END_OF_BLK;
     }
     DataHeader->m_PayloadSize = htons(buffersize);
-    if(m_LargestOriginalPacketSize < buffersize)
+    if (m_LargestOriginalPacketSize < buffersize)
     {
         m_LargestOriginalPacketSize = buffersize;
     }
-    DataHeader->m_LastIndicator = 1;/* This field is reserved to support fragmentation */
-    for(uint8_t i = 0 ; i < m_BlockSize ; i++)
+    DataHeader->m_LastIndicator = 1; /* This field is reserved to support fragmentation */
+    for (uint8_t i = 0; i < m_BlockSize; i++)
     {
-        if(i != m_TransmissionCount)
+        if (i != m_TransmissionCount)
         {
             DataHeader->m_Codes[i] = 0;
         }
@@ -89,15 +87,14 @@ bool TransmissionBlock::Send(uint8_t* buffer, uint16_t buffersize)
         }
     }
     memcpy(DataHeader->m_Codes + m_BlockSize, buffer, buffersize);
-    sendto(p_Session->c_Socket, m_OriginalPacketBuffer[m_TransmissionCount++].get(), ntohs(DataHeader->m_TotalSize), 0, (sockaddr*)&p_Session->c_Addr.Addr, p_Session->c_Addr.AddrLength);
+    sendto(p_Session->c_Socket, m_OriginalPacketBuffer[m_TransmissionCount++].get(), ntohs(DataHeader->m_TotalSize), 0, (sockaddr *)&p_Session->c_Addr.Addr, p_Session->c_Addr.AddrLength);
 
-    if((m_TransmissionCount == m_BlockSize)/* || reqack == true*/)
+    if ((m_TransmissionCount == m_BlockSize) /* || reqack == true*/)
     {
         p_Session->p_TransmissionBlock = nullptr;
-        p_Session->m_Timer.PeriodicTaskAdv([this]()->std::tuple<bool, uint32_t, uint32_t>
-        {
+        p_Session->m_Timer.PeriodicTaskAdv([this]() -> std::tuple<bool, uint32_t, uint32_t> {
             const bool schedulenextretransmission = Retransmission();
-            const uint32_t priority = (p_Session->m_MinBlockSequenceNumber == m_BlockSequenceNumber?TransmissionSession::MIDDLE_PRIORITY:TransmissionSession::LOW_PRIORITY);
+            const uint32_t priority = (p_Session->m_MinBlockSequenceNumber == m_BlockSequenceNumber ? TransmissionSession::MIDDLE_PRIORITY : TransmissionSession::LOW_PRIORITY);
             return std::make_tuple(schedulenextretransmission, p_Session->m_RetransmissionInterval, priority);
         });
     }
@@ -107,18 +104,18 @@ bool TransmissionBlock::Send(uint8_t* buffer, uint16_t buffersize)
 const bool TransmissionBlock::Retransmission()
 {
     const uint8_t c_AckIndex = AckIndex();
-    if(m_TransmissionMode == Parameter::BEST_EFFORT_TRANSMISSION_MODE)
+    if (m_TransmissionMode == Parameter::BEST_EFFORT_TRANSMISSION_MODE)
     {
-        if(m_TransmissionCount >= m_OriginalPacketBuffer.size() + m_RetransmissionRedundancy)
+        if (m_TransmissionCount >= m_OriginalPacketBuffer.size() + m_RetransmissionRedundancy)
         {
             p_Session->m_AckList[c_AckIndex] = true;
         }
     }
-    if(p_Session->m_AckList[c_AckIndex] == true)
+    if (p_Session->m_AckList[c_AckIndex] == true)
     {
-        for(uint16_t i = p_Session->m_MinBlockSequenceNumber ; i != p_Session->m_MaxBlockSequenceNumber ; i++)
+        for (uint16_t i = p_Session->m_MinBlockSequenceNumber; i != p_Session->m_MaxBlockSequenceNumber; i++)
         {
-            if(p_Session->m_AckList[i%(Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION*2)] == true)
+            if (p_Session->m_AckList[i % (Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION * 2)] == true)
             {
                 p_Session->m_MinBlockSequenceNumber++;
             }
@@ -130,15 +127,15 @@ const bool TransmissionBlock::Retransmission()
         delete this;
         return false;
     }
-    if(p_Session->m_IsConnected == false)
+    if (p_Session->m_IsConnected == false)
     {
         delete this;
         return false;
     }
     {
         std::vector<uint8_t> RandomCoefficients;
-        Header::Data* RemedyHeader = reinterpret_cast<Header::Data*>(m_RemedyPacketBuffer);
-        if(m_OriginalPacketBuffer.size() == 1)
+        Header::Data *RemedyHeader = reinterpret_cast<Header::Data *>(m_RemedyPacketBuffer);
+        if (m_OriginalPacketBuffer.size() == 1)
         {
             // No encoding if only one packet is in m_OriginalPacketBuffer.
             do
@@ -148,40 +145,40 @@ const bool TransmissionBlock::Retransmission()
                     TEST_EXCEPTION(std::bad_alloc());
                     RandomCoefficients.push_back(1);
                 }
-                catch(const std::bad_alloc& ex)
+                catch (const std::bad_alloc &ex)
                 {
                     EXCEPTION_PRINT;
                     std::this_thread::sleep_for(std::chrono::milliseconds(1));
                     continue;
                 }
                 break;
-            }while(1);
+            } while (1);
         }
         else
         {
-            for(uint8_t Coef = 0 ; Coef < m_OriginalPacketBuffer.size() ; Coef++)
+            for (uint8_t Coef = 0; Coef < m_OriginalPacketBuffer.size(); Coef++)
             {
                 do
                 {
                     try
                     {
                         TEST_EXCEPTION(std::bad_alloc());
-                        RandomCoefficients.push_back((rand()%255)+1);
+                        RandomCoefficients.push_back((rand() % 255) + 1);
                     }
-                    catch(const std::bad_alloc& ex)
+                    catch (const std::bad_alloc &ex)
                     {
                         EXCEPTION_PRINT;
                         std::this_thread::sleep_for(std::chrono::milliseconds(1));
                         continue;
                     }
                     break;
-                }while(1);
+                } while (1);
             }
         }
 
         memset(m_RemedyPacketBuffer, 0x0, sizeof(m_RemedyPacketBuffer));
         RemedyHeader->m_Type = Header::Common::HeaderType::DATA;
-        RemedyHeader->m_TotalSize = htons(sizeof(Header::Data) + (m_BlockSize-1) + m_LargestOriginalPacketSize);
+        RemedyHeader->m_TotalSize = htons(sizeof(Header::Data) + (m_BlockSize - 1) + m_LargestOriginalPacketSize);
         RemedyHeader->m_MinBlockSequenceNumber = htons(p_Session->m_MinBlockSequenceNumber.load());
         RemedyHeader->m_CurrentBlockSequenceNumber = htons(m_BlockSequenceNumber);
         RemedyHeader->m_MaxBlockSequenceNumber = htons(p_Session->m_MaxBlockSequenceNumber.load());
@@ -189,10 +186,10 @@ const bool TransmissionBlock::Retransmission()
         RemedyHeader->m_MaximumRank = m_BlockSize;
         RemedyHeader->m_Flags = Header::Data::FLAGS_END_OF_BLK;
         RemedyHeader->m_TxCount = ++m_TransmissionCount;
-        for(uint8_t PacketIndex = 0 ; PacketIndex < m_OriginalPacketBuffer.size() ; PacketIndex++)
+        for (uint8_t PacketIndex = 0; PacketIndex < m_OriginalPacketBuffer.size(); PacketIndex++)
         {
-            uint8_t* OriginalBuffer = reinterpret_cast<uint8_t*>(m_OriginalPacketBuffer[PacketIndex].get());
-            Header::Data* OriginalHeader = reinterpret_cast<Header::Data*>(OriginalBuffer);
+            uint8_t *OriginalBuffer = reinterpret_cast<uint8_t *>(m_OriginalPacketBuffer[PacketIndex].get());
+            Header::Data *OriginalHeader = reinterpret_cast<Header::Data *>(OriginalBuffer);
             const uint16_t length = ntohs(OriginalHeader->m_TotalSize);
 #if 0
             for(uint16_t CodingOffset = Header::Data::OffSets::CodingOffset ; CodingOffset < length ; CodingOffset++)
@@ -201,7 +198,7 @@ const bool TransmissionBlock::Retransmission()
             }
 #else
             uint16_t CodingOffset = Header::Data::OffSets::CodingOffset;
-            while(CodingOffset < length)
+            while (CodingOffset < length)
             {
                 /*if(length - CodingOffset > 1024)
                 {
@@ -215,37 +212,37 @@ const bool TransmissionBlock::Retransmission()
                 {
                     Encoding256(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
                 }
-                else */if(length - CodingOffset > 128)
+                else */ if (length - CodingOffset > 128)
                 {
                     Encoding128(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
                 }
-                else if(length - CodingOffset > 64)
+                else if (length - CodingOffset > 64)
                 {
                     Encoding64(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
                 }
-                else if(length - CodingOffset > 32)
+                else if (length - CodingOffset > 32)
                 {
                     Encoding32(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
                 }
-                else if(length - CodingOffset > 16)
+                else if (length - CodingOffset > 16)
                 {
                     Encoding16(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
                 }
-                else if(length - CodingOffset > 8)
+                else if (length - CodingOffset > 8)
                 {
                     Encoding8(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
                 }
-                else if(length - CodingOffset > 4)
+                else if (length - CodingOffset > 4)
                 {
                     Encoding4(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
                 }
-                else if(length - CodingOffset > 2)
+                else if (length - CodingOffset > 2)
                 {
                     Encoding2(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
                 }
                 else
                 {
-                    for(; CodingOffset < length ; CodingOffset++)
+                    for (; CodingOffset < length; CodingOffset++)
                     {
                         m_RemedyPacketBuffer[CodingOffset] ^= FiniteField::instance()->mul(OriginalBuffer[CodingOffset], RandomCoefficients[PacketIndex]);
                     }
@@ -253,7 +250,7 @@ const bool TransmissionBlock::Retransmission()
             }
 #endif
         }
-        sendto(p_Session->c_Socket, m_RemedyPacketBuffer, ntohs(RemedyHeader->m_TotalSize), 0, (sockaddr*)&p_Session->c_Addr.Addr, p_Session->c_Addr.AddrLength);
+        sendto(p_Session->c_Socket, m_RemedyPacketBuffer, ntohs(RemedyHeader->m_TotalSize), 0, (sockaddr *)&p_Session->c_Addr.Addr, p_Session->c_Addr.AddrLength);
     }
     return true;
 }
@@ -261,7 +258,7 @@ const bool TransmissionBlock::Retransmission()
 ////////////////////////////////////////////////////////////
 /////////////// TransmissionSession
 /*OK*/
-TransmissionSession::TransmissionSession(Transmission* const transmission, int32_t Socket, const DataStructures::AddressType Addr, Parameter::TRANSMISSION_MODE TransmissionMode, Parameter::BLOCK_SIZE BlockSize, uint16_t RetransmissionRedundancy): c_Transmission(transmission), c_Socket(Socket), c_Addr(Addr)
+TransmissionSession::TransmissionSession(Transmission *const transmission, int32_t Socket, const DataStructures::AddressType Addr, Parameter::TRANSMISSION_MODE TransmissionMode, Parameter::BLOCK_SIZE BlockSize, uint16_t RetransmissionRedundancy) : c_Transmission(transmission), c_Socket(Socket), c_Addr(Addr)
 {
     m_TransmissionMode = TransmissionMode;
     m_BlockSize = BlockSize;
@@ -270,14 +267,13 @@ TransmissionSession::TransmissionSession(Transmission* const transmission, int32
     m_MinBlockSequenceNumber = 0;
     m_MaxBlockSequenceNumber = 0;
     p_TransmissionBlock = nullptr;
-    for(uint32_t i = 0 ; i < (Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION*2) ; i++)
+    for (uint32_t i = 0; i < (Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION * 2); i++)
     {
         m_AckList[i] = true;
     }
     m_ConcurrentRetransmissions = 0;
     m_IsConnected = false;
 }
-
 
 /*OK*/
 TransmissionSession::~TransmissionSession()
@@ -288,8 +284,7 @@ TransmissionSession::~TransmissionSession()
 /*OK*/
 void TransmissionSession::ChangeTransmissionMode(const Parameter::TRANSMISSION_MODE TransmissionMode)
 {
-    m_Timer.ImmediateTask([this, TransmissionMode]()
-    {
+    m_Timer.ImmediateTask([this, TransmissionMode]() {
         m_TransmissionMode = TransmissionMode;
     });
 }
@@ -297,8 +292,7 @@ void TransmissionSession::ChangeTransmissionMode(const Parameter::TRANSMISSION_M
 /*OK*/
 void TransmissionSession::ChangeBlockSize(const Parameter::BLOCK_SIZE BlockSize)
 {
-    m_Timer.ImmediateTask([this, BlockSize]()
-    {
+    m_Timer.ImmediateTask([this, BlockSize]() {
         m_BlockSize = BlockSize;
     });
 }
@@ -306,8 +300,7 @@ void TransmissionSession::ChangeBlockSize(const Parameter::BLOCK_SIZE BlockSize)
 /*OK*/
 void TransmissionSession::ChangeRetransmissionRedundancy(const uint16_t RetransmissionRedundancy)
 {
-    m_Timer.ImmediateTask([this, RetransmissionRedundancy]()
-    {
+    m_Timer.ImmediateTask([this, RetransmissionRedundancy]() {
         m_RetransmissionRedundancy = RetransmissionRedundancy;
     });
 }
@@ -315,8 +308,7 @@ void TransmissionSession::ChangeRetransmissionRedundancy(const uint16_t Retransm
 /*OK*/
 void TransmissionSession::ChangeSessionParameter(const Parameter::TRANSMISSION_MODE TransmissionMode, const Parameter::BLOCK_SIZE BlockSize, const uint16_t RetransmissionRedundancy)
 {
-    m_Timer.ImmediateTask([this, TransmissionMode, BlockSize, RetransmissionRedundancy]()
-    {
+    m_Timer.ImmediateTask([this, TransmissionMode, BlockSize, RetransmissionRedundancy]() {
         m_TransmissionMode = TransmissionMode;
         m_BlockSize = BlockSize;
         m_RetransmissionRedundancy = RetransmissionRedundancy;
@@ -331,70 +323,71 @@ const bool TransmissionSession::SendPing()
 
     CLOCK::time_point const CurrentTime(CLOCK::duration(ping.m_PingTime));
     CLOCK::time_point const LastPongRecvTime(CLOCK::duration(m_LastPongTime.load()));
-    std::chrono::duration<double> TimeSinceLastPongTime = std::chrono::duration_cast<std::chrono::duration<double>> (CurrentTime - LastPongRecvTime);
-    if(TimeSinceLastPongTime.count() > Parameter::CONNECTION_TIMEOUT)
+    std::chrono::duration<double> TimeSinceLastPongTime = std::chrono::duration_cast<std::chrono::duration<double>>(CurrentTime - LastPongRecvTime);
+    if (TimeSinceLastPongTime.count() > Parameter::CONNECTION_TIMEOUT)
     {
-        std::cout<<"Client is disconnected. No response for "<<TimeSinceLastPongTime.count()<<" sec."<<std::endl;
+        std::cout << "Client is disconnected. No response for " << TimeSinceLastPongTime.count() << " sec." << std::endl;
         c_Transmission->Disconnect(c_Addr);
         return false;
     }
 
-    sendto(c_Socket, reinterpret_cast<uint8_t*>(&ping), sizeof(Header::Ping), 0, (sockaddr*)&c_Addr.Addr, c_Addr.AddrLength);
+    sendto(c_Socket, reinterpret_cast<uint8_t *>(&ping), sizeof(Header::Ping), 0, (sockaddr *)&c_Addr.Addr, c_Addr.AddrLength);
     return true;
 }
 
 void TransmissionSession::ProcessPong(const uint16_t rtt)
 {
-    m_Timer.ImmediateTask([this, rtt]()
-    {
-        m_RetransmissionInterval = (m_RetransmissionInterval + rtt)/2;
+    m_Timer.ImmediateTask([this, rtt]() {
+        m_RetransmissionInterval = (m_RetransmissionInterval + rtt) / 2;
     });
 }
 
 void TransmissionSession::ProcessDataAck(const uint16_t sequence, const uint8_t loss)
 {
-    m_Timer.ImmediateTask([this,sequence,loss](){
-        if(m_AckList[sequence%(Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION*2)] == true)
+    m_Timer.ImmediateTask([this, sequence, loss]() {
+        if (m_AckList[sequence % (Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION * 2)] == true)
         {
             return;
         }
-        m_AckList[sequence%(Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION*2)] = true;
+        m_AckList[sequence % (Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION * 2)] = true;
         /* To-Do */
         // Update the Avg. loss rate.
-    }, TransmissionSession::HIGH_PRIORITY);
+    },
+                          TransmissionSession::HIGH_PRIORITY);
 }
 
 void TransmissionSession::ProcessSyncAck(const uint16_t sequence)
 {
-    m_Timer.ImmediateTask([this,sequence](){
-        if(sequence == m_MaxBlockSequenceNumber)
+    m_Timer.ImmediateTask([this, sequence]() {
+        if (sequence == m_MaxBlockSequenceNumber)
         {
             m_IsConnected = true;
         }
-    }, TransmissionSession::HIGH_PRIORITY);
+    },
+                          TransmissionSession::HIGH_PRIORITY);
 }
 
 ////////////////////////////////////////////////////////////
 /////////////// Transmission
 /* OK */
-Transmission::Transmission(int32_t Socket) : c_Socket(Socket){}
+Transmission::Transmission(int32_t Socket) : c_Socket(Socket) {}
 
 /* OK */
 Transmission::~Transmission()
 {
-    m_Sessions.DoSomethingOnAllData([](TransmissionSession* &session ){delete session;});
+    m_Sessions.DoSomethingOnAllData([](TransmissionSession *&session) { delete session; });
     m_Sessions.Clear();
 }
 
 /* OK */
 bool Transmission::Connect(const DataStructures::AddressType Addr, uint32_t ConnectionTimeout, Parameter::TRANSMISSION_MODE TransmissionMode, Parameter::BLOCK_SIZE BlockSize, uint16_t RetransmissionRedundancy)
 {
-    TransmissionSession* newsession = nullptr;
+    TransmissionSession *newsession = nullptr;
     {
-        std::unique_lock< std::mutex > lock(m_Lock);
-        const DataStructures::SessionKey key = DataStructures::GetSessionKey((sockaddr*)&Addr.Addr, Addr.AddrLength);
-        TransmissionSession** const session = m_Sessions.GetPtr(key);
-        if(session != nullptr)
+        std::unique_lock<std::mutex> lock(m_Lock);
+        const DataStructures::SessionKey key = DataStructures::GetSessionKey((sockaddr *)&Addr.Addr, Addr.AddrLength);
+        TransmissionSession **const session = m_Sessions.GetPtr(key);
+        if (session != nullptr)
         {
             newsession = (*session);
         }
@@ -405,16 +398,16 @@ bool Transmission::Connect(const DataStructures::AddressType Addr, uint32_t Conn
                 TEST_EXCEPTION(std::bad_alloc());
                 newsession = new TransmissionSession(this, c_Socket, Addr, TransmissionMode, BlockSize, RetransmissionRedundancy);
             }
-            catch(const std::bad_alloc& ex)
+            catch (const std::bad_alloc &ex)
             {
                 EXCEPTION_PRINT;
                 return false;
             }
-            if(m_Sessions.Insert(key, newsession) == false)
+            if (m_Sessions.Insert(key, newsession) == false)
             {
                 return false;
             }
-            if(newsession->m_BlockSize == Parameter::BLOCK_SIZE::INVALID_BLOCK_SIZE)
+            if (newsession->m_BlockSize == Parameter::BLOCK_SIZE::INVALID_BLOCK_SIZE)
             {
                 delete newsession;
                 m_Sessions.Remove(key);
@@ -426,63 +419,63 @@ bool Transmission::Connect(const DataStructures::AddressType Addr, uint32_t Conn
     SyncPacket.m_Type = Header::Common::HeaderType::SYNC;
     SyncPacket.m_Sequence = htons(newsession->m_MaxBlockSequenceNumber);
 
-    if(sendto(c_Socket, (uint8_t*)&SyncPacket, sizeof(SyncPacket), 0, (sockaddr*)(&newsession->c_Addr.Addr), newsession->c_Addr.AddrLength) != sizeof(SyncPacket))
+    if (sendto(c_Socket, (uint8_t *)&SyncPacket, sizeof(SyncPacket), 0, (sockaddr *)(&newsession->c_Addr.Addr), newsession->c_Addr.AddrLength) != sizeof(SyncPacket))
     {
         return false;
     }
-    while(!newsession->m_IsConnected && ConnectionTimeout > 0)
+    while (!newsession->m_IsConnected && ConnectionTimeout > 0)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
         ConnectionTimeout--;
     }
-    if(ConnectionTimeout == 0)
+    if (ConnectionTimeout == 0)
     {
         return false;
     }
     newsession->m_LastPongTime = CLOCK::now().time_since_epoch().count();
-    newsession->m_Timer.PeriodicTask(Parameter::PING_INTERVAL, [newsession]()->const bool
-    {
+    newsession->m_Timer.PeriodicTask(Parameter::PING_INTERVAL, [newsession]() -> const bool {
         return newsession->SendPing();
-    }, TransmissionSession::HIGH_PRIORITY);
+    },
+                                     TransmissionSession::HIGH_PRIORITY);
     return true;
 }
 
 /* OK */
-bool Transmission::Send(const DataStructures::AddressType Addr, uint8_t* buffer, uint16_t buffersize)
+bool Transmission::Send(const DataStructures::AddressType Addr, uint8_t *buffer, uint16_t buffersize)
 {
-    TransmissionSession* p_session = nullptr;
+    TransmissionSession *p_session = nullptr;
     {
-        std::unique_lock< std::mutex > lock(m_Lock);
-        const DataStructures::SessionKey key = DataStructures::GetSessionKey((sockaddr*)&Addr.Addr, Addr.AddrLength);
-        TransmissionSession** const pp_session = m_Sessions.GetPtr(key);
-        if(pp_session)
+        std::unique_lock<std::mutex> lock(m_Lock);
+        const DataStructures::SessionKey key = DataStructures::GetSessionKey((sockaddr *)&Addr.Addr, Addr.AddrLength);
+        TransmissionSession **const pp_session = m_Sessions.GetPtr(key);
+        if (pp_session)
         {
             p_session = (*pp_session);
         }
     }
-    if(p_session == nullptr)
+    if (p_session == nullptr)
     {
         return false;
     }
-    if(p_session->m_IsConnected == false)
+    if (p_session->m_IsConnected == false)
     {
         return false;
     }
 
     std::atomic<bool> TransmissionIsCompleted(false);
     std::atomic<bool> TransmissionResult(false);
-    while(p_session->m_ConcurrentRetransmissions >= Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION ||
-          (uint16_t)(p_session->m_MaxBlockSequenceNumber - p_session->m_MinBlockSequenceNumber) >= (uint16_t)Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION)
+    while (p_session->m_ConcurrentRetransmissions >= Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION ||
+           (uint16_t)(p_session->m_MaxBlockSequenceNumber - p_session->m_MinBlockSequenceNumber) >= (uint16_t)Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION)
     {
-        if(!p_session->m_IsConnected)
+        if (!p_session->m_IsConnected)
         {
             return false;
         }
-        std::this_thread::sleep_for (std::chrono::milliseconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
-    const uint32_t TransmissionIsScheduled = p_session->m_Timer.ImmediateTask([buffer, buffersize/*, reqack*/, p_session, &TransmissionIsCompleted, &TransmissionResult](){
+    const uint32_t TransmissionIsScheduled = p_session->m_Timer.ImmediateTask([buffer, buffersize /*, reqack*/, p_session, &TransmissionIsCompleted, &TransmissionResult]() {
         // 1. Get Transmission Block
-        if(p_session->p_TransmissionBlock == nullptr)
+        if (p_session->p_TransmissionBlock == nullptr)
         {
             try
             {
@@ -491,7 +484,7 @@ bool Transmission::Send(const DataStructures::AddressType Addr, uint8_t* buffer,
 #endif
                 p_session->p_TransmissionBlock = new TransmissionBlock(p_session);
             }
-            catch(const std::bad_alloc& ex)
+            catch (const std::bad_alloc &ex)
             {
                 EXCEPTION_PRINT;
                 TransmissionResult = false;
@@ -499,8 +492,8 @@ bool Transmission::Send(const DataStructures::AddressType Addr, uint8_t* buffer,
                 return;
             }
         }
-        TransmissionBlock* const block = p_session->p_TransmissionBlock;
-        if(block->Send(buffer, buffersize/*, reqack*/) == false)
+        TransmissionBlock *const block = p_session->p_TransmissionBlock;
+        if (block->Send(buffer, buffersize /*, reqack*/) == false)
         {
             TransmissionResult = false;
             TransmissionIsCompleted = true;
@@ -508,78 +501,79 @@ bool Transmission::Send(const DataStructures::AddressType Addr, uint8_t* buffer,
         }
         TransmissionResult = true;
         TransmissionIsCompleted = true;
-    }, TransmissionSession::MIDDLE_PRIORITY);
+    },
+                                                                              TransmissionSession::MIDDLE_PRIORITY);
 
-    if(TransmissionIsScheduled == INVALID_TASK_ID)
+    if (TransmissionIsScheduled == INVALID_TASK_ID)
     {
         TransmissionResult = false;
         TransmissionIsCompleted = true;
     }
-    while(!TransmissionIsCompleted)
+    while (!TransmissionIsCompleted)
     {
         // Yield CPU resource.
-        std::this_thread::sleep_for (std::chrono::milliseconds(0));
+        std::this_thread::sleep_for(std::chrono::milliseconds(0));
     }
     return TransmissionResult;
 }
 
 bool Transmission::Flush(const DataStructures::AddressType Addr)
 {
-    TransmissionSession* p_session = nullptr;
+    TransmissionSession *p_session = nullptr;
     {
-        std::unique_lock< std::mutex > lock(m_Lock);
-        const DataStructures::SessionKey key = DataStructures::GetSessionKey((sockaddr*)&Addr.Addr, Addr.AddrLength);
-        TransmissionSession** const pp_session = m_Sessions.GetPtr(key);
-        if(pp_session)
+        std::unique_lock<std::mutex> lock(m_Lock);
+        const DataStructures::SessionKey key = DataStructures::GetSessionKey((sockaddr *)&Addr.Addr, Addr.AddrLength);
+        TransmissionSession **const pp_session = m_Sessions.GetPtr(key);
+        if (pp_session)
         {
             p_session = (*pp_session);
         }
     }
-    if(p_session == nullptr)
+    if (p_session == nullptr)
     {
         return false;
     }
-    if(p_session->m_IsConnected == false)
+    if (p_session->m_IsConnected == false)
     {
         return false;
     }
-    return IMMEDIATE_TASK_ID == p_session->m_Timer.ImmediateTask([p_session](){
+    return IMMEDIATE_TASK_ID == p_session->m_Timer.ImmediateTask([p_session]() {
         // 1. Get Transmission Block
-        if(p_session->p_TransmissionBlock)
+        if (p_session->p_TransmissionBlock)
         {
-            TransmissionBlock * const block = p_session->p_TransmissionBlock;
-            p_session->m_Timer.PeriodicTaskAdv([p_session, block]()->std::tuple<bool, uint32_t, uint32_t>
-            {
+            TransmissionBlock *const block = p_session->p_TransmissionBlock;
+            p_session->m_Timer.PeriodicTaskAdv([p_session, block]() -> std::tuple<bool, uint32_t, uint32_t> {
                 const bool schedulenextretransmission = block->Retransmission();
-                const uint32_t priority = (p_session->m_MinBlockSequenceNumber == block->m_BlockSequenceNumber?TransmissionSession::MIDDLE_PRIORITY:TransmissionSession::LOW_PRIORITY);
+                const uint32_t priority = (p_session->m_MinBlockSequenceNumber == block->m_BlockSequenceNumber ? TransmissionSession::MIDDLE_PRIORITY : TransmissionSession::LOW_PRIORITY);
                 return std::make_tuple(schedulenextretransmission, p_session->m_RetransmissionInterval, priority);
             });
             p_session->p_TransmissionBlock = nullptr;
         }
-    }, TransmissionSession::LOW_PRIORITY);
+    },
+                                                                 TransmissionSession::LOW_PRIORITY);
 }
 
 void Transmission::WaitUntilTxIsCompleted(const DataStructures::AddressType Addr)
 {
-    TransmissionSession* p_session = nullptr;
+    TransmissionSession *p_session = nullptr;
     {
-        std::unique_lock< std::mutex > lock(m_Lock);
-        const DataStructures::SessionKey key = DataStructures::GetSessionKey((sockaddr*)&Addr.Addr, Addr.AddrLength);
-        TransmissionSession** const pp_session = m_Sessions.GetPtr(key);
-        if(pp_session)
+        std::unique_lock<std::mutex> lock(m_Lock);
+        const DataStructures::SessionKey key = DataStructures::GetSessionKey((sockaddr *)&Addr.Addr, Addr.AddrLength);
+        TransmissionSession **const pp_session = m_Sessions.GetPtr(key);
+        if (pp_session)
         {
             p_session = (*pp_session);
         }
     }
-    if(p_session == nullptr)
+    if (p_session == nullptr)
     {
         return;
     }
-    if(p_session->m_IsConnected == false)
+    if (p_session->m_IsConnected == false)
     {
         return;
     }
-    while(p_session->m_IsConnected && p_session->m_ConcurrentRetransmissions > 0)
+    while (p_session->m_IsConnected && p_session->m_ConcurrentRetransmissions > 0)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
@@ -587,92 +581,81 @@ void Transmission::WaitUntilTxIsCompleted(const DataStructures::AddressType Addr
 
 void Transmission::Disconnect(const DataStructures::AddressType Addr)
 {
-    std::thread DisconnectThread = std::thread([this, Addr](){
-        const DataStructures::SessionKey key = DataStructures::GetSessionKey((sockaddr*)&Addr.Addr, Addr.AddrLength);
-        TransmissionSession** pp_session = nullptr;
-        {
-            std::unique_lock< std::mutex > lock(m_Lock);
+    const DataStructures::SessionKey key = DataStructures::GetSessionKey((sockaddr *)&Addr.Addr, Addr.AddrLength);
+    TransmissionSession **pp_session = nullptr;
+    {
+        std::unique_lock<std::mutex> lock(m_Lock);
 
-            pp_session = m_Sessions.GetPtr(key);
-            if(pp_session == nullptr)
-            {
-                return false;
-            }
+        pp_session = m_Sessions.GetPtr(key);
+        if (pp_session == nullptr)
+        {
+            return;
         }
-        //do
-        //{
-            (*pp_session)->m_IsConnected = false;
-            //for(auto i = 0 ; i < Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION*2 ; i++)
-            //{
-            //    (*pp_session)->m_AckList[i] = true;
-            //}
-        //}while(0 < (*pp_session)->m_ConcurrentRetransmissions);
-        while(0 < (*pp_session)->m_ConcurrentRetransmissions);
-        m_Sessions.Remove(key, [](TransmissionSession*&session){
-            delete session;
-        });
-        return true;
+    }
+    (*pp_session)->m_IsConnected = false;
+    while (0 < (*pp_session)->m_ConcurrentRetransmissions);
+    m_Sessions.Remove(key, [](TransmissionSession *&session) {
+        delete session;
     });
-    DisconnectThread.detach();
 }
 
 /* OK */
-void Transmission::RxHandler(uint8_t* buffer, uint16_t size, const sockaddr* const sender_addr, const uint32_t sender_addr_len)
+void Transmission::RxHandler(uint8_t *buffer, uint16_t size, const sockaddr *const sender_addr, const uint32_t sender_addr_len)
 {
-    Header::Common* CommonHeader = reinterpret_cast< Header::Common* >(buffer);
-    switch(CommonHeader->m_Type)
+    Header::Common *CommonHeader = reinterpret_cast<Header::Common *>(buffer);
+    switch (CommonHeader->m_Type)
     {
-        case Header::Common::HeaderType::DATA_ACK:
+    case Header::Common::HeaderType::DATA_ACK:
+    {
+        const Header::DataAck *Ack = reinterpret_cast<Header::DataAck *>(buffer);
+        const DataStructures::SessionKey key = DataStructures::GetSessionKey(sender_addr, sender_addr_len);
+        std::unique_lock<std::mutex> lock(m_Lock);
+        TransmissionSession **const pp_session = m_Sessions.GetPtr(key);
+        if (pp_session)
         {
-            const Header::DataAck* Ack = reinterpret_cast< Header::DataAck* >(buffer);
-            const DataStructures::SessionKey key = DataStructures::GetSessionKey(sender_addr, sender_addr_len);
-            std::unique_lock< std::mutex > lock(m_Lock);
-            TransmissionSession** const pp_session = m_Sessions.GetPtr(key);
-            if(pp_session)
+            (*pp_session)->ProcessDataAck(ntohs(Ack->m_Sequence), Ack->m_Losses);
+        }
+    }
+    break;
+
+    case Header::Common::HeaderType::SYNC_ACK:
+    {
+        const Header::Sync *sync = reinterpret_cast<Header::Sync *>(buffer);
+        const DataStructures::SessionKey key = DataStructures::GetSessionKey(sender_addr, sender_addr_len);
+        std::unique_lock<std::mutex> lock(m_Lock);
+        TransmissionSession **const pp_session = m_Sessions.GetPtr(key);
+        if (pp_session)
+        {
+            (*pp_session)->ProcessSyncAck(ntohs(sync->m_Sequence));
+        }
+    }
+    break;
+
+    case Header::Common::PONG:
+    {
+        const Header::Pong *pong = reinterpret_cast<Header::Pong *>(buffer);
+        const DataStructures::SessionKey key = DataStructures::GetSessionKey(sender_addr, sender_addr_len);
+        std::unique_lock<std::mutex> lock(m_Lock);
+        TransmissionSession **const pp_session = m_Sessions.GetPtr(key);
+        if (pp_session)
+        {
+            CLOCK::time_point const SentTime(CLOCK::duration(pong->m_PingTime));
+            (*pp_session)->m_LastPongTime = CLOCK::now().time_since_epoch().count();
+            CLOCK::time_point const RecvTime(CLOCK::duration((*pp_session)->m_LastPongTime));
+            std::chrono::duration<double> rtt = std::chrono::duration_cast<std::chrono::duration<double>>(RecvTime - SentTime);
+            if (rtt.count() * 1000 < Parameter::MINIMUM_RETRANSMISSION_INTERVAL)
             {
-                (*pp_session)->ProcessDataAck(ntohs(Ack->m_Sequence), Ack->m_Losses);
+                (*pp_session)->ProcessPong(Parameter::MINIMUM_RETRANSMISSION_INTERVAL);
+            }
+            else
+            {
+                (*pp_session)->ProcessPong((uint16_t)(rtt.count() * 1000.));
             }
         }
-        break;
+    }
+    break;
 
-        case Header::Common::HeaderType::SYNC_ACK:
-        {
-            const Header::Sync* sync = reinterpret_cast< Header::Sync* >(buffer);
-            const DataStructures::SessionKey key = DataStructures::GetSessionKey(sender_addr, sender_addr_len);
-            std::unique_lock< std::mutex > lock(m_Lock);
-            TransmissionSession** const pp_session = m_Sessions.GetPtr(key);
-            if(pp_session)
-            {
-                (*pp_session)->ProcessSyncAck(ntohs(sync->m_Sequence));
-            }
-        }
-        break;
-
-        case Header::Common::PONG:
-        {
-            const Header::Pong* pong = reinterpret_cast< Header::Pong* >(buffer);
-            const DataStructures::SessionKey key = DataStructures::GetSessionKey(sender_addr, sender_addr_len);
-            std::unique_lock< std::mutex > lock(m_Lock);
-            TransmissionSession** const pp_session = m_Sessions.GetPtr(key);
-            if(pp_session)
-            {
-                CLOCK::time_point const SentTime(CLOCK::duration(pong->m_PingTime));
-                (*pp_session)->m_LastPongTime = CLOCK::now().time_since_epoch().count();
-                CLOCK::time_point const RecvTime(CLOCK::duration((*pp_session)->m_LastPongTime));
-                std::chrono::duration<double> rtt = std::chrono::duration_cast<std::chrono::duration<double>>(RecvTime - SentTime);
-                if(rtt.count() * 1000 < Parameter::MINIMUM_RETRANSMISSION_INTERVAL)
-                {
-                    (*pp_session)->ProcessPong(Parameter::MINIMUM_RETRANSMISSION_INTERVAL);
-                }
-                else
-                {
-                    (*pp_session)->ProcessPong((uint16_t)(rtt.count()*1000.));
-                }
-            }
-        }
-        break;
-
-        default:
+    default:
         break;
     }
 }
