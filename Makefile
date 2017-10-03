@@ -33,8 +33,9 @@ release : $(TARGET)
 
 
 library : TARGET := libncsocket.so
+library : ./basiclibrary/.git/config
 library : CPPFLAGS := -fPIC -O3 -c -Wall -std=c++0x
-library : LDFLAGS := -shared -Wl,-soname,libncsocket.so.1
+library : LDFLAGS := -shared
 library : SOURCES  := $(filter-out main.cpp , $(wildcard *.cpp))
 library : OBJECTS  := $(SOURCES:.cpp=.o)
 library : $(TARGET)
