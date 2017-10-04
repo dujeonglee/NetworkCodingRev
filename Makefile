@@ -4,7 +4,7 @@
 SOURCES  := $(wildcard *.cpp)
 INCLUDES := -I./basiclibrary/avltree -I./basiclibrary/threadpool -I./basiclibrary/singleshottimer
 OBJECTS  := $(SOURCES:.cpp=.o)
-LIBRARY := -lpthread
+LIBRARY := -lpthread -ldl
 CPP := g++
 TARGET = ncsocket
 
