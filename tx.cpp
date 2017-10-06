@@ -380,7 +380,7 @@ Transmission::~Transmission()
 }
 
 /* OK */
-bool Transmission::Connect(const DataStructures::AddressType Addr, uint32_t ConnectionTimeout, Parameter::TRANSMISSION_MODE TransmissionMode, Parameter::BLOCK_SIZE BlockSize, uint16_t RetransmissionRedundancy)
+bool Transmission::Connect(const DataStructures::AddressType Addr, uint32_t ConnectionTimeout, const Parameter::TRANSMISSION_MODE TransmissionMode, const Parameter::BLOCK_SIZE BlockSize, const uint16_t RetransmissionRedundancy)
 {
     TransmissionSession *newsession = nullptr;
     {
@@ -601,7 +601,7 @@ void Transmission::Disconnect(const DataStructures::AddressType Addr)
 }
 
 /* OK */
-void Transmission::RxHandler(uint8_t *buffer, uint16_t size, const sockaddr *const sender_addr, const uint32_t sender_addr_len)
+void Transmission::RxHandler(uint8_t *const buffer, const uint16_t size, const sockaddr *const sender_addr, const uint32_t sender_addr_len)
 {
     Header::Common *CommonHeader = reinterpret_cast<Header::Common *>(buffer);
     switch (CommonHeader->m_Type)
