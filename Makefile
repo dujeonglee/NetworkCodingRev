@@ -28,12 +28,14 @@ basiclibrary/.git/config :
 	git clone https://github.com/dujeonglee/basiclibrary.git
 SHAREDLIBOUT := out/shared
 sharedlibrary : libncsocket.so
-libncsocket.so : $(SHAREDLIBOUT) basiclibrary/.git/config $(SHAREDLIBOUT)/finite_field.o $(SHAREDLIBOUT)/tx.o $(SHAREDLIBOUT)/rx.o $(SHAREDLIBOUT)/c_stub.o
-	$(CROSS)$(CPP) -shared -o $@ $(SHAREDLIBOUT)/finite_field.o $(SHAREDLIBOUT)/tx.o $(SHAREDLIBOUT)/rx.o $(SHAREDLIBOUT)/c_stub.o
+libncsocket.so : $(SHAREDLIBOUT) basiclibrary/.git/config $(SHAREDLIBOUT)/chk.o $(SHAREDLIBOUT)/finite_field.o $(SHAREDLIBOUT)/tx.o $(SHAREDLIBOUT)/rx.o $(SHAREDLIBOUT)/c_stub.o
+	$(CROSS)$(CPP) -shared -o $@ $(SHAREDLIBOUT)/chk.o $(SHAREDLIBOUT)/finite_field.o $(SHAREDLIBOUT)/tx.o $(SHAREDLIBOUT)/rx.o $(SHAREDLIBOUT)/c_stub.o
 $(SHAREDLIBOUT) :
 	mkdir -p $(SHAREDLIBOUT)
 SHAREDLIBCPPFLAGS := -fPIC -O3 $(BASICCPPFLAGS)
 SHAREDLIBOUT := out/shared
+$(SHAREDLIBOUT)/chk.o : chk.h chk.cpp
+	$(CROSS)$(CPP) chk.cpp -o $@ $(SHAREDLIBCPPFLAGS) $(INCLUDES)
 $(SHAREDLIBOUT)/finite_field.o : finite_field.h finite_field.cpp
 	$(CROSS)$(CPP) finite_field.cpp -o $@ $(SHAREDLIBCPPFLAGS) $(INCLUDES)
 $(SHAREDLIBOUT)/tx.o : tx.h tx.cpp
@@ -45,12 +47,14 @@ $(SHAREDLIBOUT)/c_stub.o : c_stub.h c_stub.cpp
 
 STATICLIBOUT := out/static
 staticlibrary : libncsocket.a
-libncsocket.a : $(STATICLIBOUT) basiclibrary/.git/config $(STATICLIBOUT)/finite_field.o $(STATICLIBOUT)/tx.o $(STATICLIBOUT)/rx.o $(STATICLIBOUT)/c_stub.o
-	$(CROSS)$(AR) rcs $@ $(STATICLIBOUT)/finite_field.o $(STATICLIBOUT)/tx.o $(STATICLIBOUT)/rx.o $(STATICLIBOUT)/c_stub.o
+libncsocket.a : $(STATICLIBOUT) basiclibrary/.git/config $(STATICLIBOUT)/chk.o $(STATICLIBOUT)/finite_field.o $(STATICLIBOUT)/tx.o $(STATICLIBOUT)/rx.o $(STATICLIBOUT)/c_stub.o
+	$(CROSS)$(AR) rcs $@  $(STATICLIBOUT)/chk.o $(STATICLIBOUT)/finite_field.o $(STATICLIBOUT)/tx.o $(STATICLIBOUT)/rx.o $(STATICLIBOUT)/c_stub.o
 $(STATICLIBOUT) :
 	mkdir -p $(STATICLIBOUT)
 STATICLIBCPPFLAGS := -O3 $(BASICCPPFLAGS)
 STATICLIBOUT := out/static
+$(STATICLIBOUT)/chk.o : chk.h chk.cpp
+	$(CROSS)$(CPP) chk.cpp -o $@ $(STATICLIBCPPFLAGS) $(INCLUDES)
 $(STATICLIBOUT)/finite_field.o : finite_field.h finite_field.cpp
 	$(CROSS)$(CPP) finite_field.cpp -o $@ $(STATICLIBCPPFLAGS) $(INCLUDES)
 $(STATICLIBOUT)/tx.o : tx.h tx.cpp

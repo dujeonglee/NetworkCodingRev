@@ -1,4 +1,5 @@
 #include "tx.h"
+#include "chk.h"
 #include "encoding_decoding_macro.h"
 
 using namespace NetworkCoding;
@@ -64,6 +65,7 @@ bool TransmissionBlock::Send(uint8_t *buffer, uint16_t buffersize)
     DataHeader->m_MaximumRank = m_BlockSize;
     DataHeader->m_Flags = Header::Data::FLAGS_ORIGINAL;
     DataHeader->m_TxCount = m_TransmissionCount + 1;
+    DataHeader->m_CheckSum = 0;
     if (DataHeader->m_ExpectedRank == m_BlockSize)
     {
         //Note: Header::Data::FLAGS_END_OF_BLK asks ack from the client
@@ -87,6 +89,7 @@ bool TransmissionBlock::Send(uint8_t *buffer, uint16_t buffersize)
         }
     }
     memcpy(DataHeader->m_Codes + m_BlockSize, buffer, buffersize);
+    DataHeader->m_CheckSum = checksum8(m_OriginalPacketBuffer[m_TransmissionCount].get(), ntohs(DataHeader->m_TotalSize));
     sendto(p_Session->c_Socket, m_OriginalPacketBuffer[m_TransmissionCount++].get(), ntohs(DataHeader->m_TotalSize), 0, (sockaddr *)&p_Session->c_Addr.Addr, p_Session->c_Addr.AddrLength);
 
     if ((m_TransmissionCount == m_BlockSize))
@@ -186,17 +189,12 @@ const bool TransmissionBlock::Retransmission()
         RemedyHeader->m_MaximumRank = m_BlockSize;
         RemedyHeader->m_Flags = Header::Data::FLAGS_END_OF_BLK;
         RemedyHeader->m_TxCount = ++m_TransmissionCount;
+        RemedyHeader->m_CheckSum = 0;
         for (uint8_t PacketIndex = 0; PacketIndex < m_OriginalPacketBuffer.size(); PacketIndex++)
         {
             uint8_t *OriginalBuffer = reinterpret_cast<uint8_t *>(m_OriginalPacketBuffer[PacketIndex].get());
             Header::Data *OriginalHeader = reinterpret_cast<Header::Data *>(OriginalBuffer);
             const uint16_t length = ntohs(OriginalHeader->m_TotalSize);
-#if 0
-            for(uint16_t CodingOffset = Header::Data::OffSets::CodingOffset ; CodingOffset < length ; CodingOffset++)
-            {
-                m_RemedyPacketBuffer[CodingOffset] ^= FiniteField::instance()->mul(OriginalBuffer[CodingOffset], RandomCoefficients[PacketIndex]);
-            }
-#else
             uint16_t CodingOffset = Header::Data::OffSets::CodingOffset;
             while (CodingOffset < length)
             {
@@ -248,8 +246,8 @@ const bool TransmissionBlock::Retransmission()
                     }
                 }
             }
-#endif
         }
+        RemedyHeader->m_CheckSum = checksum8(m_RemedyPacketBuffer, ntohs(RemedyHeader->m_TotalSize));
         sendto(p_Session->c_Socket, m_RemedyPacketBuffer, ntohs(RemedyHeader->m_TotalSize), 0, (sockaddr *)&p_Session->c_Addr.Addr, p_Session->c_Addr.AddrLength);
     }
     return true;
@@ -473,36 +471,37 @@ bool Transmission::Send(const DataStructures::AddressType Addr, uint8_t *buffer,
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
-    const uint32_t TransmissionIsScheduled = p_session->m_Timer.ImmediateTask([buffer, buffersize, p_session, &TransmissionIsCompleted, &TransmissionResult]() {
-        // 1. Get Transmission Block
-        if (p_session->p_TransmissionBlock == nullptr)
-        {
-            try
+    const uint32_t TransmissionIsScheduled = p_session->m_Timer.ImmediateTask(
+        [buffer, buffersize, p_session, &TransmissionIsCompleted, &TransmissionResult]() {
+            // 1. Get Transmission Block
+            if (p_session->p_TransmissionBlock == nullptr)
             {
+                try
+                {
 #if ENABLE_CRITICAL_EXCEPTIONS
-                TEST_EXCEPTION(std::bad_alloc());
+                    TEST_EXCEPTION(std::bad_alloc());
 #endif
-                p_session->p_TransmissionBlock = new TransmissionBlock(p_session);
+                    p_session->p_TransmissionBlock = new TransmissionBlock(p_session);
+                }
+                catch (const std::bad_alloc &ex)
+                {
+                    EXCEPTION_PRINT;
+                    TransmissionResult = false;
+                    TransmissionIsCompleted = true;
+                    return;
+                }
             }
-            catch (const std::bad_alloc &ex)
+            TransmissionBlock *const block = p_session->p_TransmissionBlock;
+            if (block->Send(buffer, buffersize) == false)
             {
-                EXCEPTION_PRINT;
                 TransmissionResult = false;
                 TransmissionIsCompleted = true;
                 return;
             }
-        }
-        TransmissionBlock *const block = p_session->p_TransmissionBlock;
-        if (block->Send(buffer, buffersize) == false)
-        {
-            TransmissionResult = false;
+            TransmissionResult = true;
             TransmissionIsCompleted = true;
-            return;
-        }
-        TransmissionResult = true;
-        TransmissionIsCompleted = true;
-    },
-                                                                              TransmissionSession::MIDDLE_PRIORITY);
+        },
+        TransmissionSession::MIDDLE_PRIORITY);
 
     if (TransmissionIsScheduled == INVALID_TASK_ID)
     {

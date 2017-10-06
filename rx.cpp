@@ -1,4 +1,5 @@
 #include "rx.h"
+#include "chk.h"
 #include "encoding_decoding_macro.h"
 #include <cstdlib>
 
@@ -307,12 +308,6 @@ bool ReceptionBlock::Decoding()
         for (uint8_t i = 0; i < MAX_RANK; i++)
         {
             const uint16_t length = (ntohs(reinterpret_cast<Header::Data *>(m_DecodedPacketBuffer[i].get())->m_TotalSize) < ntohs(pkt->m_TotalSize) ? ntohs(reinterpret_cast<Header::Data *>(m_DecodedPacketBuffer[i].get())->m_TotalSize) : ntohs(pkt->m_TotalSize));
-#if 0
-            for(uint32_t decodingposition = Header::Data::CodingOffset ; decodingposition < length ; decodingposition++)
-            {
-                DecodeOut.back().get()[decodingposition] ^= FiniteField::instance()->mul(m_DecodingMatrix[row].get()[i], m_DecodedPacketBuffer[i].get()[decodingposition]);
-            }
-#else
             uint32_t decodingposition = Header::Data::CodingOffset;
             while (decodingposition < length)
             {
@@ -364,7 +359,6 @@ bool ReceptionBlock::Decoding()
                     }
                 }
             }
-#endif
         }
         if (reinterpret_cast<Header::Data *>(DecodeOut.back().get())->m_Codes[row] != 1)
         {
@@ -691,6 +685,12 @@ void Reception::RxHandler(uint8_t *buffer, uint16_t size, const sockaddr *const 
             return;
         }
         ReceptionSession *const p_Session = (*pp_Session);
+        const uint16_t packetlen = ntohs(((Header::Data *)buffer)->m_TotalSize);
+        if (checksum8(buffer, packetlen) != 0x0)
+        {
+            std::cout << "checksum(buffer, packetlen)" << 0 + checksum(buffer, packetlen) << std::endl;
+            return;
+        }
         p_Session->Receive(buffer, size, sender_addr, sender_addr_len);
     }
     break;
