@@ -688,7 +688,6 @@ void Reception::RxHandler(uint8_t *buffer, uint16_t size, const sockaddr *const 
         const uint16_t packetlen = ntohs(((Header::Data *)buffer)->m_TotalSize);
         if (checksum8(buffer, packetlen) != 0x0)
         {
-            std::cout << "checksum(buffer, packetlen)" << 0 + checksum(buffer, packetlen) << std::endl;
             return;
         }
         p_Session->Receive(buffer, size, sender_addr, sender_addr_len);
