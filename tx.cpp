@@ -593,7 +593,8 @@ void Transmission::Disconnect(const DataStructures::AddressType Addr)
         }
     }
     (*pp_session)->m_IsConnected = false;
-    while (0 < (*pp_session)->m_ConcurrentRetransmissions);
+    while (0 < (*pp_session)->m_ConcurrentRetransmissions)
+        ;
     m_Sessions.Remove(key, [](TransmissionSession *&session) {
         delete session;
     });

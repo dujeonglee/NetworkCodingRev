@@ -1,5 +1,7 @@
 #include <stdio.h>
+#include <string.h>
 #include <iostream>
+#include <thread>
 #include "c_stub.h"
 #ifdef DYNAMIC
 #include <dlfcn.h>
@@ -92,9 +94,7 @@ int main(int argc, char *argv[])
         do
         {
 
-        } while (false == Connect(handle, remote_ip, remote_port, 1000,
-                                  NetworkCoding::Parameter::RELIABLE_TRANSMISSION_MODE,
-                                  NetworkCoding::Parameter::BLOCK_SIZE_32, (uint16_t)0));
+        } while (false == Connect(handle, remote_ip, remote_port, 1000, 0, 32 , 0));
         Send(handle, remote_ip, remote_port, (unsigned char *)argv[4], strlen(argv[4]));
         while ((readbytes = fread(buffer, 1, sizeof(buffer), p_File)) > 0)
         {
@@ -112,9 +112,7 @@ int main(int argc, char *argv[])
         do
         {
 
-        } while (false == ((ConnectFuncType)dlsym(pLibHandle, "Connect"))(handle, remote_ip, remote_port, 1000,
-                                                                          NetworkCoding::Parameter::RELIABLE_TRANSMISSION_MODE,
-                                                                          NetworkCoding::Parameter::BLOCK_SIZE_32, (uint16_t)0));
+        } while (false == ((ConnectFuncType)dlsym(pLibHandle, "Connect"))(handle, remote_ip, remote_port, 1000, 0, 32, 0));
         ((SendFuncType)dlsym(pLibHandle, "Send"))(handle, remote_ip, remote_port, (unsigned char *)argv[4], strlen(argv[4]));
         while ((readbytes = fread(buffer, 1, sizeof(buffer), p_File)) > 0)
         {

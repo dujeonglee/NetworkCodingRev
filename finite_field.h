@@ -3,34 +3,38 @@
 #define INLINE_MUL_INV
 typedef unsigned char byte;
 
-class FiniteField{
-private:
-    static FiniteField* _instance;
+class FiniteField
+{
+  private:
+    static FiniteField *_instance;
     void init();
     FiniteField()
     {
         init();
     }
-    ~FiniteField(){}
-public:
-    static inline FiniteField* instance()
+    ~FiniteField() {}
+
+  public:
+    static inline FiniteField *instance()
     {
         return _instance;
     }
-private:
+
+  private:
     /**
      * @brief _mul_table: multiplication lookup table
      */
-    byte ** _mul_table;
+    byte **_mul_table;
     /**
      * @brief _inv_table: inversion lookup table
      */
-    byte * _inv_table;
+    byte *_inv_table;
     /**
      * @brief _mul: multiplication function building "_mul_table"
      */
     byte _mul(byte a, byte b);
-public:
+
+  public:
     /**
      * @brief add: Adding "a" and "b"
      */
@@ -43,11 +47,11 @@ public:
     /**
      * @brief mul: Multiplying "a" and "b"
      */
-    inline byte mul(byte a, byte b){return _mul_table[a<b?a:b][a<b?b-a:a-b];}
+    inline byte mul(byte a, byte b) { return _mul_table[a < b ? a : b][a < b ? b - a : a - b]; }
     /**
      * @brief inv: Calculating inverse of "a"
      */
-    inline byte inv(byte a){return _inv_table[a];}
+    inline byte inv(byte a) { return _inv_table[a]; }
 #else
     /**
      * @brief mul: Multiplying "a" and "b"
