@@ -64,7 +64,7 @@ bool TransmissionBlock::Send(uint8_t *buffer, uint16_t buffersize)
     DataHeader->m_MaximumRank = m_BlockSize;
     DataHeader->m_Flags = Header::Data::FLAGS_ORIGINAL;
     DataHeader->m_TxCount = m_TransmissionCount + 1;
-    if (/*reqack || */ DataHeader->m_ExpectedRank == m_BlockSize)
+    if (DataHeader->m_ExpectedRank == m_BlockSize)
     {
         //Note: Header::Data::FLAGS_END_OF_BLK asks ack from the client
         DataHeader->m_Flags |= Header::Data::FLAGS_END_OF_BLK;
@@ -89,7 +89,7 @@ bool TransmissionBlock::Send(uint8_t *buffer, uint16_t buffersize)
     memcpy(DataHeader->m_Codes + m_BlockSize, buffer, buffersize);
     sendto(p_Session->c_Socket, m_OriginalPacketBuffer[m_TransmissionCount++].get(), ntohs(DataHeader->m_TotalSize), 0, (sockaddr *)&p_Session->c_Addr.Addr, p_Session->c_Addr.AddrLength);
 
-    if ((m_TransmissionCount == m_BlockSize) /* || reqack == true*/)
+    if ((m_TransmissionCount == m_BlockSize))
     {
         p_Session->p_TransmissionBlock = nullptr;
         p_Session->m_Timer.PeriodicTaskAdv([this]() -> std::tuple<bool, uint32_t, uint32_t> {
@@ -473,7 +473,7 @@ bool Transmission::Send(const DataStructures::AddressType Addr, uint8_t *buffer,
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
-    const uint32_t TransmissionIsScheduled = p_session->m_Timer.ImmediateTask([buffer, buffersize /*, reqack*/, p_session, &TransmissionIsCompleted, &TransmissionResult]() {
+    const uint32_t TransmissionIsScheduled = p_session->m_Timer.ImmediateTask([buffer, buffersize, p_session, &TransmissionIsCompleted, &TransmissionResult]() {
         // 1. Get Transmission Block
         if (p_session->p_TransmissionBlock == nullptr)
         {
@@ -493,7 +493,7 @@ bool Transmission::Send(const DataStructures::AddressType Addr, uint8_t *buffer,
             }
         }
         TransmissionBlock *const block = p_session->p_TransmissionBlock;
-        if (block->Send(buffer, buffersize /*, reqack*/) == false)
+        if (block->Send(buffer, buffersize) == false)
         {
             TransmissionResult = false;
             TransmissionIsCompleted = true;

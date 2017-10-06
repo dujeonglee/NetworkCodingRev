@@ -33,7 +33,7 @@ public:
     TransmissionBlock& operator=(TransmissionBlock&&) = delete;
 
     const uint16_t AckIndex();
-    bool Send(uint8_t *buffer, uint16_t buffersize/*, bool reqack*/);
+    bool Send(uint8_t *buffer, uint16_t buffersize);
     const bool Retransmission();
 };
 
