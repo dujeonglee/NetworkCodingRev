@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
         do
         {
 
-        } while (false == Connect(handle, remote_ip, remote_port, 1000, 0, 32 , 0));
+        } while (false == Connect(handle, remote_ip, remote_port, 1000, 0, 32, 0));
         Send(handle, remote_ip, remote_port, (unsigned char *)argv[4], strlen(argv[4]));
         while ((readbytes = fread(buffer, 1, sizeof(buffer), p_File)) > 0)
         {

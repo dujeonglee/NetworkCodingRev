@@ -342,27 +342,29 @@ void TransmissionSession::ProcessPong(const uint16_t rtt)
 
 void TransmissionSession::ProcessDataAck(const uint16_t sequence, const uint8_t loss)
 {
-    m_Timer.ImmediateTask([this, sequence, loss]() {
-        if (m_AckList[sequence % (Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION * 2)] == true)
-        {
-            return;
-        }
-        m_AckList[sequence % (Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION * 2)] = true;
-        /* To-Do */
-        // Update the Avg. loss rate.
-    },
-                          TransmissionSession::HIGH_PRIORITY);
+    m_Timer.ImmediateTask(
+        [this, sequence, loss]() {
+            if (m_AckList[sequence % (Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION * 2)] == true)
+            {
+                return;
+            }
+            m_AckList[sequence % (Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION * 2)] = true;
+            /* To-Do */
+            // Update the Avg. loss rate.
+        },
+        TransmissionSession::HIGH_PRIORITY);
 }
 
 void TransmissionSession::ProcessSyncAck(const uint16_t sequence)
 {
-    m_Timer.ImmediateTask([this, sequence]() {
-        if (sequence == m_MaxBlockSequenceNumber)
-        {
-            m_IsConnected = true;
-        }
-    },
-                          TransmissionSession::HIGH_PRIORITY);
+    m_Timer.ImmediateTask(
+        [this, sequence]() {
+            if (sequence == m_MaxBlockSequenceNumber)
+            {
+                m_IsConnected = true;
+            }
+        },
+        TransmissionSession::HIGH_PRIORITY);
 }
 
 ////////////////////////////////////////////////////////////
@@ -431,10 +433,12 @@ bool Transmission::Connect(const DataStructures::AddressType Addr, uint32_t Conn
         return false;
     }
     newsession->m_LastPongTime = CLOCK::now().time_since_epoch().count();
-    newsession->m_Timer.PeriodicTask(Parameter::PING_INTERVAL, [newsession]() -> const bool {
-        return newsession->SendPing();
-    },
-                                     TransmissionSession::HIGH_PRIORITY);
+    newsession->m_Timer.PeriodicTask(
+        Parameter::PING_INTERVAL,
+        [newsession]() -> const bool {
+            return newsession->SendPing();
+        },
+        TransmissionSession::HIGH_PRIORITY);
     return true;
 }
 
@@ -541,11 +545,12 @@ bool Transmission::Flush(const DataStructures::AddressType Addr)
         if (p_session->p_TransmissionBlock)
         {
             TransmissionBlock *const block = p_session->p_TransmissionBlock;
-            p_session->m_Timer.PeriodicTaskAdv([p_session, block]() -> std::tuple<bool, uint32_t, uint32_t> {
-                const bool schedulenextretransmission = block->Retransmission();
-                const uint32_t priority = (p_session->m_MinBlockSequenceNumber == block->m_BlockSequenceNumber ? TransmissionSession::MIDDLE_PRIORITY : TransmissionSession::LOW_PRIORITY);
-                return std::make_tuple(schedulenextretransmission, p_session->m_RetransmissionInterval, priority);
-            });
+            p_session->m_Timer.PeriodicTaskAdv(
+                [p_session, block]() -> std::tuple<bool, uint32_t, uint32_t> {
+                    const bool schedulenextretransmission = block->Retransmission();
+                    const uint32_t priority = (p_session->m_MinBlockSequenceNumber == block->m_BlockSequenceNumber ? TransmissionSession::MIDDLE_PRIORITY : TransmissionSession::LOW_PRIORITY);
+                    return std::make_tuple(schedulenextretransmission, p_session->m_RetransmissionInterval, priority);
+                });
             p_session->p_TransmissionBlock = nullptr;
         }
     },
