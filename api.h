@@ -1,5 +1,5 @@
-#ifndef C_STUB_H_
-#define C_STUB_H_
+#ifndef API_H_
+#define API_H_
 
 #include <stdint.h>
 
