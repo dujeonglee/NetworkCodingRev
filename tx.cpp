@@ -97,8 +97,15 @@ bool TransmissionBlock::Send(uint8_t *buffer, uint16_t buffersize)
         p_Session->p_TransmissionBlock = nullptr;
         p_Session->m_Timer.PeriodicTaskAdv([this]() -> std::tuple<bool, uint32_t, uint32_t> {
             const bool schedulenextretransmission = Retransmission();
-            const uint32_t priority = (p_Session->m_MinBlockSequenceNumber == m_BlockSequenceNumber ? TransmissionSession::MIDDLE_PRIORITY : TransmissionSession::LOW_PRIORITY);
-            return std::make_tuple(schedulenextretransmission, p_Session->m_RetransmissionInterval, priority);
+            if (schedulenextretransmission)
+            {
+                const uint32_t priority = (p_Session->m_MinBlockSequenceNumber == m_BlockSequenceNumber ? TransmissionSession::MIDDLE_PRIORITY : TransmissionSession::LOW_PRIORITY);
+                return std::make_tuple(schedulenextretransmission, p_Session->m_RetransmissionInterval, priority);
+            }
+            else
+            {
+                return std::make_tuple(false, 0, 0);
+            }
         });
     }
     return true;
@@ -554,8 +561,15 @@ bool Transmission::Flush(const DataStructures::AddressType Addr)
                 p_session->m_Timer.PeriodicTaskAdv(
                     [p_session, block]() -> std::tuple<bool, uint32_t, uint32_t> {
                         const bool schedulenextretransmission = block->Retransmission();
-                        const uint32_t priority = (p_session->m_MinBlockSequenceNumber == block->m_BlockSequenceNumber ? TransmissionSession::MIDDLE_PRIORITY : TransmissionSession::LOW_PRIORITY);
-                        return std::make_tuple(schedulenextretransmission, p_session->m_RetransmissionInterval, priority);
+                        if (schedulenextretransmission)
+                        {
+                            const uint32_t priority = (p_session->m_MinBlockSequenceNumber == block->m_BlockSequenceNumber ? TransmissionSession::MIDDLE_PRIORITY : TransmissionSession::LOW_PRIORITY);
+                            return std::make_tuple(schedulenextretransmission, p_session->m_RetransmissionInterval, priority);
+                        }
+                        else
+                        {
+                            return std::make_tuple(false, 0, 0);
+                        }
                     });
                 p_session->p_TransmissionBlock = nullptr;
             }
