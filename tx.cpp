@@ -95,18 +95,19 @@ bool TransmissionBlock::Send(uint8_t *buffer, uint16_t buffersize)
     if ((m_TransmissionCount == m_BlockSize))
     {
         p_Session->p_TransmissionBlock = nullptr;
-        p_Session->m_Timer.PeriodicTaskAdv([this]() -> std::tuple<bool, uint32_t, uint32_t> {
-            const bool schedulenextretransmission = Retransmission();
-            if (schedulenextretransmission)
-            {
-                const uint32_t priority = (p_Session->m_MinBlockSequenceNumber == m_BlockSequenceNumber ? TransmissionSession::MIDDLE_PRIORITY : TransmissionSession::LOW_PRIORITY);
-                return std::make_tuple(schedulenextretransmission, p_Session->m_RetransmissionInterval, priority);
-            }
-            else
-            {
-                return std::make_tuple(false, 0, 0);
-            }
-        });
+        p_Session->m_Timer.PeriodicTaskAdv(
+            [this]() -> std::tuple<bool, uint32_t, uint32_t> {
+                const bool schedulenextretransmission = Retransmission();
+                if (schedulenextretransmission)
+                {
+                    const uint32_t priority = (p_Session->m_MinBlockSequenceNumber == m_BlockSequenceNumber ? TransmissionSession::MIDDLE_PRIORITY : TransmissionSession::LOW_PRIORITY);
+                    return std::make_tuple(schedulenextretransmission, p_Session->m_RetransmissionInterval, priority);
+                }
+                else
+                {
+                    return std::make_tuple(false, 0, 0);
+                }
+            });
     }
     return true;
 }
@@ -207,19 +208,7 @@ const bool TransmissionBlock::Retransmission()
             uint16_t CodingOffset = Header::Data::OffSets::CodingOffset;
             while (CodingOffset < length)
             {
-                /*if(length - CodingOffset > 1024)
-                {
-                    Encoding1024(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
-                }
-                else if(length - CodingOffset > 512)
-                {
-                    Encoding512(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
-                }
-                else if(length - CodingOffset > 256)
-                {
-                    Encoding256(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
-                }
-                else */ if (length - CodingOffset > 128)
+                if (length - CodingOffset > 128)
                 {
                     Encoding128(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
                 }
@@ -291,35 +280,39 @@ TransmissionSession::~TransmissionSession()
 /*OK*/
 void TransmissionSession::ChangeTransmissionMode(const Parameter::TRANSMISSION_MODE TransmissionMode)
 {
-    m_Timer.ImmediateTask([this, TransmissionMode]() {
-        m_TransmissionMode = TransmissionMode;
-    });
+    m_Timer.ImmediateTask(
+        [this, TransmissionMode]() -> void {
+            m_TransmissionMode = TransmissionMode;
+        });
 }
 
 /*OK*/
 void TransmissionSession::ChangeBlockSize(const Parameter::BLOCK_SIZE BlockSize)
 {
-    m_Timer.ImmediateTask([this, BlockSize]() {
-        m_BlockSize = BlockSize;
-    });
+    m_Timer.ImmediateTask(
+        [this, BlockSize]() -> void {
+            m_BlockSize = BlockSize;
+        });
 }
 
 /*OK*/
 void TransmissionSession::ChangeRetransmissionRedundancy(const uint16_t RetransmissionRedundancy)
 {
-    m_Timer.ImmediateTask([this, RetransmissionRedundancy]() {
-        m_RetransmissionRedundancy = RetransmissionRedundancy;
-    });
+    m_Timer.ImmediateTask(
+        [this, RetransmissionRedundancy]() -> void {
+            m_RetransmissionRedundancy = RetransmissionRedundancy;
+        });
 }
 
 /*OK*/
 void TransmissionSession::ChangeSessionParameter(const Parameter::TRANSMISSION_MODE TransmissionMode, const Parameter::BLOCK_SIZE BlockSize, const uint16_t RetransmissionRedundancy)
 {
-    m_Timer.ImmediateTask([this, TransmissionMode, BlockSize, RetransmissionRedundancy]() {
-        m_TransmissionMode = TransmissionMode;
-        m_BlockSize = BlockSize;
-        m_RetransmissionRedundancy = RetransmissionRedundancy;
-    });
+    m_Timer.ImmediateTask(
+        [this, TransmissionMode, BlockSize, RetransmissionRedundancy]() -> void {
+            m_TransmissionMode = TransmissionMode;
+            m_BlockSize = BlockSize;
+            m_RetransmissionRedundancy = RetransmissionRedundancy;
+        });
 }
 
 const bool TransmissionSession::SendPing()
@@ -345,15 +338,16 @@ const bool TransmissionSession::SendPing()
 
 void TransmissionSession::ProcessPong(const uint16_t rtt)
 {
-    m_Timer.ImmediateTask([this, rtt]() {
-        m_RetransmissionInterval = (m_RetransmissionInterval + rtt) / 2;
-    });
+    m_Timer.ImmediateTask(
+        [this, rtt]() -> void {
+            m_RetransmissionInterval = (m_RetransmissionInterval + rtt) / 2;
+        });
 }
 
 void TransmissionSession::ProcessDataAck(const uint16_t sequence, const uint8_t loss)
 {
     m_Timer.ImmediateTask(
-        [this, sequence, loss]() {
+        [this, sequence, loss]() -> void {
             if (m_AckList[sequence % (Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION * 2)] == true)
             {
                 return;
@@ -368,7 +362,7 @@ void TransmissionSession::ProcessDataAck(const uint16_t sequence, const uint8_t 
 void TransmissionSession::ProcessSyncAck(const uint16_t sequence)
 {
     m_Timer.ImmediateTask(
-        [this, sequence]() {
+        [this, sequence]() -> void {
             if (sequence == m_MaxBlockSequenceNumber)
             {
                 m_IsConnected = true;
@@ -385,7 +379,7 @@ Transmission::Transmission(int32_t Socket) : c_Socket(Socket) {}
 /* OK */
 Transmission::~Transmission()
 {
-    m_Sessions.DoSomethingOnAllData([](TransmissionSession *&session) { delete session; });
+    m_Sessions.DoSomethingOnAllData([](TransmissionSession *&session) -> void { delete session; });
     m_Sessions.Clear();
 }
 
@@ -488,7 +482,7 @@ bool Transmission::Send(const DataStructures::AddressType Addr, uint8_t *buffer,
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
     const uint32_t TransmissionIsScheduled = p_session->m_Timer.ImmediateTask(
-        [buffer, buffersize, p_session, &TransmissionIsCompleted, &TransmissionResult]() {
+        [buffer, buffersize, p_session, &TransmissionIsCompleted, &TransmissionResult]() -> void {
             // 1. Get Transmission Block
             if (p_session->p_TransmissionBlock == nullptr)
             {
@@ -553,7 +547,7 @@ bool Transmission::Flush(const DataStructures::AddressType Addr)
         return false;
     }
     const uint32_t TaskID = p_session->m_Timer.ImmediateTask(
-        [p_session]() {
+        [p_session]() -> void {
             // 1. Get Transmission Block
             if (p_session->p_TransmissionBlock)
             {
@@ -622,9 +616,10 @@ void Transmission::Disconnect(const DataStructures::AddressType Addr)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
-    m_Sessions.Remove(key, [](TransmissionSession *&session) {
-        delete session;
-    });
+    m_Sessions.Remove(key,
+                      [](TransmissionSession *&session) -> void {
+                          delete session;
+                      });
 }
 
 /* OK */
