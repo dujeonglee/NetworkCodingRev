@@ -13,16 +13,20 @@ bool Done = false;
 
 FILE *p_File = nullptr;
 float rxsize = 0;
+float cummulative_bandwith = 0;
+uint32_t samples = 0;
 
 void RxCallback(uint8_t *const buffer, const uint16_t length, const void *const sockaddr_type, const uint32_t sender_addr_len)
 {
     if (p_File == nullptr)
     {
         buffer[length] = 0;
+        std::cout << "File " << (char *)buffer << std::endl;
         p_File = fopen((char *)buffer, "w");
     }
     else if (length == 1 && buffer[0] == 0xff)
     {
+        std::cout << "Done" << std::endl;
         Done = true;
     }
     else
@@ -37,11 +41,14 @@ void BandwidthCheck()
     while (Done == false)
     {
         std::this_thread::sleep_for(std::chrono::seconds(1));
-        printf("%5.5f Mb/s\n", rxsize / (1000. * 1000.));
-        fflush(stdout);
+        const float sample_bandwidth = rxsize / (1000. * 1000.);
         rxsize = 0;
+        cummulative_bandwith += sample_bandwidth;
+        samples++;
+        printf("[AVG %5.5f MB/s][%u seconds]\n", cummulative_bandwith / samples, samples);
+        fflush(stdout);
     }
-    printf("%5.5f Mb/s\n", rxsize / (1000. * 1000.));
+    printf("[AVG %5.5f MB/s][%u seconds]\n", cummulative_bandwith / samples, samples);
     fflush(stdout);
 }
 
