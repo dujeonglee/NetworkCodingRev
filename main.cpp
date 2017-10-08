@@ -41,12 +41,15 @@ void BandwidthCheck()
     while (Done == false)
     {
         std::this_thread::sleep_for(std::chrono::seconds(1));
-        const float sample_bandwidth = rxsize / (1000. * 1000.);
-        rxsize = 0;
-        cummulative_bandwith += sample_bandwidth;
-        samples++;
-        printf("[AVG %5.5f MB/s][%u seconds]\n", cummulative_bandwith / samples, samples);
-        fflush(stdout);
+        if (p_File)
+        {
+            const float sample_bandwidth = rxsize / (1000. * 1000.);
+            rxsize = 0;
+            cummulative_bandwith += sample_bandwidth;
+            samples++;
+            printf("[AVG %5.5f MB/s][%u seconds]\n", cummulative_bandwith / samples, samples);
+            fflush(stdout);
+        }
     }
     printf("[AVG %5.5f MB/s][%u seconds]\n", cummulative_bandwith / samples, samples);
     fflush(stdout);
