@@ -16,9 +16,9 @@ run_static : main_stc.o libncsocket.a
 	$(CROSS)$(CPP) -o $@ main_stc.o ./libncsocket.a -lpthread
 run_dynamic : main_dyn.o libncsocket.so
 	$(CROSS)$(CPP) -o $@ main_dyn.o -lpthread -ldl
-main_stc.o : main.cpp
+main_stc.o : Makefile main.cpp
 	$(CROSS)$(CPP) -o $@ main.cpp $(OPTIMIZATIONCPPFLAGS) $(BASICCPPFLAGS) $(INCLUDES)
-main_dyn.o : main.cpp
+main_dyn.o : Makefile main.cpp
 	$(CROSS)$(CPP) -o $@ main.cpp -DDYNAMIC $(OPTIMIZATIONCPPFLAGS) $(BASICCPPFLAGS) $(INCLUDES)
 
 clean :
@@ -34,15 +34,15 @@ $(SHAREDLIBOUT) :
 	mkdir -p $(SHAREDLIBOUT)
 SHAREDLIBCPPFLAGS := -fPIC $(OPTIMIZATIONCPPFLAGS) $(BASICCPPFLAGS)
 SHAREDLIBOUT := out/shared
-$(SHAREDLIBOUT)/chk.o : chk.h chk.cpp
+$(SHAREDLIBOUT)/chk.o : Makefile chk.h chk.cpp
 	$(CROSS)$(CPP) chk.cpp -o $@ $(SHAREDLIBCPPFLAGS) $(INCLUDES)
-$(SHAREDLIBOUT)/finite_field.o : finite_field.h finite_field.cpp
+$(SHAREDLIBOUT)/finite_field.o : Makefile finite_field.h finite_field.cpp
 	$(CROSS)$(CPP) finite_field.cpp -o $@ $(SHAREDLIBCPPFLAGS) $(INCLUDES)
-$(SHAREDLIBOUT)/tx.o : tx.h tx.cpp
+$(SHAREDLIBOUT)/tx.o : Makefile tx.h tx.cpp
 	$(CROSS)$(CPP) tx.cpp -o $@ $(SHAREDLIBCPPFLAGS) $(INCLUDES)
-$(SHAREDLIBOUT)/rx.o : rx.h rx.cpp
+$(SHAREDLIBOUT)/rx.o : Makefile rx.h rx.cpp
 	$(CROSS)$(CPP) rx.cpp -o $@ $(SHAREDLIBCPPFLAGS) $(INCLUDES)
-$(SHAREDLIBOUT)/c_stub.o : c_stub.h c_stub.cpp
+$(SHAREDLIBOUT)/c_stub.o : Makefile c_stub.h c_stub.cpp
 	$(CROSS)$(CPP) c_stub.cpp -o $@ $(SHAREDLIBCPPFLAGS) $(INCLUDES)
 
 STATICLIBOUT := out/static
@@ -53,13 +53,13 @@ $(STATICLIBOUT) :
 	mkdir -p $(STATICLIBOUT)
 STATICLIBCPPFLAGS := $(OPTIMIZATIONCPPFLAGS) $(BASICCPPFLAGS)
 STATICLIBOUT := out/static
-$(STATICLIBOUT)/chk.o : chk.h chk.cpp
+$(STATICLIBOUT)/chk.o : Makefile chk.h chk.cpp
 	$(CROSS)$(CPP) chk.cpp -o $@ $(STATICLIBCPPFLAGS) $(INCLUDES)
-$(STATICLIBOUT)/finite_field.o : finite_field.h finite_field.cpp
+$(STATICLIBOUT)/finite_field.o : Makefile finite_field.h finite_field.cpp
 	$(CROSS)$(CPP) finite_field.cpp -o $@ $(STATICLIBCPPFLAGS) $(INCLUDES)
-$(STATICLIBOUT)/tx.o : tx.h tx.cpp
+$(STATICLIBOUT)/tx.o : Makefile tx.h tx.cpp
 	$(CROSS)$(CPP) tx.cpp -o $@ $(STATICLIBCPPFLAGS) $(INCLUDES)
-$(STATICLIBOUT)/rx.o : rx.h rx.cpp
+$(STATICLIBOUT)/rx.o : Makefile rx.h rx.cpp
 	$(CROSS)$(CPP) rx.cpp -o $@ $(STATICLIBCPPFLAGS) $(INCLUDES)
-$(STATICLIBOUT)/c_stub.o : c_stub.h c_stub.cpp
+$(STATICLIBOUT)/c_stub.o : Makefile c_stub.h c_stub.cpp
 	$(CROSS)$(CPP) c_stub.cpp -o $@ $(STATICLIBCPPFLAGS) $(INCLUDES)
