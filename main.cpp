@@ -2,7 +2,7 @@
 #include <string.h>
 #include <iostream>
 #include <thread>
-#include "c_stub.h"
+#include "api.h"
 #ifdef DYNAMIC
 #include <dlfcn.h>
 #endif
