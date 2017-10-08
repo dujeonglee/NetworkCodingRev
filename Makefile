@@ -32,7 +32,7 @@ libncsocket.so : $(SHAREDLIBOUT) basiclibrary/.git/config $(SHAREDLIBOUT)/chk.o 
 	$(CROSS)$(CPP) -shared -o $@ $(SHAREDLIBOUT)/chk.o $(SHAREDLIBOUT)/finite_field.o $(SHAREDLIBOUT)/tx.o $(SHAREDLIBOUT)/rx.o $(SHAREDLIBOUT)/c_stub.o
 $(SHAREDLIBOUT) :
 	mkdir -p $(SHAREDLIBOUT)
-SHAREDLIBCPPFLAGS := -fPIC -O3 $(BASICCPPFLAGS)
+SHAREDLIBCPPFLAGS := -fPIC $(OPTIMIZATIONCPPFLAGS) $(BASICCPPFLAGS)
 SHAREDLIBOUT := out/shared
 $(SHAREDLIBOUT)/chk.o : chk.h chk.cpp
 	$(CROSS)$(CPP) chk.cpp -o $@ $(SHAREDLIBCPPFLAGS) $(INCLUDES)
@@ -51,7 +51,7 @@ libncsocket.a : $(STATICLIBOUT) basiclibrary/.git/config $(STATICLIBOUT)/chk.o $
 	$(CROSS)$(AR) rcs $@  $(STATICLIBOUT)/chk.o $(STATICLIBOUT)/finite_field.o $(STATICLIBOUT)/tx.o $(STATICLIBOUT)/rx.o $(STATICLIBOUT)/c_stub.o
 $(STATICLIBOUT) :
 	mkdir -p $(STATICLIBOUT)
-STATICLIBCPPFLAGS := -O3 $(BASICCPPFLAGS)
+STATICLIBCPPFLAGS := $(OPTIMIZATIONCPPFLAGS) $(BASICCPPFLAGS)
 STATICLIBOUT := out/static
 $(STATICLIBOUT)/chk.o : chk.h chk.cpp
 	$(CROSS)$(CPP) chk.cpp -o $@ $(STATICLIBCPPFLAGS) $(INCLUDES)

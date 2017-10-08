@@ -57,6 +57,7 @@ bool TransmissionBlock::Send(uint8_t *buffer, uint16_t buffersize)
     // Fill up the fields
     Header::Data *const DataHeader = reinterpret_cast<Header::Data *>(m_OriginalPacketBuffer[m_TransmissionCount].get());
     DataHeader->m_Type = Header::Common::HeaderType::DATA;
+    DataHeader->m_CheckSum = 0;
     DataHeader->m_TotalSize = htons(sizeof(Header::Data) + (m_BlockSize - 1) + buffersize);
     DataHeader->m_MinBlockSequenceNumber = htons(p_Session->m_MinBlockSequenceNumber);
     DataHeader->m_CurrentBlockSequenceNumber = htons(m_BlockSequenceNumber);
@@ -65,7 +66,6 @@ bool TransmissionBlock::Send(uint8_t *buffer, uint16_t buffersize)
     DataHeader->m_MaximumRank = m_BlockSize;
     DataHeader->m_Flags = Header::Data::FLAGS_ORIGINAL;
     DataHeader->m_TxCount = m_TransmissionCount + 1;
-    DataHeader->m_CheckSum = 0;
     if (DataHeader->m_ExpectedRank == m_BlockSize)
     {
         //Note: Header::Data::FLAGS_END_OF_BLK asks ack from the client
@@ -104,6 +104,7 @@ bool TransmissionBlock::Send(uint8_t *buffer, uint16_t buffersize)
     return true;
 }
 
+// OK
 const bool TransmissionBlock::Retransmission()
 {
     const uint8_t c_AckIndex = AckIndex();
@@ -181,6 +182,7 @@ const bool TransmissionBlock::Retransmission()
 
         memset(m_RemedyPacketBuffer, 0x0, sizeof(m_RemedyPacketBuffer));
         RemedyHeader->m_Type = Header::Common::HeaderType::DATA;
+        RemedyHeader->m_CheckSum = 0;
         RemedyHeader->m_TotalSize = htons(sizeof(Header::Data) + (m_BlockSize - 1) + m_LargestOriginalPacketSize);
         RemedyHeader->m_MinBlockSequenceNumber = htons(p_Session->m_MinBlockSequenceNumber.load());
         RemedyHeader->m_CurrentBlockSequenceNumber = htons(m_BlockSequenceNumber);
@@ -317,6 +319,7 @@ const bool TransmissionSession::SendPing()
 {
     Header::Ping ping;
     ping.m_Type = Header::Data::HeaderType::PING;
+    ping.m_CheckSum = 0;
     ping.m_PingTime = CLOCK::now().time_since_epoch().count();
 
     CLOCK::time_point const CurrentTime(CLOCK::duration(ping.m_PingTime));
@@ -328,7 +331,7 @@ const bool TransmissionSession::SendPing()
         c_Transmission->Disconnect(c_Addr);
         return false;
     }
-
+    ping.m_CheckSum = checksum8(reinterpret_cast<uint8_t *>(&ping), sizeof(Header::Ping));
     sendto(c_Socket, reinterpret_cast<uint8_t *>(&ping), sizeof(Header::Ping), 0, (sockaddr *)&c_Addr.Addr, c_Addr.AddrLength);
     return true;
 }
@@ -417,8 +420,10 @@ bool Transmission::Connect(const DataStructures::AddressType Addr, uint32_t Conn
     }
     Header::Sync SyncPacket;
     SyncPacket.m_Type = Header::Common::HeaderType::SYNC;
+    SyncPacket.m_CheckSum = 0;
     SyncPacket.m_Sequence = htons(newsession->m_MaxBlockSequenceNumber);
 
+    SyncPacket.m_CheckSum = checksum8(reinterpret_cast<uint8_t *>(&SyncPacket), sizeof(SyncPacket));
     if (sendto(c_Socket, (uint8_t *)&SyncPacket, sizeof(SyncPacket), 0, (sockaddr *)(&newsession->c_Addr.Addr), newsession->c_Addr.AddrLength) != sizeof(SyncPacket))
     {
         return false;
@@ -540,21 +545,23 @@ bool Transmission::Flush(const DataStructures::AddressType Addr)
     {
         return false;
     }
-    return IMMEDIATE_TASK_ID == p_session->m_Timer.ImmediateTask([p_session]() {
-        // 1. Get Transmission Block
-        if (p_session->p_TransmissionBlock)
-        {
-            TransmissionBlock *const block = p_session->p_TransmissionBlock;
-            p_session->m_Timer.PeriodicTaskAdv(
-                [p_session, block]() -> std::tuple<bool, uint32_t, uint32_t> {
-                    const bool schedulenextretransmission = block->Retransmission();
-                    const uint32_t priority = (p_session->m_MinBlockSequenceNumber == block->m_BlockSequenceNumber ? TransmissionSession::MIDDLE_PRIORITY : TransmissionSession::LOW_PRIORITY);
-                    return std::make_tuple(schedulenextretransmission, p_session->m_RetransmissionInterval, priority);
-                });
-            p_session->p_TransmissionBlock = nullptr;
-        }
-    },
-                                                                 TransmissionSession::LOW_PRIORITY);
+    const uint32_t TaskID = p_session->m_Timer.ImmediateTask(
+        [p_session]() {
+            // 1. Get Transmission Block
+            if (p_session->p_TransmissionBlock)
+            {
+                TransmissionBlock *const block = p_session->p_TransmissionBlock;
+                p_session->m_Timer.PeriodicTaskAdv(
+                    [p_session, block]() -> std::tuple<bool, uint32_t, uint32_t> {
+                        const bool schedulenextretransmission = block->Retransmission();
+                        const uint32_t priority = (p_session->m_MinBlockSequenceNumber == block->m_BlockSequenceNumber ? TransmissionSession::MIDDLE_PRIORITY : TransmissionSession::LOW_PRIORITY);
+                        return std::make_tuple(schedulenextretransmission, p_session->m_RetransmissionInterval, priority);
+                    });
+                p_session->p_TransmissionBlock = nullptr;
+            }
+        },
+        TransmissionSession::LOW_PRIORITY);
+    return IMMEDIATE_TASK_ID == TaskID;
 }
 
 void Transmission::WaitUntilTxIsCompleted(const DataStructures::AddressType Addr)
@@ -598,7 +605,9 @@ void Transmission::Disconnect(const DataStructures::AddressType Addr)
     }
     (*pp_session)->m_IsConnected = false;
     while (0 < (*pp_session)->m_ConcurrentRetransmissions)
-        ;
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
     m_Sessions.Remove(key, [](TransmissionSession *&session) {
         delete session;
     });
@@ -608,6 +617,10 @@ void Transmission::Disconnect(const DataStructures::AddressType Addr)
 void Transmission::RxHandler(uint8_t *const buffer, const uint16_t size, const sockaddr *const sender_addr, const uint32_t sender_addr_len)
 {
     Header::Common *CommonHeader = reinterpret_cast<Header::Common *>(buffer);
+    if (checksum8(buffer, size) != 0x0)
+    {
+        return;
+    }
     switch (CommonHeader->m_Type)
     {
     case Header::Common::HeaderType::DATA_ACK:

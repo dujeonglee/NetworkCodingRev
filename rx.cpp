@@ -415,8 +415,10 @@ void ReceptionBlock::Receive(uint8_t *buffer, uint16_t length, const sockaddr *c
     {
         Header::DataAck ack;
         ack.m_Type = Header::Common::HeaderType::DATA_ACK;
+        ack.m_CheckSum = 0;
         ack.m_Sequence = DataHeader->m_CurrentBlockSequenceNumber;
         ack.m_Losses = DataHeader->m_TxCount - DataHeader->m_ExpectedRank;
+        ack.m_CheckSum = checksum8(reinterpret_cast<uint8_t *>(&ack), sizeof(ack));
         sendto(c_Reception->c_Socket, (uint8_t *)&ack, sizeof(ack), 0, (sockaddr *)sender_addr, sender_addr_len);
         return;
     }
@@ -549,8 +551,10 @@ void ReceptionBlock::Receive(uint8_t *buffer, uint16_t length, const sockaddr *c
             }
             Header::DataAck ack;
             ack.m_Type = Header::Common::HeaderType::DATA_ACK;
+            ack.m_CheckSum = 0;
             ack.m_Sequence = DataHeader->m_CurrentBlockSequenceNumber;
             ack.m_Losses = DataHeader->m_TxCount - DataHeader->m_ExpectedRank;
+            ack.m_CheckSum = checksum8(reinterpret_cast<uint8_t *>(&ack), sizeof(ack));
             sendto(c_Reception->c_Socket, (uint8_t *)&ack, sizeof(ack), 0, (sockaddr *)sender_addr, sender_addr_len);
         }
         break;
@@ -629,8 +633,10 @@ void ReceptionSession::Receive(uint8_t *buffer, uint16_t length, const sockaddr 
         {
             Header::DataAck ack;
             ack.m_Type = Header::Common::HeaderType::DATA_ACK;
+            ack.m_CheckSum = 0;
             ack.m_Sequence = DataHeader->m_CurrentBlockSequenceNumber;
             ack.m_Losses = DataHeader->m_TxCount - DataHeader->m_ExpectedRank;
+            ack.m_CheckSum = checksum8(reinterpret_cast<uint8_t *>(&ack), sizeof(ack));
             sendto(c_Reception->c_Socket, (uint8_t *)&ack, sizeof(ack), 0, (sockaddr *)sender_addr, sender_addr_len);
         }
         return;
@@ -674,6 +680,10 @@ Reception::~Reception()
 void Reception::RxHandler(uint8_t *buffer, uint16_t size, const sockaddr *const sender_addr, const uint32_t sender_addr_len)
 {
     Header::Common *CommonHeader = reinterpret_cast<Header::Common *>(buffer);
+    if (checksum8(buffer, size) != 0x0)
+    {
+        return;
+    }
     switch (CommonHeader->m_Type)
     {
     case Header::Common::HeaderType::DATA:
@@ -685,11 +695,6 @@ void Reception::RxHandler(uint8_t *buffer, uint16_t size, const sockaddr *const 
             return;
         }
         ReceptionSession *const p_Session = (*pp_Session);
-        const uint16_t packetlen = ntohs(((Header::Data *)buffer)->m_TotalSize);
-        if (checksum8(buffer, packetlen) != 0x0)
-        {
-            return;
-        }
         p_Session->Receive(buffer, size, sender_addr, sender_addr_len);
     }
     break;
@@ -743,6 +748,8 @@ void Reception::RxHandler(uint8_t *buffer, uint16_t size, const sockaddr *const 
             p_Session->m_Blocks.Clear();
         }
         sync->m_Type = Header::Common::HeaderType::SYNC_ACK;
+        sync->m_CheckSum = 0;
+        sync->m_CheckSum = checksum8(buffer, size);
         sendto(c_Socket, buffer, size, 0, (sockaddr *)sender_addr, sender_addr_len);
     }
     break;
@@ -751,6 +758,8 @@ void Reception::RxHandler(uint8_t *buffer, uint16_t size, const sockaddr *const 
     {
         Header::Ping *const ping = reinterpret_cast<Header::Ping *>(buffer);
         ping->m_Type = Header::Data::HeaderType::PONG;
+        ping->m_CheckSum = 0;
+        ping->m_CheckSum = checksum8(buffer, size);
         sendto(c_Socket, buffer, size, 0, (sockaddr *)sender_addr, sender_addr_len);
     }
     break;

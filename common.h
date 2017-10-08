@@ -39,6 +39,7 @@ namespace Header
 struct Common
 {
     uint8_t m_Type;
+    uint8_t m_CheckSum;
     enum HeaderType : uint8_t
     {
         DATA = 1,
@@ -68,9 +69,8 @@ struct Data : Common
     uint8_t m_TxCount;
     enum OffSets : uint8_t
     {
-        CodingOffset = (1 + 2 + 2 + 2 + 2 + 1 + 1 + 1 + 1 + 1)
+        CodingOffset = (1 + 1 + 2 + 2 + 2 + 2 + 1 + 1 + 1 + 1)
     };
-    uint8_t m_CheckSum;
     // ^^^ This part is not encoded ^^^ //
     uint16_t m_PayloadSize;
     uint8_t m_LastIndicator;
