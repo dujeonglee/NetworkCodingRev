@@ -28,8 +28,8 @@ basiclibrary/.git/config :
 	git clone https://github.com/dujeonglee/basiclibrary.git
 SHAREDLIBOUT := out/shared
 sharedlibrary : libncsocket.so
-libncsocket.so : $(SHAREDLIBOUT) basiclibrary/.git/config $(SHAREDLIBOUT)/chk.o $(SHAREDLIBOUT)/finite_field.o $(SHAREDLIBOUT)/tx.o $(SHAREDLIBOUT)/rx.o $(SHAREDLIBOUT)/c_stub.o
-	$(CROSS)$(CPP) -shared -o $@ $(SHAREDLIBOUT)/chk.o $(SHAREDLIBOUT)/finite_field.o $(SHAREDLIBOUT)/tx.o $(SHAREDLIBOUT)/rx.o $(SHAREDLIBOUT)/c_stub.o
+libncsocket.so : $(SHAREDLIBOUT) basiclibrary/.git/config $(SHAREDLIBOUT)/chk.o $(SHAREDLIBOUT)/finite_field.o $(SHAREDLIBOUT)/tx.o $(SHAREDLIBOUT)/rx.o $(SHAREDLIBOUT)/api.o
+	$(CROSS)$(CPP) -shared -o $@ $(SHAREDLIBOUT)/chk.o $(SHAREDLIBOUT)/finite_field.o $(SHAREDLIBOUT)/tx.o $(SHAREDLIBOUT)/rx.o $(SHAREDLIBOUT)/api.o
 $(SHAREDLIBOUT) :
 	mkdir -p $(SHAREDLIBOUT)
 SHAREDLIBCPPFLAGS := -fPIC $(OPTIMIZATIONCPPFLAGS) $(BASICCPPFLAGS)
@@ -42,13 +42,13 @@ $(SHAREDLIBOUT)/tx.o : Makefile tx.h tx.cpp
 	$(CROSS)$(CPP) tx.cpp -o $@ $(SHAREDLIBCPPFLAGS) $(INCLUDES)
 $(SHAREDLIBOUT)/rx.o : Makefile rx.h rx.cpp
 	$(CROSS)$(CPP) rx.cpp -o $@ $(SHAREDLIBCPPFLAGS) $(INCLUDES)
-$(SHAREDLIBOUT)/c_stub.o : Makefile c_stub.h c_stub.cpp
-	$(CROSS)$(CPP) c_stub.cpp -o $@ $(SHAREDLIBCPPFLAGS) $(INCLUDES)
+$(SHAREDLIBOUT)/api.o : Makefile api.h api.cpp
+	$(CROSS)$(CPP) api.cpp -o $@ $(SHAREDLIBCPPFLAGS) $(INCLUDES)
 
 STATICLIBOUT := out/static
 staticlibrary : libncsocket.a
-libncsocket.a : $(STATICLIBOUT) basiclibrary/.git/config $(STATICLIBOUT)/chk.o $(STATICLIBOUT)/finite_field.o $(STATICLIBOUT)/tx.o $(STATICLIBOUT)/rx.o $(STATICLIBOUT)/c_stub.o
-	$(CROSS)$(AR) rcs $@  $(STATICLIBOUT)/chk.o $(STATICLIBOUT)/finite_field.o $(STATICLIBOUT)/tx.o $(STATICLIBOUT)/rx.o $(STATICLIBOUT)/c_stub.o
+libncsocket.a : $(STATICLIBOUT) basiclibrary/.git/config $(STATICLIBOUT)/chk.o $(STATICLIBOUT)/finite_field.o $(STATICLIBOUT)/tx.o $(STATICLIBOUT)/rx.o $(STATICLIBOUT)/api.o
+	$(CROSS)$(AR) rcs $@  $(STATICLIBOUT)/chk.o $(STATICLIBOUT)/finite_field.o $(STATICLIBOUT)/tx.o $(STATICLIBOUT)/rx.o $(STATICLIBOUT)/api.o
 $(STATICLIBOUT) :
 	mkdir -p $(STATICLIBOUT)
 STATICLIBCPPFLAGS := $(OPTIMIZATIONCPPFLAGS) $(BASICCPPFLAGS)
@@ -61,5 +61,5 @@ $(STATICLIBOUT)/tx.o : Makefile tx.h tx.cpp
 	$(CROSS)$(CPP) tx.cpp -o $@ $(STATICLIBCPPFLAGS) $(INCLUDES)
 $(STATICLIBOUT)/rx.o : Makefile rx.h rx.cpp
 	$(CROSS)$(CPP) rx.cpp -o $@ $(STATICLIBCPPFLAGS) $(INCLUDES)
-$(STATICLIBOUT)/c_stub.o : Makefile c_stub.h c_stub.cpp
-	$(CROSS)$(CPP) c_stub.cpp -o $@ $(STATICLIBCPPFLAGS) $(INCLUDES)
+$(STATICLIBOUT)/api.o : Makefile api.h api.cpp
+	$(CROSS)$(CPP) api.cpp -o $@ $(STATICLIBCPPFLAGS) $(INCLUDES)
