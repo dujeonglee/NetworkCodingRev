@@ -34,7 +34,7 @@ void PRINT(Header::Data *data)
     std::cout << std::endl;
 }
 
-const uint8_t ReceptionBlock::FindMaximumRank(Header::Data *hdr)
+const uint8_t ReceptionBlock::FindMaximumRank(const Header::Data *const hdr)
 {
     uint8_t MaximumRank = 0;
     if (m_EncodedPacketBuffer.size())
@@ -63,7 +63,7 @@ const uint8_t ReceptionBlock::FindMaximumRank(Header::Data *hdr)
     return MaximumRank;
 }
 
-const bool ReceptionBlock::FindEndOfBlock(Header::Data *hdr)
+const bool ReceptionBlock::FindEndOfBlock(const Header::Data *const hdr)
 {
     if (m_EncodedPacketBuffer.size())
     {
@@ -83,11 +83,11 @@ const bool ReceptionBlock::FindEndOfBlock(Header::Data *hdr)
     return false;
 }
 
-ReceptionBlock::ReceiveAction ReceptionBlock::FindAction(uint8_t *buffer, uint16_t length)
+ReceptionBlock::ReceiveAction ReceptionBlock::FindAction(const uint8_t *const buffer, const uint16_t length)
 {
     const uint8_t OLD_RANK = m_DecodedPacketBuffer.size() + m_EncodedPacketBuffer.size();
-    const uint8_t MAX_RANK = FindMaximumRank(reinterpret_cast<Header::Data *>(buffer));
-    const bool MAKE_DECODING_MATRIX = (OLD_RANK + 1 == MAX_RANK && FindEndOfBlock(reinterpret_cast<Header::Data *>(buffer)));
+    const uint8_t MAX_RANK = FindMaximumRank(reinterpret_cast<const Header::Data *const>(buffer));
+    const bool MAKE_DECODING_MATRIX = (OLD_RANK + 1 == MAX_RANK && FindEndOfBlock(reinterpret_cast<const Header::Data *const>(buffer)));
 
     std::vector<std::unique_ptr<uint8_t[]>> EncodingMatrix;
     if (OLD_RANK == MAX_RANK)
@@ -145,9 +145,9 @@ ReceptionBlock::ReceiveAction ReceptionBlock::FindAction(uint8_t *buffer, uint16
             {
                 memcpy(EncodingMatrix[row].get(), reinterpret_cast<Header::Data *>(m_EncodedPacketBuffer[EncodedPktIdx++].get())->m_Codes, MAX_RANK);
             }
-            else if (RxPkt < 1 && reinterpret_cast<Header::Data *>(buffer)->m_Codes[row])
+            else if (RxPkt < 1 && reinterpret_cast<const Header::Data *const>(buffer)->m_Codes[row])
             {
-                memcpy(EncodingMatrix[row].get(), reinterpret_cast<Header::Data *>(buffer)->m_Codes, MAX_RANK);
+                memcpy(EncodingMatrix[row].get(), reinterpret_cast<const Header::Data *const>(buffer)->m_Codes, MAX_RANK);
                 RxPkt++;
             }
         }
@@ -400,7 +400,7 @@ ReceptionBlock::~ReceptionBlock()
     m_EncodedPacketBuffer.clear();
 }
 
-void ReceptionBlock::Receive(uint8_t *buffer, uint16_t length, const sockaddr *const sender_addr, const uint32_t sender_addr_len)
+void ReceptionBlock::Receive(uint8_t *const buffer, const uint16_t length, const sockaddr *const sender_addr, const uint32_t sender_addr_len)
 {
     Header::Data *const DataHeader = reinterpret_cast<Header::Data *>(buffer);
     if (m_DecodingReady)
@@ -573,7 +573,7 @@ ReceptionSession::~ReceptionSession()
     m_Blocks.DoSomethingOnAllData([](ReceptionBlock *&block) { delete block; });
 }
 
-void ReceptionSession::Receive(uint8_t *buffer, uint16_t length, const sockaddr *const sender_addr, const uint32_t sender_addr_len)
+void ReceptionSession::Receive(uint8_t *const buffer, const uint16_t length, const sockaddr *const sender_addr, const uint32_t sender_addr_len)
 {
     Header::Data *const DataHeader = reinterpret_cast<Header::Data *>(buffer);
     // update min and max sequence.
@@ -677,7 +677,7 @@ void ReceptionSession::Receive(uint8_t *buffer, uint16_t length, const sockaddr 
     p_Block->Receive(buffer, length, sender_addr, sender_addr_len);
 }
 
-Reception::Reception(int32_t Socket, std::function<void(uint8_t *buffer, uint16_t length, const sockaddr *const sender_addr, const uint32_t sender_addr_len)> rx) : c_Socket(Socket), m_RxCallback(rx) {}
+Reception::Reception(const int32_t Socket, const std::function<void(uint8_t *buffer, uint16_t length, const sockaddr *const sender_addr, const uint32_t sender_addr_len)> rx) : c_Socket(Socket), m_RxCallback(rx) {}
 
 Reception::~Reception()
 {
@@ -685,7 +685,7 @@ Reception::~Reception()
     m_Sessions.Clear();
 }
 
-void Reception::RxHandler(uint8_t *buffer, uint16_t size, const sockaddr *const sender_addr, const uint32_t sender_addr_len)
+void Reception::RxHandler(uint8_t *const buffer, const uint16_t size, const sockaddr *const sender_addr, const uint32_t sender_addr_len)
 {
     Header::Common *CommonHeader = reinterpret_cast<Header::Common *>(buffer);
     if (checksum8(buffer, size) != 0x0)

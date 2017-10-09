@@ -9,11 +9,11 @@ using namespace NetworkCoding;
 /*
  * Create TransmissionBlock.
  */
-TransmissionBlock::TransmissionBlock(TransmissionSession *p_session) : p_Session(p_session),
-                                                                       m_BlockSize(p_session->m_BlockSize),
-                                                                       m_TransmissionMode(p_session->m_TransmissionMode),
-                                                                       m_BlockSequenceNumber(p_session->m_MaxBlockSequenceNumber.fetch_add(1, std::memory_order_relaxed)),
-                                                                       m_RetransmissionRedundancy(p_session->m_RetransmissionRedundancy)
+TransmissionBlock::TransmissionBlock(TransmissionSession *const p_session) : p_Session(p_session),
+                                                                             m_BlockSize(p_session->m_BlockSize),
+                                                                             m_TransmissionMode(p_session->m_TransmissionMode),
+                                                                             m_BlockSequenceNumber(p_session->m_MaxBlockSequenceNumber.fetch_add(1, std::memory_order_relaxed)),
+                                                                             m_RetransmissionRedundancy(p_session->m_RetransmissionRedundancy)
 {
     p_Session->m_ConcurrentRetransmissions++;
     m_LargestOriginalPacketSize = 0;
@@ -33,7 +33,7 @@ const uint16_t TransmissionBlock::AckIndex()
     return m_BlockSequenceNumber % (Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION * 2);
 }
 
-bool TransmissionBlock::Send(uint8_t *buffer, uint16_t buffersize)
+bool TransmissionBlock::Send(uint8_t *const buffer, const uint16_t buffersize)
 {
     if (p_Session->m_IsConnected == false)
     {
@@ -254,7 +254,7 @@ const bool TransmissionBlock::Retransmission()
 ////////////////////////////////////////////////////////////
 /////////////// TransmissionSession
 /*OK*/
-TransmissionSession::TransmissionSession(Transmission *const transmission, int32_t Socket, const DataStructures::AddressType Addr, Parameter::TRANSMISSION_MODE TransmissionMode, Parameter::BLOCK_SIZE BlockSize, uint16_t RetransmissionRedundancy) : c_Transmission(transmission), c_Socket(Socket), c_Addr(Addr)
+TransmissionSession::TransmissionSession(Transmission *const transmission, const int32_t Socket, const DataStructures::AddressType Addr, const Parameter::TRANSMISSION_MODE TransmissionMode, const Parameter::BLOCK_SIZE BlockSize, const uint16_t RetransmissionRedundancy) : c_Transmission(transmission), c_Socket(Socket), c_Addr(Addr)
 {
     m_TransmissionMode = TransmissionMode;
     m_BlockSize = BlockSize;
@@ -374,7 +374,7 @@ void TransmissionSession::ProcessSyncAck(const uint16_t sequence)
 ////////////////////////////////////////////////////////////
 /////////////// Transmission
 /* OK */
-Transmission::Transmission(int32_t Socket) : c_Socket(Socket) {}
+Transmission::Transmission(const int32_t Socket) : c_Socket(Socket) {}
 
 /* OK */
 Transmission::~Transmission()

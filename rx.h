@@ -23,8 +23,8 @@ private:
   std::vector<std::unique_ptr<uint8_t[]>> m_EncodedPacketBuffer;
   std::vector<std::unique_ptr<uint8_t[]>> m_DecodingMatrix;
   bool m_DecodingReady;
-  const uint8_t FindMaximumRank(Header::Data *hdr = nullptr);
-  const bool FindEndOfBlock(Header::Data *hdr = nullptr);
+  const uint8_t FindMaximumRank(const Header::Data *const hdr = nullptr);
+  const bool FindEndOfBlock(const Header::Data *const hdr = nullptr);
   enum ReceiveAction
   {
     DROP = 0,
@@ -32,7 +32,7 @@ private:
     DECODING,
   };
 
-  ReceiveAction FindAction(uint8_t *buffer, uint16_t length);
+  ReceiveAction FindAction(const uint8_t *const buffer, const uint16_t length);
   bool Decoding();
 
 public:
@@ -44,7 +44,7 @@ public:
 
   ReceptionBlock(Reception *const reception, ReceptionSession *const session, const uint16_t BlockSequenceNumber);
   ~ReceptionBlock();
-  void Receive(uint8_t *buffer, uint16_t length, const sockaddr *const sender_addr, const uint32_t sender_addr_len);
+  void Receive(uint8_t *const buffer, const uint16_t length, const sockaddr *const sender_addr, const uint32_t sender_addr_len);
 };
 
 class ReceptionSession
@@ -69,7 +69,7 @@ public:
 
   ReceptionSession(Reception *const Session, const DataStructures::AddressType addr);
   ~ReceptionSession();
-  void Receive(uint8_t *buffer, uint16_t length, const sockaddr *const sender_addr, const uint32_t sender_addr_len);
+  void Receive(uint8_t *const buffer, const uint16_t length, const sockaddr *const sender_addr, const uint32_t sender_addr_len);
 };
 
 class Reception
@@ -83,11 +83,11 @@ private:
 
 public:
   const std::function<void(uint8_t *buffer, uint16_t length, const sockaddr *const sender_addr, const uint32_t sender_addr_len)> m_RxCallback;
-  Reception(int32_t Socket, std::function<void(uint8_t *buffer, uint16_t length, const sockaddr *const sender_addr, const uint32_t sender_addr_len)> rx);
+  Reception(const int32_t Socket, const std::function<void(uint8_t *buffer, uint16_t length, const sockaddr *const sender_addr, const uint32_t sender_addr_len)> rx);
   ~Reception();
 
 public:
-  void RxHandler(uint8_t *buffer, uint16_t size, const sockaddr *const sender_addr, const uint32_t sender_addr_len);
+  void RxHandler(uint8_t *const buffer, const uint16_t size, const sockaddr *const sender_addr, const uint32_t sender_addr_len);
 };
 }
 

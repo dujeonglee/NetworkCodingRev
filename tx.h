@@ -27,14 +27,14 @@ public:
   TransmissionBlock() = delete;
   TransmissionBlock(const TransmissionBlock &) = delete;
   TransmissionBlock(TransmissionSession &&) = delete;
-  TransmissionBlock(TransmissionSession *p_session);
+  TransmissionBlock(TransmissionSession *const p_session);
   ~TransmissionBlock();
 
   TransmissionBlock &operator=(const TransmissionBlock &) = delete;
   TransmissionBlock &operator=(TransmissionBlock &&) = delete;
 
   const uint16_t AckIndex();
-  bool Send(uint8_t *buffer, uint16_t buffersize);
+  bool Send(uint8_t *const buffer, const uint16_t buffersize);
   const bool Retransmission();
 };
 
@@ -65,10 +65,10 @@ public:
   TransmissionBlock *p_TransmissionBlock;
   std::atomic<unsigned long> m_ConcurrentRetransmissions;
 
-  TransmissionSession(Transmission *const transmission, int32_t Socket, const DataStructures::AddressType Addr,
-                      Parameter::TRANSMISSION_MODE TransmissionMode = Parameter::TRANSMISSION_MODE::RELIABLE_TRANSMISSION_MODE,
-                      Parameter::BLOCK_SIZE BlockSize = Parameter::BLOCK_SIZE::BLOCK_SIZE_04,
-                      uint16_t RetransmissionRedundancy = 0);
+  TransmissionSession(Transmission *const transmission, const int32_t Socket, const DataStructures::AddressType Addr,
+                      const Parameter::TRANSMISSION_MODE TransmissionMode = Parameter::TRANSMISSION_MODE::RELIABLE_TRANSMISSION_MODE,
+                      const Parameter::BLOCK_SIZE BlockSize = Parameter::BLOCK_SIZE::BLOCK_SIZE_04,
+                      const uint16_t RetransmissionRedundancy = 0);
   TransmissionSession() = delete;
   TransmissionSession(const TransmissionSession &) = delete;
   TransmissionSession(TransmissionSession &&) = delete;
@@ -94,7 +94,7 @@ private:
   std::mutex m_Lock;
 
 public:
-  Transmission(int32_t Socket);
+  Transmission(const int32_t Socket);
   ~Transmission();
 
 public:
