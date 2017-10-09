@@ -6,15 +6,21 @@ OPTIMIZATIONCPPFLAGS := -O3
 BASICCPPFLAGS := -c -Wall -std=c++0x
 CPP := g++
 
+LIBOUT := out/lib
+LIBRARY_HEADER := $(LIBOUT)/api.h
+STATIC_LIBRARY := $(LIBOUT)/libncsocket.a
+STATICLIBOBJOUT := out/static_lib_objs
+SHARED_LIBRARY := $(LIBOUT)/libncsocket.so
+SHAREDLIBOBJOUT := out/shared_lib_objs
+
 all : release
 
 dynamic : run_dynamic
-
 static : run_static
 
-run_static : main_stc.o libncsocket.a
-	$(CROSS)$(CPP) -o $@ main_stc.o ./libncsocket.a -lpthread
-run_dynamic : main_dyn.o libncsocket.so
+run_static : main_stc.o $(STATIC_LIBRARY)
+	$(CROSS)$(CPP) -o $@ main_stc.o $(STATIC_LIBRARY) -lpthread
+run_dynamic : main_dyn.o $(SHARED_LIBRARY)
 	$(CROSS)$(CPP) -o $@ main_dyn.o -lpthread -ldl
 main_stc.o : Makefile main.cpp
 	$(CROSS)$(CPP) -o $@ main.cpp $(OPTIMIZATIONCPPFLAGS) $(BASICCPPFLAGS) $(INCLUDES)
@@ -26,40 +32,43 @@ clean :
 
 basiclibrary/.git/config : 
 	git clone https://github.com/dujeonglee/basiclibrary.git
-SHAREDLIBOUT := out/shared
-sharedlibrary : libncsocket.so
-libncsocket.so : $(SHAREDLIBOUT) basiclibrary/.git/config $(SHAREDLIBOUT)/chk.o $(SHAREDLIBOUT)/finite_field.o $(SHAREDLIBOUT)/tx.o $(SHAREDLIBOUT)/rx.o $(SHAREDLIBOUT)/api.o
-	$(CROSS)$(CPP) -shared -o $@ $(SHAREDLIBOUT)/chk.o $(SHAREDLIBOUT)/finite_field.o $(SHAREDLIBOUT)/tx.o $(SHAREDLIBOUT)/rx.o $(SHAREDLIBOUT)/api.o
-$(SHAREDLIBOUT) :
-	mkdir -p $(SHAREDLIBOUT)
+
+$(LIBOUT):
+	mkdir -p $(LIBOUT)
+
+$(LIBRARY_HEADER) :
+	cp ./api.h $(LIBOUT)
+
+sharedlibrary : $(SHARED_LIBRARY)
+$(SHARED_LIBRARY) : $(SHAREDLIBOBJOUT) $(LIBOUT) $(LIBRARY_HEADER) basiclibrary/.git/config $(SHAREDLIBOBJOUT)/chk.o $(SHAREDLIBOBJOUT)/finite_field.o $(SHAREDLIBOBJOUT)/tx.o $(SHAREDLIBOBJOUT)/rx.o $(SHAREDLIBOBJOUT)/api.o
+	$(CROSS)$(CPP) -shared -o $@ $(SHAREDLIBOBJOUT)/chk.o $(SHAREDLIBOBJOUT)/finite_field.o $(SHAREDLIBOBJOUT)/tx.o $(SHAREDLIBOBJOUT)/rx.o $(SHAREDLIBOBJOUT)/api.o
+$(SHAREDLIBOBJOUT) :
+	mkdir -p $(SHAREDLIBOBJOUT)
 SHAREDLIBCPPFLAGS := -fPIC $(OPTIMIZATIONCPPFLAGS) $(BASICCPPFLAGS)
-SHAREDLIBOUT := out/shared
-$(SHAREDLIBOUT)/chk.o : Makefile chk.h chk.cpp
+$(SHAREDLIBOBJOUT)/chk.o : Makefile chk.h chk.cpp
 	$(CROSS)$(CPP) chk.cpp -o $@ $(SHAREDLIBCPPFLAGS) $(INCLUDES)
-$(SHAREDLIBOUT)/finite_field.o : Makefile finite_field.h finite_field.cpp
+$(SHAREDLIBOBJOUT)/finite_field.o : Makefile finite_field.h finite_field.cpp
 	$(CROSS)$(CPP) finite_field.cpp -o $@ $(SHAREDLIBCPPFLAGS) $(INCLUDES)
-$(SHAREDLIBOUT)/tx.o : Makefile tx.h tx.cpp
+$(SHAREDLIBOBJOUT)/tx.o : Makefile tx.h tx.cpp
 	$(CROSS)$(CPP) tx.cpp -o $@ $(SHAREDLIBCPPFLAGS) $(INCLUDES)
-$(SHAREDLIBOUT)/rx.o : Makefile rx.h rx.cpp
+$(SHAREDLIBOBJOUT)/rx.o : Makefile rx.h rx.cpp
 	$(CROSS)$(CPP) rx.cpp -o $@ $(SHAREDLIBCPPFLAGS) $(INCLUDES)
-$(SHAREDLIBOUT)/api.o : Makefile api.h api.cpp
+$(SHAREDLIBOBJOUT)/api.o : Makefile api.h api.cpp
 	$(CROSS)$(CPP) api.cpp -o $@ $(SHAREDLIBCPPFLAGS) $(INCLUDES)
 
-STATICLIBOUT := out/static
-staticlibrary : libncsocket.a
-libncsocket.a : $(STATICLIBOUT) basiclibrary/.git/config $(STATICLIBOUT)/chk.o $(STATICLIBOUT)/finite_field.o $(STATICLIBOUT)/tx.o $(STATICLIBOUT)/rx.o $(STATICLIBOUT)/api.o
-	$(CROSS)$(AR) rcs $@  $(STATICLIBOUT)/chk.o $(STATICLIBOUT)/finite_field.o $(STATICLIBOUT)/tx.o $(STATICLIBOUT)/rx.o $(STATICLIBOUT)/api.o
-$(STATICLIBOUT) :
-	mkdir -p $(STATICLIBOUT)
+staticlibrary : $(STATIC_LIBRARY)
+$(STATIC_LIBRARY) : $(STATICLIBOBJOUT) $(LIBOUT) $(LIBRARY_HEADER) basiclibrary/.git/config $(STATICLIBOBJOUT)/chk.o $(STATICLIBOBJOUT)/finite_field.o $(STATICLIBOBJOUT)/tx.o $(STATICLIBOBJOUT)/rx.o $(STATICLIBOBJOUT)/api.o
+	$(CROSS)$(AR) rcs $@  $(STATICLIBOBJOUT)/chk.o $(STATICLIBOBJOUT)/finite_field.o $(STATICLIBOBJOUT)/tx.o $(STATICLIBOBJOUT)/rx.o $(STATICLIBOBJOUT)/api.o
+$(STATICLIBOBJOUT) :
+	mkdir -p $(STATICLIBOBJOUT)
 STATICLIBCPPFLAGS := $(OPTIMIZATIONCPPFLAGS) $(BASICCPPFLAGS)
-STATICLIBOUT := out/static
-$(STATICLIBOUT)/chk.o : Makefile chk.h chk.cpp
+$(STATICLIBOBJOUT)/chk.o : Makefile chk.h chk.cpp
 	$(CROSS)$(CPP) chk.cpp -o $@ $(STATICLIBCPPFLAGS) $(INCLUDES)
-$(STATICLIBOUT)/finite_field.o : Makefile finite_field.h finite_field.cpp
+$(STATICLIBOBJOUT)/finite_field.o : Makefile finite_field.h finite_field.cpp
 	$(CROSS)$(CPP) finite_field.cpp -o $@ $(STATICLIBCPPFLAGS) $(INCLUDES)
-$(STATICLIBOUT)/tx.o : Makefile tx.h tx.cpp
+$(STATICLIBOBJOUT)/tx.o : Makefile tx.h tx.cpp
 	$(CROSS)$(CPP) tx.cpp -o $@ $(STATICLIBCPPFLAGS) $(INCLUDES)
-$(STATICLIBOUT)/rx.o : Makefile rx.h rx.cpp
+$(STATICLIBOBJOUT)/rx.o : Makefile rx.h rx.cpp
 	$(CROSS)$(CPP) rx.cpp -o $@ $(STATICLIBCPPFLAGS) $(INCLUDES)
-$(STATICLIBOUT)/api.o : Makefile api.h api.cpp
+$(STATICLIBOBJOUT)/api.o : Makefile api.h api.cpp
 	$(CROSS)$(CPP) api.cpp -o $@ $(STATICLIBCPPFLAGS) $(INCLUDES)
