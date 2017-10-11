@@ -63,7 +63,7 @@ public:
   std::atomic<CLOCK::time_point::duration::rep> m_LastPongTime;
 
   TransmissionBlock *p_TransmissionBlock;
-  std::atomic<unsigned long> m_ConcurrentRetransmissions;
+  std::atomic<uint32_t> m_ConcurrentRetransmissions;
 
   TransmissionSession(Transmission *const transmission, const int32_t Socket, const DataStructures::AddressType Addr,
                       const Parameter::TRANSMISSION_MODE TransmissionMode = Parameter::TRANSMISSION_MODE::RELIABLE_TRANSMISSION_MODE,

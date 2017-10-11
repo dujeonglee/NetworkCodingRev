@@ -1,6 +1,7 @@
 *.o
 *.so
 *.a
+*.class
 /out
 /basiclibrary
 run_*

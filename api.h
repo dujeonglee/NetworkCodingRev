@@ -3,9 +3,9 @@
 
 #include <stdint.h>
 
-typedef void (*rxcallback)(uint8_t *const buffer, const uint16_t length, const void *const type, const uint32_t sender_addr_len);
+typedef void (*rxcallback)(uint8_t *const buffer, const uint16_t length, const void *const address, const uint32_t sender_addr_len);
 
-typedef void *(*InitSocketFuncType)(const char *local_port, const long int RxTimeout, const long int TxTimeout, const rxcallback cb);
+typedef void *(*InitSocketFuncType)(const char *local_port, const uint32_t RxTimeout, const uint32_t TxTimeout, const rxcallback cb);
 typedef bool (*ConnectFuncType)(void *const handle, const char *const ip, const char *const port, const uint32_t timeout, const uint8_t TransmissionMode, const uint8_t BlockSize, const uint16_t RetransmissionRedundancy);
 typedef void (*DisconnectFuncType)(void *const handle, const char *const ip, const char *const port);
 typedef bool (*SendFuncType)(void *const handle, const char *const ip, const char *const port, uint8_t *const buff, const uint16_t size);
@@ -15,7 +15,7 @@ typedef void (*FreeSocketFuncType)(void *const handle);
 
 extern "C" {
 
-void *InitSocket(const char *const local_port, const long int RxTimeout, const long int TxTimeout, const rxcallback cb);
+void *InitSocket(const char *const local_port, const uint32_t RxTimeout, const uint32_t TxTimeout, const rxcallback cb);
 bool Connect(void *const handle, const char *const ip, const char *const port, const uint32_t timeout, const uint8_t TransmissionMode, const uint8_t BlockSize, const uint16_t RetransmissionRedundancy);
 void Disconnect(void *const handle, const char *const ip, const char *const port);
 bool Send(void *const handle, const char *const ip, const char *const port, uint8_t *const buff, const uint16_t size);

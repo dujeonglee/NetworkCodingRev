@@ -14,7 +14,7 @@ class NCSocket
     NCSocket() = delete;
     NCSocket(const NCSocket &) = delete;
     NCSocket(NCSocket &&) = delete;
-    NCSocket(const std::string PORT, const long int RXTIMEOUT, const long int TXTIMEOUT,
+    NCSocket(const std::string PORT, const uint32_t RXTIMEOUT, const uint32_t TXTIMEOUT,
              const std::function<void(uint8_t *const buffer, const uint16_t length, const sockaddr *const sender_addr, const uint32_t sender_addr_len)> rx)
     {
         m_State = INIT_FAILURE;

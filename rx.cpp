@@ -27,7 +27,7 @@ void PRINT(Header::Data *data)
         printf(" %3hhu ", data->m_Codes[i]);
     }
     printf("]\n");
-    for (unsigned long i = 0; i < ntohs(data->m_PayloadSize); i++)
+    for (uint16_t i = 0; i < ntohs(data->m_PayloadSize); i++)
     {
         std::cout << (data->m_Codes + (data->m_MaximumRank - 1))[i];
     }
