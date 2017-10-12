@@ -1,25 +1,12 @@
-public class Japi
+import dujeonglee.networkcoding.Japi;
+
+public class Main
 {
-    static 
-    {
-        System.loadLibrary("jncsocket");
-    }
-
-    public native long InitSocket(final String local_port, final int rxTimeout, final int txTimeout);
-    public native boolean Connect(final long handle, final String ip, final String port, final int timeout, final int transmissionMode, final int blockSize, final int retransmissionRedundancy);
-    public native void Disconnect(final long handle, final String ip, final String port);
-    public native boolean Send(final long handle, final String ip, final String port, byte[] buff, final int size);
-    public native boolean Flush(final long handle, final String ip, final String port);
-    public native void WaitUntilTxIsCompleted(final long handle, final String ip, final String port);
-    public native int Receive(final long handle, byte[] buffer, String[] senderInfo);
-    public native void FreeSocket(final long handle);
-
     public static void main (String[] args)
     {
         System.out.println("Args : "+args.length);
         Japi ncsocket = new Japi();
         final long handle = ncsocket.InitSocket(args[0], 500, 500);
-        System.out.println("Handle : "+handle);
         while(false == ncsocket.Connect(handle, args[1], args[2], 1000, 0, 8, 0))
         {
             System.out.println("Connecting...");
@@ -60,4 +47,4 @@ public class Japi
             }
         }
     }
-} 
+}

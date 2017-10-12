@@ -1,9 +1,1 @@
-*.o
-*.so
-*.a
-*.class
-*.log
-/out
-/basiclibrary
-run_*
-test*
+/lib
