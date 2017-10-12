@@ -58,10 +58,10 @@ JNIEXPORT void JNICALL Java_Japi_WaitUntilTxIsCompleted
 /*
  * Class:     Japi
  * Method:    Receive
- * Signature: (J[BLjava/lang/String;Ljava/lang/String;)V
+ * Signature: (J[B[Ljava/lang/String;)I
  */
-JNIEXPORT void JNICALL Java_Japi_Receive
-  (JNIEnv *, jobject, jlong, jbyteArray, jstring, jstring);
+JNIEXPORT jint JNICALL Java_Japi_Receive
+  (JNIEnv *, jobject, jlong, jbyteArray, jobjectArray);
 
 /*
  * Class:     Japi

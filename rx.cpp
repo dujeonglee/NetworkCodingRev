@@ -800,7 +800,7 @@ void Reception::RxHandler(uint8_t *const buffer, const uint16_t size, const sock
 bool Reception::Receive(uint8_t *const buffer, uint16_t *const length, sockaddr *const sender_addr, uint32_t *const sender_addr_len)
 {
     std::unique_lock<std::mutex> Lock(m_PacketQueueLock);
-    if(m_PacketQueue.size() == 0)
+    if (m_PacketQueue.size() == 0)
     {
         return false;
     }

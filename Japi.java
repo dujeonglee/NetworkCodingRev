@@ -11,7 +11,7 @@ public class Japi
     public native boolean Send(final long handle, final String ip, final String port, byte[] buff, final int size);
     public native boolean Flush(final long handle, final String ip, final String port);
     public native void WaitUntilTxIsCompleted(final long handle, final String ip, final String port);
-    public native void Receive(final long handle, byte[] buffer, final String ip, final String port);
+    public native int Receive(final long handle, byte[] buffer, String[] senderInfo);
     public native void FreeSocket(final long handle);
 
     public static void main (String[] args)
@@ -37,6 +37,27 @@ public class Japi
         }
         ncsocket.WaitUntilTxIsCompleted(handle, args[1], args[2]);
         System.out.println("Flush");
-        while(true);
+        while(true)
+        {
+            byte[] buffer = new byte[1500];
+            String[] info = new String[2];
+            String ip = new String("");
+            String port = new String("");
+            int ret = ncsocket.Receive(handle, buffer, info);
+            if(ret > 0)
+            {
+                System.out.println(ret+" "+info[0]+" "+info[1]);
+                System.out.println((char)buffer[0]);
+                System.out.println((char)buffer[1]);
+                System.out.println((char)buffer[2]);
+                System.out.println((char)buffer[3]);
+                System.out.println((char)buffer[4]);
+            }
+            try{
+                Thread.sleep(1000);
+            }catch(Exception e){
+                System.out.println(e.getMessage());
+            }
+        }
     }
 } 

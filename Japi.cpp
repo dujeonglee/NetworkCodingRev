@@ -1,6 +1,8 @@
 #include "Japi.h"
 #include "api.h"
+#include "common.h"
 #include <iostream>
+//#include <stdlib.h>
 
 /*
  * Class:     Japi
@@ -138,12 +140,55 @@ Java_Japi_WaitUntilTxIsCompleted(JNIEnv *env, jobject obj, jlong handle, jstring
 /*
  * Class:     Japi
  * Method:    Receive
- * Signature: (J[BLjava/lang/String;Ljava/lang/String;)V
+ * Signature: (J[B[Ljava/lang/String;)I
  */
-JNIEXPORT void JNICALL
-Java_Japi_Receive(JNIEnv *env, jobject obj, jlong handle, jbyteArray buffer, jstring ip, jstring port)
+JNIEXPORT jint JNICALL 
+Java_Japi_Receive(JNIEnv *env, jobject obj, jlong handle, jbyteArray buffer, jobjectArray sender)
 {
     std::cout << __FUNCTION__ << std::endl;
+    uint8_t local_buffer[1500];
+    uint16_t local_buffer_length = sizeof(local_buffer);
+    NetworkCoding::DataStructures::AddressType addr;
+    addr.AddrLength = sizeof(addr);
+
+    const bool result = Receive(
+        reinterpret_cast<void *>(handle),
+        local_buffer,
+        &local_buffer_length,
+        &addr.Addr,
+        &addr.AddrLength);
+    if (!result)
+    {
+        return static_cast<jint>(0);
+    }
+    env->SetByteArrayRegion(buffer, 0, local_buffer_length, reinterpret_cast<jbyte *>(local_buffer));
+    if (addr.AddrLength == sizeof(addr.Addr.IPv4))
+    {
+        char str[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &(addr.Addr.IPv4), str, INET_ADDRSTRLEN);
+        env->SetObjectArrayElement(sender, 0, env->NewStringUTF(str));
+        env->SetObjectArrayElement(
+            sender, 
+            1, 
+            env->NewStringUTF(std::to_string(ntohs(addr.Addr.IPv4.sin_port)).c_str())
+        );
+    }
+    else if (addr.AddrLength == sizeof(addr.Addr.IPv6))
+    {
+        char str[INET6_ADDRSTRLEN];
+        inet_ntop(AF_INET6, &(addr.Addr.IPv6), str, INET6_ADDRSTRLEN);
+        env->SetObjectArrayElement(sender, 0, env->NewStringUTF(str));
+        env->SetObjectArrayElement(
+            sender, 
+            1, 
+            env->NewStringUTF(std::to_string(ntohs(addr.Addr.IPv6.sin6_port)).c_str())
+        );
+    }
+    else
+    {
+    }
+
+    return static_cast<jint>(local_buffer_length);
 }
 
 /*
