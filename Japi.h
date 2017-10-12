@@ -57,6 +57,14 @@ JNIEXPORT void JNICALL Java_Japi_WaitUntilTxIsCompleted
 
 /*
  * Class:     Japi
+ * Method:    Receive
+ * Signature: (J[BLjava/lang/String;Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_Japi_Receive
+  (JNIEnv *, jobject, jlong, jbyteArray, jstring, jstring);
+
+/*
+ * Class:     Japi
  * Method:    FreeSocket
  * Signature: (J)V
  */

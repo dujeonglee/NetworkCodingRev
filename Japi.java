@@ -11,12 +11,8 @@ public class Japi
     public native boolean Send(final long handle, final String ip, final String port, byte[] buff, final int size);
     public native boolean Flush(final long handle, final String ip, final String port);
     public native void WaitUntilTxIsCompleted(final long handle, final String ip, final String port);
+    public native void Receive(final long handle, byte[] buffer, final String ip, final String port);
     public native void FreeSocket(final long handle);
-
-    public void Callback(byte[] buffer, final String ip, final String port)
-    {
-        System.out.println("RECV!!");
-    }
 
     public static void main (String[] args)
     {
