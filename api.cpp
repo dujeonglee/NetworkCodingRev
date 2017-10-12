@@ -51,7 +51,7 @@ void WaitUntilTxIsCompleted(void *const handle, const char *const ip, const char
     return ((NCSocket *)handle)->WaitUntilTxIsCompleted(std::string(ip), std::string(port));
 }
 
-bool Receive(void *const handle, uint8_t *const buffer, uint16_t *length, void *const address, uint32_t *const sender_addr_len)
+bool Receive(void *const handle, uint8_t *const buffer, uint16_t *const length, void *const address, uint32_t *const sender_addr_len)
 {
     return ((NCSocket *)handle)->Receive(buffer, length, (sockaddr*)address, sender_addr_len);
 }

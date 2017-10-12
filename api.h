@@ -23,7 +23,7 @@ void Disconnect(void *const handle, const char *const ip, const char *const port
 bool Send(void *const handle, const char *const ip, const char *const port, uint8_t *const buff, const uint16_t size);
 bool Flush(void *const handle, const char *const ip, const char *const port);
 void WaitUntilTxIsCompleted(void *const handle, const char *const ip, const char *const port);
-bool Receive(void *const handle, uint8_t *const buffer, const uint16_t length, const void *const address, const uint32_t sender_addr_len);
+bool Receive(void *const handle, uint8_t *const buffer, const uint16_t length, void *const address, uint32_t *const sender_addr_len);
 void FreeSocket(void *const handle);
 #ifdef __cplusplus
 }
