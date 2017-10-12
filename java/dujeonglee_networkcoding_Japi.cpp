@@ -2,10 +2,9 @@
 #include "api.h"
 #include "common.h"
 #include <iostream>
-//#include <stdlib.h>
 
 /*
- * Class:     Japi
+ * Class:     dujeonglee_networkcoding_Japi
  * Method:    InitSocket
  * Signature: (Ljava/lang/String;II)J
  */
@@ -21,10 +20,10 @@ Java_dujeonglee_networkcoding_Japi_InitSocket(JNIEnv *env, jobject obj, jstring 
 }
 
 /*
-* Class:     Japi
-* Method:    Connect
-* Signature: (JLjava/lang/String;Ljava/lang/String;IIII)Z
-*/
+ * Class:     dujeonglee_networkcoding_Japi
+ * Method:    Connect
+ * Signature: (JLjava/lang/String;Ljava/lang/String;IIII)Z
+ */
 JNIEXPORT jboolean JNICALL
 Java_dujeonglee_networkcoding_Japi_Connect(JNIEnv *env, jobject obj, jlong handle, jstring ip, jstring port, jint timeout, jint transmissionMode, jint blockSize, jint retransmissionRedundancy)
 {
@@ -46,10 +45,10 @@ Java_dujeonglee_networkcoding_Japi_Connect(JNIEnv *env, jobject obj, jlong handl
 }
 
 /*
-* Class:     Japi
-* Method:    Disconnect
-* Signature: (JLjava/lang/String;Ljava/lang/String;)V
-*/
+ * Class:     dujeonglee_networkcoding_Japi
+ * Method:    Disconnect
+ * Signature: (JLjava/lang/String;Ljava/lang/String;)V
+ */
 JNIEXPORT void JNICALL
 Java_dujeonglee_networkcoding_Japi_Disconnect(JNIEnv *env, jobject obj, jlong handle, jstring ip, jstring port)
 {
@@ -66,10 +65,10 @@ Java_dujeonglee_networkcoding_Japi_Disconnect(JNIEnv *env, jobject obj, jlong ha
 }
 
 /*
-* Class:     Japi
-* Method:    Send
-* Signature: (JLjava/lang/String;Ljava/lang/String;[BI)Z
-*/
+ * Class:     dujeonglee_networkcoding_Japi
+ * Method:    Send
+ * Signature: (JLjava/lang/String;Ljava/lang/String;[BI)Z
+ */
 JNIEXPORT jboolean JNICALL
 Java_dujeonglee_networkcoding_Japi_Send(JNIEnv *env, jobject obj, jlong handle, jstring ip, jstring port, jbyteArray buffer, jint size)
 {
@@ -91,10 +90,10 @@ Java_dujeonglee_networkcoding_Japi_Send(JNIEnv *env, jobject obj, jlong handle, 
 }
 
 /*
-* Class:     Japi
-* Method:    Flush
-* Signature: (JLjava/lang/String;Ljava/lang/String;)Z
-*/
+ * Class:     dujeonglee_networkcoding_Japi
+ * Method:    Flush
+ * Signature: (JLjava/lang/String;Ljava/lang/String;)Z
+ */
 JNIEXPORT jboolean JNICALL
 Java_dujeonglee_networkcoding_Japi_Flush(JNIEnv *env, jobject obj, jlong handle, jstring ip, jstring port)
 {
@@ -132,12 +131,12 @@ Java_dujeonglee_networkcoding_Japi_WaitUntilTxIsCompleted(JNIEnv *env, jobject o
 }
 
 /*
- * Class:     Japi
+ * Class:     dujeonglee_networkcoding_Japi
  * Method:    Receive
- * Signature: (J[B[Ljava/lang/String;)I
+ * Signature: (J[BI[Ljava/lang/String;I)I
  */
 JNIEXPORT jint JNICALL
-Java_dujeonglee_networkcoding_Japi_Receive(JNIEnv *env, jobject obj, jlong handle, jbyteArray buffer, jobjectArray sender)
+Java_dujeonglee_networkcoding_Japi_Receive(JNIEnv *env, jobject obj, jlong handle, jbyteArray buffer, jint bufferSize, jobjectArray senderInfo, jint senderInfoSize)
 {
     uint8_t local_buffer[1500] = {0};
     uint16_t local_buffer_length = sizeof(local_buffer);
@@ -154,34 +153,56 @@ Java_dujeonglee_networkcoding_Japi_Receive(JNIEnv *env, jobject obj, jlong handl
     {
         return static_cast<jint>(0);
     }
+    if((int)local_buffer_length > static_cast<int>(bufferSize))
+    {
+        return static_cast<jint>(0);
+    }
     env->SetByteArrayRegion(buffer, 0, local_buffer_length, reinterpret_cast<jbyte *>(local_buffer));
     if (addr.AddrLength == sizeof(addr.Addr.IPv4))
     {
         char str[INET_ADDRSTRLEN];
         inet_ntop(AF_INET, &(addr.Addr.IPv4), str, INET_ADDRSTRLEN);
-        env->SetObjectArrayElement(sender, 0, env->NewStringUTF(str));
-        env->SetObjectArrayElement(sender, 1, env->NewStringUTF(std::to_string(ntohs(addr.Addr.IPv4.sin_port)).c_str()));
+        if(static_cast<int>(senderInfoSize) > 0)
+        {
+            env->SetObjectArrayElement(senderInfo, 0, env->NewStringUTF(str));
+        }
+        if(static_cast<int>(senderInfoSize) > 1)
+        {
+            env->SetObjectArrayElement(senderInfo, 1, env->NewStringUTF(std::to_string(ntohs(addr.Addr.IPv4.sin_port)).c_str()));
+        }
     }
     else if (addr.AddrLength == sizeof(addr.Addr.IPv6))
     {
         char str[INET6_ADDRSTRLEN];
         inet_ntop(AF_INET6, &(addr.Addr.IPv6), str, INET6_ADDRSTRLEN);
-        env->SetObjectArrayElement(sender, 0, env->NewStringUTF(str));
-        env->SetObjectArrayElement(sender, 1, env->NewStringUTF(std::to_string(ntohs(addr.Addr.IPv6.sin6_port)).c_str()));
+        if(static_cast<int>(senderInfoSize) > 0)
+        {
+            env->SetObjectArrayElement(senderInfo, 0, env->NewStringUTF(str));
+        }
+        if(static_cast<int>(senderInfoSize) > 1)
+        {
+            env->SetObjectArrayElement(senderInfo, 1, env->NewStringUTF(std::to_string(ntohs(addr.Addr.IPv4.sin_port)).c_str()));
+        }
     }
     else
     {
-        env->SetObjectArrayElement(sender, 0, env->NewStringUTF("Unknown Address"));
-        env->SetObjectArrayElement(sender, 1, env->NewStringUTF("Unknown Port"));
+        if(static_cast<int>(senderInfoSize) > 0)
+        {
+            env->SetObjectArrayElement(senderInfo, 0, env->NewStringUTF("Unknown Address"));
+        }
+        if(static_cast<int>(senderInfoSize) > 1)
+        {
+            env->SetObjectArrayElement(senderInfo, 1, env->NewStringUTF("Unknown Port"));
+        }
     }
     return static_cast<jint>(local_buffer_length);
 }
 
 /*
-* Class:     Japi
-* Method:    FreeSocket
-* Signature: (J)V
-*/
+ * Class:     dujeonglee_networkcoding_Japi
+ * Method:    FreeSocket
+ * Signature: (J)V
+ */
 JNIEXPORT void JNICALL
 Java_dujeonglee_networkcoding_Japi_FreeSocket(JNIEnv *env, jobject obj, jlong handle)
 {
