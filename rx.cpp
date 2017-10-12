@@ -374,8 +374,13 @@ bool ReceptionBlock::Decoding()
                         if (c_Reception->m_RxCallback)
                         {
                             c_Reception->m_RxCallback(pkt + sizeof(Header::Data) + reinterpret_cast<Header::Data *>(pkt)->m_MaximumRank - 1, ntohs(reinterpret_cast<Header::Data *>(pkt)->m_PayloadSize), (sockaddr *)&c_Session->m_SenderAddress.Addr, c_Session->m_SenderAddress.AddrLength);
+                            delete[] pkt;
                         }
-                        delete[] pkt;
+                        else
+                        {
+                            std::unique_lock<std::mutex> Lock(c_Reception->m_PacketQueueLock);
+                            c_Reception->m_PacketQueue.push_back(std::tuple<DataStructures::AddressType, uint8_t *>(c_Session->m_SenderAddress, pkt));
+                        }
                     });
             } while (result == false);
         }
@@ -453,8 +458,13 @@ void ReceptionBlock::Receive(uint8_t *const buffer, const uint16_t length, const
                                     if (c_Reception->m_RxCallback)
                                     {
                                         c_Reception->m_RxCallback(pkt + sizeof(Header::Data) + reinterpret_cast<Header::Data *>(pkt)->m_MaximumRank - 1, ntohs(reinterpret_cast<Header::Data *>(pkt)->m_PayloadSize), (sockaddr *)&c_Session->m_SenderAddress.Addr, c_Session->m_SenderAddress.AddrLength);
+                                        delete[] pkt;
                                     }
-                                    delete[] pkt;
+                                    else
+                                    {
+                                        std::unique_lock<std::mutex> Lock(c_Reception->m_PacketQueueLock);
+                                        c_Reception->m_PacketQueue.push_back(std::tuple<DataStructures::AddressType, uint8_t *>(c_Session->m_SenderAddress, pkt));
+                                    }
                                 });
                         } while (result == false);
                         reinterpret_cast<Header::Data *>(m_DecodedPacketBuffer.back().get())->m_Flags |= Header::Data::DataHeaderFlag::FLAGS_CONSUMED;
@@ -532,8 +542,13 @@ void ReceptionBlock::Receive(uint8_t *const buffer, const uint16_t length, const
                                                 if (c_Reception->m_RxCallback)
                                                 {
                                                     c_Reception->m_RxCallback(pkt + sizeof(Header::Data) + reinterpret_cast<Header::Data *>(pkt)->m_MaximumRank - 1, ntohs(reinterpret_cast<Header::Data *>(pkt)->m_PayloadSize), (sockaddr *)&c_Session->m_SenderAddress.Addr, c_Session->m_SenderAddress.AddrLength);
+                                                    delete[] pkt;
                                                 }
-                                                delete[] pkt;
+                                                else
+                                                {
+                                                    std::unique_lock<std::mutex> Lock(c_Reception->m_PacketQueueLock);
+                                                    c_Reception->m_PacketQueue.push_back(std::tuple<DataStructures::AddressType, uint8_t *>(c_Session->m_SenderAddress, pkt));
+                                                }
                                             });
                                     } while (result == false);
                                     reinterpret_cast<Header::Data *>((*pp_block)->m_DecodedPacketBuffer[i].get())->m_Flags |= Header::Data::DataHeaderFlag::FLAGS_CONSUMED;
@@ -606,8 +621,13 @@ void ReceptionSession::Receive(uint8_t *const buffer, const uint16_t length, con
                                         if (c_Reception->m_RxCallback)
                                         {
                                             c_Reception->m_RxCallback(pkt + sizeof(Header::Data) + reinterpret_cast<Header::Data *>(pkt)->m_MaximumRank - 1, ntohs(reinterpret_cast<Header::Data *>(pkt)->m_PayloadSize), (sockaddr *)&m_SenderAddress.Addr, m_SenderAddress.AddrLength);
+                                            delete[] pkt;
                                         }
-                                        delete[] pkt;
+                                        else
+                                        {
+                                            std::unique_lock<std::mutex> Lock(c_Reception->m_PacketQueueLock);
+                                            c_Reception->m_PacketQueue.push_back(std::tuple<DataStructures::AddressType, uint8_t *>(m_SenderAddress, pkt));
+                                        }
                                     });
                             } while (result == false);
                         }
@@ -775,4 +795,36 @@ void Reception::RxHandler(uint8_t *const buffer, const uint16_t size, const sock
     default:
         break;
     }
+}
+
+bool Reception::Receive(uint8_t *const buffer, uint16_t *const length, sockaddr *const sender_addr, uint32_t *const sender_addr_len)
+{
+    std::unique_lock<std::mutex> Lock(m_PacketQueueLock);
+    if(m_PacketQueue.size() == 0)
+    {
+        return false;
+    }
+    const DataStructures::AddressType addr = std::get<0>(m_PacketQueue.front());
+    const uint8_t *const packet = std::get<1>(m_PacketQueue.front());
+    if ((*length) < ntohs(reinterpret_cast<const Header::Data *const>(packet)->m_PayloadSize))
+    {
+        return false;
+    }
+    if ((*sender_addr_len) < addr.AddrLength)
+    {
+        return false;
+    }
+    m_PacketQueue.pop_front();
+
+    memcpy(
+        buffer,
+        packet + sizeof(Header::Data) + reinterpret_cast<const Header::Data *const>(packet)->m_MaximumRank - 1,
+        ntohs(reinterpret_cast<const Header::Data *const>(packet)->m_PayloadSize));
+    (*length) = ntohs(reinterpret_cast<const Header::Data *const>(packet)->m_PayloadSize);
+
+    memcpy(sender_addr, &addr.Addr, addr.AddrLength);
+    (*sender_addr_len) = addr.AddrLength;
+    delete[] packet;
+
+    return true;
 }

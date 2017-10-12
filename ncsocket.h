@@ -399,6 +399,29 @@ class NCSocket
             m_Tx[IPVERSION_6]->WaitUntilTxIsCompleted(Addr);
         }
     }
+
+    bool Receive(uint8_t *const buffer, uint16_t *const length, sockaddr *const sender_addr, uint32_t *const sender_addr_len)
+    {
+        if (m_State == INIT_FAILURE)
+        {
+            return false;
+        }
+        if(m_Rx[IPVERSION_4])
+        {
+            if(true == m_Rx[IPVERSION_4]->Receive(buffer, length, sender_addr, sender_addr_len))
+            {
+                return true;
+            }
+        }
+        if(m_Rx[IPVERSION_6])
+        {
+            if(true == m_Rx[IPVERSION_6]->Receive(buffer, length, sender_addr, sender_addr_len))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 };
 }
 
