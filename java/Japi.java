@@ -13,6 +13,6 @@ public class Japi
     public native boolean Send(final long handle, final String ip, final String port, byte[] buff, final int size);
     public native boolean Flush(final long handle, final String ip, final String port);
     public native void WaitUntilTxIsCompleted(final long handle, final String ip, final String port);
-    public native int Receive(final long handle, byte[] buffer, String[] senderInfo);
+    public native int Receive(final long handle, byte[] buffer, int bufferSize, String[] senderInfo, int senderInfoSize);
     public native void FreeSocket(final long handle);
 } 
