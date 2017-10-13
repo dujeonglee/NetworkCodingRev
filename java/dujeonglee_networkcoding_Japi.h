@@ -52,9 +52,9 @@ JNIEXPORT void JNICALL Java_dujeonglee_networkcoding_Japi_WaitUntilTxIsCompleted
 /*
  * Class:     dujeonglee_networkcoding_Japi
  * Method:    Receive
- * Signature: (J[BI[Ljava/lang/String;I)I
+ * Signature: (J[BI[Ljava/lang/String;II)I
  */
-JNIEXPORT jint JNICALL Java_dujeonglee_networkcoding_Japi_Receive(JNIEnv *, jobject, jlong, jbyteArray, jint, jobjectArray, jint);
+JNIEXPORT jint JNICALL Java_dujeonglee_networkcoding_Japi_Receive(JNIEnv *, jobject, jlong, jbyteArray, jint, jobjectArray, jint, jint);
 
 /*
  * Class:     dujeonglee_networkcoding_Japi
