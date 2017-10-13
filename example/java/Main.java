@@ -14,22 +14,26 @@ public class Main
             final long handle = ncsocket.InitSocket(args[0], 500, 500);
             
             do {
-                int ret = ncsocket.Receive(handle, buffer, 1500, info, 2);
+                int ret = ncsocket.Receive(handle, buffer, 1500, info, 2, 500);
                 if(ret == 1 && buffer[0] == BYEBYE)
                 {
-                    System.out.println("Bye");
+                    System.out.println("Bye.");
                     break;
                 }
                 else if(ret > 1)
                 {
                     System.out.println("Receive "+ret+" bytes: "+new String(buffer, 0, ret)+".");
                 }
+                else
+                {
+                    System.out.println("Receive timeout.");
+                }
             } while (true);
             ncsocket.FreeSocket(handle);
         }
         else if(args.length == 3)
         {
-            System.out.println("Tx Dummy");
+            System.out.println("Tx");
             byte[] buffer = new byte[1500];
             buffer[0] = 'H';
             buffer[1] = 'e';
@@ -42,7 +46,7 @@ public class Main
             final long handle = ncsocket.InitSocket(args[0], 500, 500);
             while(false==ncsocket.Connect(handle, args[1], args[2], 1000, 0, 8, 0))
             {
-                System.out.println("Connecting to "+args[1]+":"+args[2]);
+                System.out.println("Connecting to "+args[1]+":"+args[2]+".");
             }
             
             for(int i = 0 ; i < 100 ; i++)
@@ -59,8 +63,8 @@ public class Main
         }
         else
         {
-            System.out.println("1. Rx : # java Main port");
-            System.out.println("2. Tx Dummy: # java Main port remoteip remoteport");
+            System.out.println("1. Rx : # java Main port.");
+            System.out.println("2. Tx : # java Main port remoteip remoteport.");
         }
     }
 }
