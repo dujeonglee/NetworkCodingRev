@@ -14,4 +14,4 @@ clean :
 	rm -rf *.class 
 
 run :
-	java -classpath "$(LIBDIR):." -Djava.library.path=$(LIBDIR) Main 10000 172.17.0.3 10000
+	java -classpath "$(LIBDIR):." -Djava.library.path=$(LIBDIR) Main $(LOCAL_PORT) $(REMOTE_IP) $(REMOTE_PORT)
