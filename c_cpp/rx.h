@@ -84,13 +84,14 @@ private:
 public:
   const std::function<void(uint8_t *const buffer, const uint16_t length, const sockaddr *const sender_addr, const uint32_t sender_addr_len)> m_RxCallback;
   std::mutex m_PacketQueueLock;
+  std::condition_variable m_Condition;
   std::deque<std::tuple<DataStructures::AddressType, uint8_t *>> m_PacketQueue;
   Reception(const int32_t Socket, const std::function<void(uint8_t *buffer, uint16_t length, const sockaddr *const sender_addr, const uint32_t sender_addr_len)> rx);
   ~Reception();
 
 public:
   void RxHandler(uint8_t *const buffer, const uint16_t size, const sockaddr *const sender_addr, const uint32_t sender_addr_len);
-  bool Receive(uint8_t *const buffer, uint16_t *const length, sockaddr *const sender_addr, uint32_t *const sender_addr_len);
+  bool Receive(uint8_t *const buffer, uint16_t *const length, sockaddr *const sender_addr, uint32_t *const sender_addr_len, uint32_t timeout);
 };
 }
 
