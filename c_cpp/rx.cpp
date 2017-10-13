@@ -380,6 +380,7 @@ bool ReceptionBlock::Decoding()
                         {
                             std::unique_lock<std::mutex> Lock(c_Reception->m_PacketQueueLock);
                             c_Reception->m_PacketQueue.push_back(std::tuple<DataStructures::AddressType, uint8_t *>(c_Session->m_SenderAddress, pkt));
+                            c_Reception->m_Condition.notify_one();
                         }
                     });
             } while (result == false);
@@ -464,6 +465,7 @@ void ReceptionBlock::Receive(uint8_t *const buffer, const uint16_t length, const
                                     {
                                         std::unique_lock<std::mutex> Lock(c_Reception->m_PacketQueueLock);
                                         c_Reception->m_PacketQueue.push_back(std::tuple<DataStructures::AddressType, uint8_t *>(c_Session->m_SenderAddress, pkt));
+                                        c_Reception->m_Condition.notify_one();
                                     }
                                 });
                         } while (result == false);
@@ -548,6 +550,7 @@ void ReceptionBlock::Receive(uint8_t *const buffer, const uint16_t length, const
                                                 {
                                                     std::unique_lock<std::mutex> Lock(c_Reception->m_PacketQueueLock);
                                                     c_Reception->m_PacketQueue.push_back(std::tuple<DataStructures::AddressType, uint8_t *>(c_Session->m_SenderAddress, pkt));
+                                                    c_Reception->m_Condition.notify_one();
                                                 }
                                             });
                                     } while (result == false);
@@ -627,6 +630,7 @@ void ReceptionSession::Receive(uint8_t *const buffer, const uint16_t length, con
                                         {
                                             std::unique_lock<std::mutex> Lock(c_Reception->m_PacketQueueLock);
                                             c_Reception->m_PacketQueue.push_back(std::tuple<DataStructures::AddressType, uint8_t *>(m_SenderAddress, pkt));
+                                            c_Reception->m_Condition.notify_one();
                                         }
                                     });
                             } while (result == false);
@@ -797,12 +801,23 @@ void Reception::RxHandler(uint8_t *const buffer, const uint16_t size, const sock
     }
 }
 
-bool Reception::Receive(uint8_t *const buffer, uint16_t *const length, sockaddr *const sender_addr, uint32_t *const sender_addr_len)
+bool Reception::Receive(uint8_t *const buffer, uint16_t *const length, sockaddr *const sender_addr, uint32_t *const sender_addr_len, uint32_t timeout)
 {
     std::unique_lock<std::mutex> Lock(m_PacketQueueLock);
     if (m_PacketQueue.size() == 0)
     {
-        return false;
+        if (timeout == 0)
+        {
+            m_Condition.wait(Lock);
+        }
+        else
+        {
+            m_Condition.wait_for(Lock, std::chrono::milliseconds(timeout));
+            if (m_PacketQueue.size() == 0)
+            {
+                return false;
+            }
+        }
     }
     const DataStructures::AddressType addr = std::get<0>(m_PacketQueue.front());
     const uint8_t *const packet = std::get<1>(m_PacketQueue.front());
