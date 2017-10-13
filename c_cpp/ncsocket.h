@@ -400,7 +400,7 @@ class NCSocket
         }
     }
 
-    bool Receive(uint8_t *const buffer, uint16_t *const length, sockaddr *const sender_addr, uint32_t *const sender_addr_len)
+    bool Receive(uint8_t *const buffer, uint16_t *const length, sockaddr *const sender_addr, uint32_t *const sender_addr_len, uint32_t timeout)
     {
         if (m_State == INIT_FAILURE)
         {
@@ -408,14 +408,14 @@ class NCSocket
         }
         if (m_Rx[IPVERSION_4])
         {
-            if (true == m_Rx[IPVERSION_4]->Receive(buffer, length, sender_addr, sender_addr_len))
+            if (true == m_Rx[IPVERSION_4]->Receive(buffer, length, sender_addr, sender_addr_len, timeout))
             {
                 return true;
             }
         }
         if (m_Rx[IPVERSION_6])
         {
-            if (true == m_Rx[IPVERSION_6]->Receive(buffer, length, sender_addr, sender_addr_len))
+            if (true == m_Rx[IPVERSION_6]->Receive(buffer, length, sender_addr, sender_addr_len, timeout))
             {
                 return true;
             }
