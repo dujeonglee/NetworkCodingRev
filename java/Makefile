@@ -12,6 +12,10 @@ JAVACLASS := $(LIBOUT)/dujeonglee/networkcoding/Japi.class
 JAVA_LIBRARY := $(LIBOUT)/libjncsocket.so
 JAVALIBOBJOUT := java_lib_objs
 
+JNI_INCLUDE := $(join -I, $(subst /jni.h, , $(shell find / -name jni.h)))
+JNI_LINUX_INCLUDE := $(join $(JNI_INCLUDE), /linux)
+JAVA_INCLUDE := $(JNI_INCLUDE) $(JNI_LINUX_INCLUDE)
+
 all : javalibrary
 
 clean :
@@ -43,7 +47,7 @@ $(JAVALIBOBJOUT)/rx.o : Makefile common.h encoding_decoding_macro.h debug.h ncso
 $(JAVALIBOBJOUT)/api.o : Makefile common.h encoding_decoding_macro.h debug.h ncsocket.h api.h api.cpp
 	$(CROSS)$(CPP) api.cpp -o $@ $(JAVALIBCPPFLAGS) $(INCLUDES)
 $(JAVALIBOBJOUT)/dujeonglee_networkcoding_Japi.o : Makefile common.h encoding_decoding_macro.h debug.h ncsocket.h dujeonglee_networkcoding_Japi.h dujeonglee_networkcoding_Japi.cpp
-	$(CROSS)$(CPP) dujeonglee_networkcoding_Japi.cpp -o $@ $(JAVALIBCPPFLAGS) $(INCLUDES) -I/usr/lib/jvm/java-8-openjdk-amd64/include/ -I/usr/lib/jvm/java-8-openjdk-amd64/include/linux
+	$(CROSS)$(CPP) dujeonglee_networkcoding_Japi.cpp -o $@ $(JAVALIBCPPFLAGS) $(INCLUDES) $(JAVA_INCLUDE)
 $(JAVACLASS) : Japi.java
 	javac -d $(LIBOUT) ./Japi.java
 
