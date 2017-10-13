@@ -1,6 +1,7 @@
 #include "dujeonglee_networkcoding_Japi.h"
 #include "api.h"
 #include "common.h"
+#include <stdint.h>
 #include <iostream>
 
 /*
@@ -133,10 +134,9 @@ Java_dujeonglee_networkcoding_Japi_WaitUntilTxIsCompleted(JNIEnv *env, jobject o
 /*
  * Class:     dujeonglee_networkcoding_Japi
  * Method:    Receive
- * Signature: (J[BI[Ljava/lang/String;I)I
+ * Signature: (J[BI[Ljava/lang/String;II)I
  */
-JNIEXPORT jint JNICALL
-Java_dujeonglee_networkcoding_Japi_Receive(JNIEnv *env, jobject obj, jlong handle, jbyteArray buffer, jint bufferSize, jobjectArray senderInfo, jint senderInfoSize)
+JNIEXPORT jint JNICALL Java_dujeonglee_networkcoding_Japi_Receive(JNIEnv *env, jobject obj, jlong handle, jbyteArray buffer, jint bufferSize, jobjectArray senderInfo, jint senderInfoSize, jint timeout)
 {
     uint8_t local_buffer[1500] = {0};
     uint16_t local_buffer_length = sizeof(local_buffer);
@@ -148,7 +148,8 @@ Java_dujeonglee_networkcoding_Japi_Receive(JNIEnv *env, jobject obj, jlong handl
         local_buffer,
         &local_buffer_length,
         &addr.Addr,
-        &addr.AddrLength);
+        &addr.AddrLength,
+        static_cast<uint32_t>(timeout));
     if (!result)
     {
         return static_cast<jint>(0);
