@@ -14,7 +14,7 @@ public class Main
             final long handle = ncsocket.InitSocket(args[0], 500, 500);
             
             do {
-                int ret = ncsocket.Receive(handle, buffer, 1500, info, 2, 500);
+                int ret = ncsocket.Receive(handle, buffer, buffer.length, info, info.length, 500);
                 if(ret == 1 && buffer[0] == BYEBYE)
                 {
                     System.out.println("Bye.");
@@ -59,6 +59,7 @@ public class Main
             }
             buffer[0] = BYEBYE;
             ncsocket.Send(handle, args[1], args[2], buffer, 1);
+            ncsocket.WaitUntilTxIsCompleted(handle, args[1], args[2]);
             ncsocket.FreeSocket(handle);
         }
         else

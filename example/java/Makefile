@@ -1,4 +1,4 @@
-.PHONY: all clean
+.PHONY: all clean run
 
 LIBDIR := ../../lib
 NATIVELIB := $(LIBDIR)/libjncsocket.so
