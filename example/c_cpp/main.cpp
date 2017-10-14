@@ -95,7 +95,6 @@ int main(int argc, char *argv[])
         
         unsigned char buffer[1424];
         size_t readbytes;
-        std::cout << "Static" << std::endl;
         Send(handle, argv[2], argv[3], (unsigned char *)argv[4], strlen(argv[4]));
         while ((readbytes = fread(buffer, 1, sizeof(buffer), p_File)) > 0)
         {
