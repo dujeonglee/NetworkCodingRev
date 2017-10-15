@@ -10,7 +10,7 @@ CPP := g++
 all : static 
 
 clean :
-	rm -rf run_static run_dynamic 
+	rm -rf *.o run_static run_dynamic 
 
 static : run_static
 run_static : $(STATIC_LIBRARY) main_stc.o 

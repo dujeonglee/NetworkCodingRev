@@ -3,7 +3,7 @@
 #include "ncsocket.h"
 using namespace NetworkCoding;
 
-void *InitSocket(const char *const local_port, const uint32_t RxTimeout, const uint32_t TxTimeout, const rxcallback cb)
+void *InitSocket(const char *const local_port, const uint32_t RxTimeout, const uint32_t TxTimeout, const std::function<void(uint8_t *const buffer, const uint16_t length, const void *const sender_addr, const uint32_t sender_addr_len)> cb)
 {
     return new NCSocket(std::string(local_port), RxTimeout, TxTimeout, cb);
 }

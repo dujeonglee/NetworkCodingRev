@@ -2,6 +2,7 @@
 #define API_H_
 
 #include <stdint.h>
+#include <functional>
 
 typedef void (*rxcallback)(uint8_t *const buffer, const uint16_t length, const void *const address, const uint32_t sender_addr_len);
 
@@ -17,7 +18,7 @@ typedef void (*FreeSocketFuncType)(void *const handle);
 #ifdef __cplusplus
 extern "C" {
 #endif
-void *InitSocket(const char *const local_port, const uint32_t RxTimeout, const uint32_t TxTimeout, const rxcallback cb);
+void *InitSocket(const char *const local_port, const uint32_t RxTimeout, const uint32_t TxTimeout, const std::function<void(uint8_t *const buffer, const uint16_t length, const void *const sender_addr, const uint32_t sender_addr_len)> cb);
 bool Connect(void *const handle, const char *const ip, const char *const port, const uint32_t timeout, const uint8_t TransmissionMode, const uint8_t BlockSize, const uint16_t RetransmissionRedundancy);
 void Disconnect(void *const handle, const char *const ip, const char *const port);
 bool Send(void *const handle, const char *const ip, const char *const port, uint8_t *const buff, const uint16_t size);
