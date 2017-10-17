@@ -10,7 +10,37 @@ using namespace std;
 
 #define USE_RX_CALLBACK (0)
 
-void SyncReceive(const char *port)
+void SendFunction(const char * local_port, const char * remote_ip, const char * remote_port, const char * filename)
+{
+    void *handle = InitSocket(local_port, 500, 500, nullptr);
+    do
+    {
+        std::cout << "Connect to " << remote_ip << ":" << remote_port << "." << std::endl;
+    } while (false == Connect(handle, remote_ip, remote_port, 1000, 0, 32, 0));
+
+    FILE *p_File = nullptr;
+    p_File = fopen(filename, "r");
+    if (p_File == nullptr)
+    {
+        std::cout << "Cannot open file " << filename << std::endl;
+        exit(-1);
+    }
+
+    unsigned char buffer[1424];
+    size_t readbytes;
+    Send(handle, remote_ip, remote_port, (unsigned char *)filename, strlen(filename));
+    while ((readbytes = fread(buffer, 1, sizeof(buffer), p_File)) > 0)
+    {
+        Send(handle, remote_ip, remote_port, buffer, readbytes);
+    }
+    buffer[0] = 0xff;
+    Send(handle, remote_ip, remote_port, buffer, 1);
+    WaitUntilTxIsCompleted(handle, remote_ip, remote_port);
+    fclose(p_File);
+    FreeSocket(handle);
+}
+
+void SyncReceiveFunction(const char *port)
 {
     std::cout << __FUNCTION__ << std::endl;
     FILE *p_File = nullptr;
@@ -74,7 +104,7 @@ void SyncReceive(const char *port)
     handle = nullptr;
 }
 
-void AsyncReceive(const char *port)
+void AsyncReceiveFunction(const char *port)
 {
     std::cout << __FUNCTION__ << std::endl;
     FILE *p_File = nullptr;
@@ -135,11 +165,11 @@ int main(int argc, char *argv[])
         std::cout << "Receive Mode" << std::endl;
         if (std::string(argv[1]).compare("Sync") == 0)
         {
-            SyncReceive(argv[2]);
+            SyncReceiveFunction(argv[2]);
         }
         else if (std::string(argv[1]).compare("Async") == 0)
         {
-            AsyncReceive(argv[2]);
+            AsyncReceiveFunction(argv[2]);
         }
         else
         {
@@ -149,32 +179,7 @@ int main(int argc, char *argv[])
     else if (argc == 5)
     {
         std::cout << "Send Mode" << std::endl;
-        void *handle = InitSocket(argv[1], 500, 500, nullptr);
-        do
-        {
-            std::cout << "Connect to " << argv[2] << ":" << argv[3] << "." << std::endl;
-        } while (false == Connect(handle, argv[2], argv[3], 1000, 0, 32, 0));
-
-        FILE *p_File = nullptr;
-        p_File = fopen(argv[4], "r");
-        if (p_File == nullptr)
-        {
-            std::cout << "Cannot open file " << argv[4] << std::endl;
-            exit(-1);
-        }
-
-        unsigned char buffer[1424];
-        size_t readbytes;
-        Send(handle, argv[2], argv[3], (unsigned char *)argv[4], strlen(argv[4]));
-        while ((readbytes = fread(buffer, 1, sizeof(buffer), p_File)) > 0)
-        {
-            Send(handle, argv[2], argv[3], buffer, readbytes);
-        }
-        buffer[0] = 0xff;
-        Send(handle, argv[2], argv[3], buffer, 1);
-        WaitUntilTxIsCompleted(handle, argv[2], argv[3]);
-        fclose(p_File);
-        FreeSocket(handle);
+        SendFunction(argv[1], argv[2], argv[3], argv[4]);
     }
     else
     {
