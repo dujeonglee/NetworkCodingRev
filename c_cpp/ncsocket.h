@@ -60,13 +60,6 @@ class NCSocket
                         m_Socket[IPVERSION_4] = -1;
                         return;
                     }
-                    const timeval rx_to = {RXTIMEOUT / 1000, (RXTIMEOUT % 1000) * 1000};
-                    if (setsockopt(m_Socket[IPVERSION_4], SOL_SOCKET, SO_RCVTIMEO, &rx_to, sizeof(rx_to)) == -1)
-                    {
-                        close(m_Socket[IPVERSION_4]);
-                        m_Socket[IPVERSION_4] = -1;
-                        return;
-                    }
                     if (bind(m_Socket[IPVERSION_4], (sockaddr *)iter->ai_addr, iter->ai_addrlen) == -1)
                     {
                         close(m_Socket[IPVERSION_4]);
@@ -122,13 +115,6 @@ class NCSocket
                     }
                     const timeval tx_to = {TXTIMEOUT / 1000, (TXTIMEOUT % 1000) * 1000};
                     if (setsockopt(m_Socket[IPVERSION_6], SOL_SOCKET, SO_SNDTIMEO, &tx_to, sizeof(tx_to)) == -1)
-                    {
-                        close(m_Socket[IPVERSION_6]);
-                        m_Socket[IPVERSION_6] = -1;
-                        return;
-                    }
-                    const timeval rx_to = {RXTIMEOUT / 1000, (RXTIMEOUT % 1000) * 1000};
-                    if (setsockopt(m_Socket[IPVERSION_6], SOL_SOCKET, SO_RCVTIMEO, &rx_to, sizeof(rx_to)) == -1)
                     {
                         close(m_Socket[IPVERSION_6]);
                         m_Socket[IPVERSION_6] = -1;
