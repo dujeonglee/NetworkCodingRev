@@ -1,7 +1,7 @@
 .PHONY : all javalibrary clean
 .SUFFIXES : .cpp .o
 
-INCLUDES := -I./basiclibrary/avltree -I./basiclibrary/threadpool -I./basiclibrary/singleshottimer
+INCLUDES := -I../basiclibrary/avltree -I../basiclibrary/threadpool -I../basiclibrary/singleshottimer
 OPTIMIZATIONCPPFLAGS := -O3
 BASICCPPFLAGS := -c -Wall -std=c++0x
 CPP := g++
@@ -26,7 +26,7 @@ clean :
 	rm -rf $(JAVALIBOBJOUT) $(JAVA_LIBRARY) $(LIBOUT)/dujeonglee
 
 basiclibrary/.git/config : 
-	git clone https://github.com/dujeonglee/basiclibrary.git
+	git clone https://github.com/dujeonglee/basiclibrary.git ../basiclibrary
 
 $(LIBOUT):
 	mkdir -p $(LIBOUT)
@@ -35,7 +35,7 @@ $(LIBRARY_HEADER) : api.h
 	cp ./api.h $(LIBOUT)
 
 javalibrary : $(JAVA_LIBRARY) $(JAVACLASS)
-$(JAVA_LIBRARY) : $(JAVALIBOBJOUT) $(LIBOUT) $(LIBRARY_HEADER) basiclibrary/.git/config $(JAVALIBOBJOUT)/chk.o $(JAVALIBOBJOUT)/finite_field.o $(JAVALIBOBJOUT)/tx.o $(JAVALIBOBJOUT)/rx.o $(JAVALIBOBJOUT)/api.o $(JAVALIBOBJOUT)/dujeonglee_networkcoding_Japi.o
+$(JAVA_LIBRARY) : $(JAVALIBOBJOUT) $(LIBOUT) $(LIBRARY_HEADER) ../basiclibrary/.git/config $(JAVALIBOBJOUT)/chk.o $(JAVALIBOBJOUT)/finite_field.o $(JAVALIBOBJOUT)/tx.o $(JAVALIBOBJOUT)/rx.o $(JAVALIBOBJOUT)/api.o $(JAVALIBOBJOUT)/dujeonglee_networkcoding_Japi.o
 	$(CROSS)$(CPP) -shared -o $@ $(JAVALIBOBJOUT)/chk.o $(JAVALIBOBJOUT)/finite_field.o $(JAVALIBOBJOUT)/tx.o $(JAVALIBOBJOUT)/rx.o $(JAVALIBOBJOUT)/api.o $(JAVALIBOBJOUT)/dujeonglee_networkcoding_Japi.o
 $(JAVALIBOBJOUT) :
 	mkdir -p $(JAVALIBOBJOUT)

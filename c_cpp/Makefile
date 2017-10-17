@@ -1,7 +1,7 @@
 .PHONY : all staticlibrary dynamiclibrary clean
 .SUFFIXES : .cpp .o
 
-INCLUDES := -I./basiclibrary/avltree -I./basiclibrary/threadpool -I./basiclibrary/singleshottimer
+INCLUDES := -I../basiclibrary/avltree -I../basiclibrary/threadpool -I../basiclibrary/singleshottimer
 OPTIMIZATIONCPPFLAGS := -O3
 BASICCPPFLAGS := -c -Wall -std=c++0x
 CPP := g++
@@ -18,8 +18,8 @@ all : staticlibrary dynamiclibrary
 clean :
 	rm -rf $(STATIC_LIBRARY) $(STATICLIBOBJOUT) $(DYNAMIC_LIBRARY) $(DYNAMICLIBOBJOUT)
 
-basiclibrary/.git/config : 
-	git clone https://github.com/dujeonglee/basiclibrary.git
+../basiclibrary/.git/config : 
+	git clone https://github.com/dujeonglee/basiclibrary.git ../basiclibrary
 
 $(LIBOUT):
 	mkdir -p $(LIBOUT)
@@ -28,7 +28,7 @@ $(LIBRARY_HEADER) :
 	cp ./api.h $(LIBOUT)
 
 dynamiclibrary : $(DYNAMIC_LIBRARY)
-$(DYNAMIC_LIBRARY) : $(DYNAMICLIBOBJOUT) $(LIBOUT) $(LIBRARY_HEADER) basiclibrary/.git/config $(DYNAMICLIBOBJOUT)/chk.o $(DYNAMICLIBOBJOUT)/finite_field.o $(DYNAMICLIBOBJOUT)/tx.o $(DYNAMICLIBOBJOUT)/rx.o $(DYNAMICLIBOBJOUT)/api.o
+$(DYNAMIC_LIBRARY) : $(DYNAMICLIBOBJOUT) $(LIBOUT) $(LIBRARY_HEADER) ../basiclibrary/.git/config $(DYNAMICLIBOBJOUT)/chk.o $(DYNAMICLIBOBJOUT)/finite_field.o $(DYNAMICLIBOBJOUT)/tx.o $(DYNAMICLIBOBJOUT)/rx.o $(DYNAMICLIBOBJOUT)/api.o
 	$(CROSS)$(CPP) -shared -o $@ $(DYNAMICLIBOBJOUT)/chk.o $(DYNAMICLIBOBJOUT)/finite_field.o $(DYNAMICLIBOBJOUT)/tx.o $(DYNAMICLIBOBJOUT)/rx.o $(DYNAMICLIBOBJOUT)/api.o
 $(DYNAMICLIBOBJOUT) :
 	mkdir -p $(DYNAMICLIBOBJOUT)
@@ -45,7 +45,7 @@ $(DYNAMICLIBOBJOUT)/api.o : Makefile api.h api.cpp
 	$(CROSS)$(CPP) api.cpp -o $@ $(DYNAMICLIBCPPFLAGS) $(INCLUDES)
 
 staticlibrary : $(STATIC_LIBRARY)
-$(STATIC_LIBRARY) : $(STATICLIBOBJOUT) $(LIBOUT) $(LIBRARY_HEADER) basiclibrary/.git/config $(STATICLIBOBJOUT)/chk.o $(STATICLIBOBJOUT)/finite_field.o $(STATICLIBOBJOUT)/tx.o $(STATICLIBOBJOUT)/rx.o $(STATICLIBOBJOUT)/api.o
+$(STATIC_LIBRARY) : $(STATICLIBOBJOUT) $(LIBOUT) $(LIBRARY_HEADER) ../basiclibrary/.git/config $(STATICLIBOBJOUT)/chk.o $(STATICLIBOBJOUT)/finite_field.o $(STATICLIBOBJOUT)/tx.o $(STATICLIBOBJOUT)/rx.o $(STATICLIBOBJOUT)/api.o
 	$(CROSS)$(AR) rcs $@  $(STATICLIBOBJOUT)/chk.o $(STATICLIBOBJOUT)/finite_field.o $(STATICLIBOBJOUT)/tx.o $(STATICLIBOBJOUT)/rx.o $(STATICLIBOBJOUT)/api.o
 $(STATICLIBOBJOUT) :
 	mkdir -p $(STATICLIBOBJOUT)
