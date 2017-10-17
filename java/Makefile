@@ -12,7 +12,10 @@ JAVACLASS := $(LIBOUT)/dujeonglee/networkcoding/Japi.class
 JAVA_LIBRARY := $(LIBOUT)/libjncsocket.so
 JAVALIBOBJOUT := java_lib_objs
 
-JNI_INCLUDE := $(join -I, $(subst /jni.h, , $(shell find / -name jni.h)))
+JNI_INCLUDE := $(join -I, $(subst /jni.h, , $(shell find /usr/lib/jvm -name jni.h)))
+ifeq ($(JNI_INCLUDE),-I)
+    $(error cannot find jni.h in /usr/lib/jvm/*. Please install java)
+endif
 JNI_LINUX_INCLUDE := $(join $(JNI_INCLUDE), /linux)
 JAVA_INCLUDE := $(JNI_INCLUDE) $(JNI_LINUX_INCLUDE)
 
