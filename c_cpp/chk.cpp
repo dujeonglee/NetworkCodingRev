@@ -1,6 +1,8 @@
 #include "chk.h"
 
-uint8_t checksum8(const uint8_t *const buffer, const uint16_t size)
+using namespace NetworkCoding;
+
+uint8_t Checksum::get(const uint8_t *const buffer, const uint16_t size)
 {
     uint16_t tmp = 0;
     uint16_t pos = 0;

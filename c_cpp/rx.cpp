@@ -379,7 +379,7 @@ bool ReceptionBlock::Decoding()
                         else
                         {
                             std::unique_lock<std::mutex> Lock(c_Reception->m_PacketQueueLock);
-                            c_Reception->m_PacketQueue.push_back(std::tuple<DataStructures::AddressType, uint8_t *>(c_Session->m_SenderAddress, pkt));
+                            c_Reception->m_PacketQueue.push_back(std::tuple<DataTypes::Address, uint8_t *>(c_Session->m_SenderAddress, pkt));
                             c_Reception->m_Condition.notify_one();
                         }
                     });
@@ -416,7 +416,7 @@ void ReceptionBlock::Receive(uint8_t *const buffer, const uint16_t length, const
         ack.m_CheckSum = 0;
         ack.m_Sequence = DataHeader->m_CurrentBlockSequenceNumber;
         ack.m_Losses = DataHeader->m_TxCount - DataHeader->m_ExpectedRank;
-        ack.m_CheckSum = checksum8(reinterpret_cast<uint8_t *>(&ack), sizeof(ack));
+        ack.m_CheckSum = Checksum::get(reinterpret_cast<uint8_t *>(&ack), sizeof(ack));
         sendto(c_Reception->c_Socket, (uint8_t *)&ack, sizeof(ack), 0, (sockaddr *)sender_addr, sender_addr_len);
         return;
     }
@@ -464,7 +464,7 @@ void ReceptionBlock::Receive(uint8_t *const buffer, const uint16_t length, const
                                     else
                                     {
                                         std::unique_lock<std::mutex> Lock(c_Reception->m_PacketQueueLock);
-                                        c_Reception->m_PacketQueue.push_back(std::tuple<DataStructures::AddressType, uint8_t *>(c_Session->m_SenderAddress, pkt));
+                                        c_Reception->m_PacketQueue.push_back(std::tuple<DataTypes::Address, uint8_t *>(c_Session->m_SenderAddress, pkt));
                                         c_Reception->m_Condition.notify_one();
                                     }
                                 });
@@ -549,7 +549,7 @@ void ReceptionBlock::Receive(uint8_t *const buffer, const uint16_t length, const
                                                 else
                                                 {
                                                     std::unique_lock<std::mutex> Lock(c_Reception->m_PacketQueueLock);
-                                                    c_Reception->m_PacketQueue.push_back(std::tuple<DataStructures::AddressType, uint8_t *>(c_Session->m_SenderAddress, pkt));
+                                                    c_Reception->m_PacketQueue.push_back(std::tuple<DataTypes::Address, uint8_t *>(c_Session->m_SenderAddress, pkt));
                                                     c_Reception->m_Condition.notify_one();
                                                 }
                                             });
@@ -572,14 +572,14 @@ void ReceptionBlock::Receive(uint8_t *const buffer, const uint16_t length, const
             ack.m_CheckSum = 0;
             ack.m_Sequence = DataHeader->m_CurrentBlockSequenceNumber;
             ack.m_Losses = DataHeader->m_TxCount - DataHeader->m_ExpectedRank;
-            ack.m_CheckSum = checksum8(reinterpret_cast<uint8_t *>(&ack), sizeof(ack));
+            ack.m_CheckSum = Checksum::get(reinterpret_cast<uint8_t *>(&ack), sizeof(ack));
             sendto(c_Reception->c_Socket, (uint8_t *)&ack, sizeof(ack), 0, (sockaddr *)sender_addr, sender_addr_len);
         }
         break;
     }
 }
 
-ReceptionSession::ReceptionSession(Reception *const Session, const DataStructures::AddressType addr) : c_Reception(Session), m_SenderAddress(addr)
+ReceptionSession::ReceptionSession(Reception *const Session, const DataTypes::Address addr) : c_Reception(Session), m_SenderAddress(addr)
 {
     m_SequenceNumberForService = 0;
     m_MinSequenceNumberAwaitingAck = 0;
@@ -629,7 +629,7 @@ void ReceptionSession::Receive(uint8_t *const buffer, const uint16_t length, con
                                         else
                                         {
                                             std::unique_lock<std::mutex> Lock(c_Reception->m_PacketQueueLock);
-                                            c_Reception->m_PacketQueue.push_back(std::tuple<DataStructures::AddressType, uint8_t *>(m_SenderAddress, pkt));
+                                            c_Reception->m_PacketQueue.push_back(std::tuple<DataTypes::Address, uint8_t *>(m_SenderAddress, pkt));
                                             c_Reception->m_Condition.notify_one();
                                         }
                                     });
@@ -668,7 +668,7 @@ void ReceptionSession::Receive(uint8_t *const buffer, const uint16_t length, con
             ack.m_CheckSum = 0;
             ack.m_Sequence = DataHeader->m_CurrentBlockSequenceNumber;
             ack.m_Losses = DataHeader->m_TxCount - DataHeader->m_ExpectedRank;
-            ack.m_CheckSum = checksum8(reinterpret_cast<uint8_t *>(&ack), sizeof(ack));
+            ack.m_CheckSum = Checksum::get(reinterpret_cast<uint8_t *>(&ack), sizeof(ack));
             sendto(c_Reception->c_Socket, (uint8_t *)&ack, sizeof(ack), 0, (sockaddr *)sender_addr, sender_addr_len);
         }
         return;
@@ -712,7 +712,7 @@ Reception::~Reception()
 void Reception::RxHandler(uint8_t *const buffer, const uint16_t size, const sockaddr *const sender_addr, const uint32_t sender_addr_len)
 {
     Header::Common *CommonHeader = reinterpret_cast<Header::Common *>(buffer);
-    if (checksum8(buffer, size) != 0x0)
+    if (Checksum::get(buffer, size) != 0x0)
     {
         return;
     }
@@ -720,7 +720,7 @@ void Reception::RxHandler(uint8_t *const buffer, const uint16_t size, const sock
     {
     case Header::Common::HeaderType::DATA:
     {
-        const DataStructures::SessionKey key = DataStructures::GetSessionKey(sender_addr, sender_addr_len);
+        const DataTypes::SessionKey key = DataTypes::GetSessionKey(sender_addr, sender_addr_len);
         ReceptionSession **const pp_Session = m_Sessions.GetPtr(key);
         if (pp_Session == nullptr)
         {
@@ -734,14 +734,14 @@ void Reception::RxHandler(uint8_t *const buffer, const uint16_t size, const sock
     case Header::Common::HeaderType::SYNC:
     {
         // create Rx Session.
-        const DataStructures::SessionKey key = DataStructures::GetSessionKey(sender_addr, sender_addr_len);
+        const DataTypes::SessionKey key = DataTypes::GetSessionKey(sender_addr, sender_addr_len);
         ReceptionSession **const pp_Session = m_Sessions.GetPtr(key);
         ReceptionSession *p_Session = nullptr;
         if (pp_Session == nullptr)
         {
             try
             {
-                DataStructures::AddressType addr;
+                DataTypes::Address addr;
                 if (sender_addr_len == sizeof(sockaddr_in))
                 {
                     addr.Addr.IPv4 = *((sockaddr_in *)sender_addr);
@@ -781,7 +781,7 @@ void Reception::RxHandler(uint8_t *const buffer, const uint16_t size, const sock
         }
         sync->m_Type = Header::Common::HeaderType::SYNC_ACK;
         sync->m_CheckSum = 0;
-        sync->m_CheckSum = checksum8(buffer, size);
+        sync->m_CheckSum = Checksum::get(buffer, size);
         sendto(c_Socket, buffer, size, 0, (sockaddr *)sender_addr, sender_addr_len);
     }
     break;
@@ -791,7 +791,7 @@ void Reception::RxHandler(uint8_t *const buffer, const uint16_t size, const sock
         Header::Ping *const ping = reinterpret_cast<Header::Ping *>(buffer);
         ping->m_Type = Header::Data::HeaderType::PONG;
         ping->m_CheckSum = 0;
-        ping->m_CheckSum = checksum8(buffer, size);
+        ping->m_CheckSum = Checksum::get(buffer, size);
         sendto(c_Socket, buffer, size, 0, (sockaddr *)sender_addr, sender_addr_len);
     }
     break;
@@ -819,7 +819,7 @@ bool Reception::Receive(uint8_t *const buffer, uint16_t *const length, sockaddr 
             }
         }
     }
-    const DataStructures::AddressType addr = std::get<0>(m_PacketQueue.front());
+    const DataTypes::Address addr = std::get<0>(m_PacketQueue.front());
     const uint8_t *const packet = std::get<1>(m_PacketQueue.front());
     if ((*length) < ntohs(reinterpret_cast<const Header::Data *const>(packet)->m_PayloadSize))
     {

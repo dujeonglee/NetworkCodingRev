@@ -89,7 +89,7 @@ bool TransmissionBlock::Send(uint8_t *const buffer, const uint16_t buffersize)
         }
     }
     memcpy(DataHeader->m_Codes + m_BlockSize, buffer, buffersize);
-    DataHeader->m_CheckSum = checksum8(m_OriginalPacketBuffer[m_TransmissionCount].get(), ntohs(DataHeader->m_TotalSize));
+    DataHeader->m_CheckSum = Checksum::get(m_OriginalPacketBuffer[m_TransmissionCount].get(), ntohs(DataHeader->m_TotalSize));
     sendto(p_Session->c_Socket, m_OriginalPacketBuffer[m_TransmissionCount++].get(), ntohs(DataHeader->m_TotalSize), 0, (sockaddr *)&p_Session->c_Addr.Addr, p_Session->c_Addr.AddrLength);
 
     if ((m_TransmissionCount == m_BlockSize))
@@ -245,7 +245,7 @@ const bool TransmissionBlock::Retransmission()
                 }
             }
         }
-        RemedyHeader->m_CheckSum = checksum8(m_RemedyPacketBuffer, ntohs(RemedyHeader->m_TotalSize));
+        RemedyHeader->m_CheckSum = Checksum::get(m_RemedyPacketBuffer, ntohs(RemedyHeader->m_TotalSize));
         sendto(p_Session->c_Socket, m_RemedyPacketBuffer, ntohs(RemedyHeader->m_TotalSize), 0, (sockaddr *)&p_Session->c_Addr.Addr, p_Session->c_Addr.AddrLength);
     }
     return true;
@@ -254,7 +254,7 @@ const bool TransmissionBlock::Retransmission()
 ////////////////////////////////////////////////////////////
 /////////////// TransmissionSession
 /*OK*/
-TransmissionSession::TransmissionSession(Transmission *const transmission, const int32_t Socket, const DataStructures::AddressType Addr, const Parameter::TRANSMISSION_MODE TransmissionMode, const Parameter::BLOCK_SIZE BlockSize, const uint16_t RetransmissionRedundancy) : c_Transmission(transmission), c_Socket(Socket), c_Addr(Addr)
+TransmissionSession::TransmissionSession(Transmission *const transmission, const int32_t Socket, const DataTypes::Address Addr, const Parameter::TRANSMISSION_MODE TransmissionMode, const Parameter::BLOCK_SIZE BlockSize, const uint16_t RetransmissionRedundancy) : c_Transmission(transmission), c_Socket(Socket), c_Addr(Addr)
 {
     m_TransmissionMode = TransmissionMode;
     m_BlockSize = BlockSize;
@@ -331,7 +331,7 @@ const bool TransmissionSession::SendPing()
         c_Transmission->Disconnect(c_Addr);
         return false;
     }
-    ping.m_CheckSum = checksum8(reinterpret_cast<uint8_t *>(&ping), sizeof(Header::Ping));
+    ping.m_CheckSum = Checksum::get(reinterpret_cast<uint8_t *>(&ping), sizeof(Header::Ping));
     sendto(c_Socket, reinterpret_cast<uint8_t *>(&ping), sizeof(Header::Ping), 0, (sockaddr *)&c_Addr.Addr, c_Addr.AddrLength);
     return true;
 }
@@ -384,12 +384,12 @@ Transmission::~Transmission()
 }
 
 /* OK */
-bool Transmission::Connect(const DataStructures::AddressType Addr, uint32_t ConnectionTimeout, const Parameter::TRANSMISSION_MODE TransmissionMode, const Parameter::BLOCK_SIZE BlockSize, const uint16_t RetransmissionRedundancy)
+bool Transmission::Connect(const DataTypes::Address Addr, uint32_t ConnectionTimeout, const Parameter::TRANSMISSION_MODE TransmissionMode, const Parameter::BLOCK_SIZE BlockSize, const uint16_t RetransmissionRedundancy)
 {
     TransmissionSession *newsession = nullptr;
     {
         std::unique_lock<std::mutex> lock(m_Lock);
-        const DataStructures::SessionKey key = DataStructures::GetSessionKey((sockaddr *)&Addr.Addr, Addr.AddrLength);
+        const DataTypes::SessionKey key = DataTypes::GetSessionKey((sockaddr *)&Addr.Addr, Addr.AddrLength);
         TransmissionSession **const session = m_Sessions.GetPtr(key);
         if (session != nullptr)
         {
@@ -424,7 +424,7 @@ bool Transmission::Connect(const DataStructures::AddressType Addr, uint32_t Conn
     SyncPacket.m_CheckSum = 0;
     SyncPacket.m_Sequence = htons(newsession->m_MaxBlockSequenceNumber);
 
-    SyncPacket.m_CheckSum = checksum8(reinterpret_cast<uint8_t *>(&SyncPacket), sizeof(SyncPacket));
+    SyncPacket.m_CheckSum = Checksum::get(reinterpret_cast<uint8_t *>(&SyncPacket), sizeof(SyncPacket));
     if (sendto(c_Socket, (uint8_t *)&SyncPacket, sizeof(SyncPacket), 0, (sockaddr *)(&newsession->c_Addr.Addr), newsession->c_Addr.AddrLength) != sizeof(SyncPacket))
     {
         return false;
@@ -449,12 +449,12 @@ bool Transmission::Connect(const DataStructures::AddressType Addr, uint32_t Conn
 }
 
 /* OK */
-bool Transmission::Send(const DataStructures::AddressType Addr, uint8_t *buffer, uint16_t buffersize)
+bool Transmission::Send(const DataTypes::Address Addr, uint8_t *buffer, uint16_t buffersize)
 {
     TransmissionSession *p_session = nullptr;
     {
         std::unique_lock<std::mutex> lock(m_Lock);
-        const DataStructures::SessionKey key = DataStructures::GetSessionKey((sockaddr *)&Addr.Addr, Addr.AddrLength);
+        const DataTypes::SessionKey key = DataTypes::GetSessionKey((sockaddr *)&Addr.Addr, Addr.AddrLength);
         TransmissionSession **const pp_session = m_Sessions.GetPtr(key);
         if (pp_session)
         {
@@ -526,12 +526,12 @@ bool Transmission::Send(const DataStructures::AddressType Addr, uint8_t *buffer,
     return TransmissionResult;
 }
 
-bool Transmission::Flush(const DataStructures::AddressType Addr)
+bool Transmission::Flush(const DataTypes::Address Addr)
 {
     TransmissionSession *p_session = nullptr;
     {
         std::unique_lock<std::mutex> lock(m_Lock);
-        const DataStructures::SessionKey key = DataStructures::GetSessionKey((sockaddr *)&Addr.Addr, Addr.AddrLength);
+        const DataTypes::SessionKey key = DataTypes::GetSessionKey((sockaddr *)&Addr.Addr, Addr.AddrLength);
         TransmissionSession **const pp_session = m_Sessions.GetPtr(key);
         if (pp_session)
         {
@@ -572,12 +572,12 @@ bool Transmission::Flush(const DataStructures::AddressType Addr)
     return IMMEDIATE_TASK_ID == TaskID;
 }
 
-void Transmission::WaitUntilTxIsCompleted(const DataStructures::AddressType Addr)
+void Transmission::WaitUntilTxIsCompleted(const DataTypes::Address Addr)
 {
     TransmissionSession *p_session = nullptr;
     {
         std::unique_lock<std::mutex> lock(m_Lock);
-        const DataStructures::SessionKey key = DataStructures::GetSessionKey((sockaddr *)&Addr.Addr, Addr.AddrLength);
+        const DataTypes::SessionKey key = DataTypes::GetSessionKey((sockaddr *)&Addr.Addr, Addr.AddrLength);
         TransmissionSession **const pp_session = m_Sessions.GetPtr(key);
         if (pp_session)
         {
@@ -598,9 +598,9 @@ void Transmission::WaitUntilTxIsCompleted(const DataStructures::AddressType Addr
     }
 }
 
-void Transmission::Disconnect(const DataStructures::AddressType Addr)
+void Transmission::Disconnect(const DataTypes::Address Addr)
 {
-    const DataStructures::SessionKey key = DataStructures::GetSessionKey((sockaddr *)&Addr.Addr, Addr.AddrLength);
+    const DataTypes::SessionKey key = DataTypes::GetSessionKey((sockaddr *)&Addr.Addr, Addr.AddrLength);
     TransmissionSession **pp_session = nullptr;
     {
         std::unique_lock<std::mutex> lock(m_Lock);
@@ -626,7 +626,7 @@ void Transmission::Disconnect(const DataStructures::AddressType Addr)
 void Transmission::RxHandler(uint8_t *const buffer, const uint16_t size, const sockaddr *const sender_addr, const uint32_t sender_addr_len)
 {
     Header::Common *CommonHeader = reinterpret_cast<Header::Common *>(buffer);
-    if (checksum8(buffer, size) != 0x0)
+    if (Checksum::get(buffer, size) != 0x0)
     {
         return;
     }
@@ -635,7 +635,7 @@ void Transmission::RxHandler(uint8_t *const buffer, const uint16_t size, const s
     case Header::Common::HeaderType::DATA_ACK:
     {
         const Header::DataAck *Ack = reinterpret_cast<Header::DataAck *>(buffer);
-        const DataStructures::SessionKey key = DataStructures::GetSessionKey(sender_addr, sender_addr_len);
+        const DataTypes::SessionKey key = DataTypes::GetSessionKey(sender_addr, sender_addr_len);
         std::unique_lock<std::mutex> lock(m_Lock);
         TransmissionSession **const pp_session = m_Sessions.GetPtr(key);
         if (pp_session)
@@ -648,7 +648,7 @@ void Transmission::RxHandler(uint8_t *const buffer, const uint16_t size, const s
     case Header::Common::HeaderType::SYNC_ACK:
     {
         const Header::Sync *sync = reinterpret_cast<Header::Sync *>(buffer);
-        const DataStructures::SessionKey key = DataStructures::GetSessionKey(sender_addr, sender_addr_len);
+        const DataTypes::SessionKey key = DataTypes::GetSessionKey(sender_addr, sender_addr_len);
         std::unique_lock<std::mutex> lock(m_Lock);
         TransmissionSession **const pp_session = m_Sessions.GetPtr(key);
         if (pp_session)
@@ -661,7 +661,7 @@ void Transmission::RxHandler(uint8_t *const buffer, const uint16_t size, const s
     case Header::Common::PONG:
     {
         const Header::Pong *pong = reinterpret_cast<Header::Pong *>(buffer);
-        const DataStructures::SessionKey key = DataStructures::GetSessionKey(sender_addr, sender_addr_len);
+        const DataTypes::SessionKey key = DataTypes::GetSessionKey(sender_addr, sender_addr_len);
         std::unique_lock<std::mutex> lock(m_Lock);
         TransmissionSession **const pp_session = m_Sessions.GetPtr(key);
         if (pp_session)

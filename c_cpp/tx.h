@@ -43,7 +43,7 @@ class TransmissionSession
 public:
   Transmission *const c_Transmission;
   const int32_t c_Socket;
-  const DataStructures::AddressType c_Addr;
+  const DataTypes::Address c_Addr;
   std::atomic<bool> m_IsConnected;
   std::atomic<uint16_t> m_MinBlockSequenceNumber;
   std::atomic<uint16_t> m_MaxBlockSequenceNumber;
@@ -65,7 +65,7 @@ public:
   TransmissionBlock *p_TransmissionBlock;
   std::atomic<uint32_t> m_ConcurrentRetransmissions;
 
-  TransmissionSession(Transmission *const transmission, const int32_t Socket, const DataStructures::AddressType Addr,
+  TransmissionSession(Transmission *const transmission, const int32_t Socket, const DataTypes::Address Addr,
                       const Parameter::TRANSMISSION_MODE TransmissionMode = Parameter::TRANSMISSION_MODE::RELIABLE_TRANSMISSION_MODE,
                       const Parameter::BLOCK_SIZE BlockSize = Parameter::BLOCK_SIZE::BLOCK_SIZE_04,
                       const uint16_t RetransmissionRedundancy = 0);
@@ -90,7 +90,7 @@ class Transmission
 {
 private:
   const int32_t c_Socket;
-  AVLTree<DataStructures::SessionKey, TransmissionSession *> m_Sessions;
+  AVLTree<DataTypes::SessionKey, TransmissionSession *> m_Sessions;
   std::mutex m_Lock;
 
 public:
@@ -98,15 +98,15 @@ public:
   ~Transmission();
 
 public:
-  bool Connect(const DataStructures::AddressType Addr,
+  bool Connect(const DataTypes::Address Addr,
                uint32_t ConnectionTimeout,
                const Parameter::TRANSMISSION_MODE TransmissionMode,
                const Parameter::BLOCK_SIZE BlockSize,
                const uint16_t RetransmissionRedundancy = 0);
-  bool Send(const DataStructures::AddressType Addr, uint8_t *const buffer, const uint16_t buffersize);
-  bool Flush(const DataStructures::AddressType Addr);
-  void WaitUntilTxIsCompleted(const DataStructures::AddressType Addr);
-  void Disconnect(const DataStructures::AddressType Addr);
+  bool Send(const DataTypes::Address Addr, uint8_t *const buffer, const uint16_t buffersize);
+  bool Flush(const DataTypes::Address Addr);
+  void WaitUntilTxIsCompleted(const DataTypes::Address Addr);
+  void Disconnect(const DataTypes::Address Addr);
 
 public:
   void RxHandler(uint8_t *const buffer, const uint16_t size, const sockaddr *const sender_addr, const uint32_t sender_addr_len);

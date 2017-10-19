@@ -130,7 +130,7 @@ enum BLOCK_SIZE : uint8_t
 const uint8_t MAX_BLOCK_SIZE = BLOCK_SIZE_128;
 } // namespace Parameter
 
-namespace DataStructures
+namespace DataTypes
 {
 class SessionKey
 {
@@ -153,7 +153,7 @@ inline const SessionKey GetSessionKey(const sockaddr *addr, int size)
     }
 }
 
-class AddressType
+class Address
 {
   public:
     union {
@@ -163,9 +163,9 @@ class AddressType
     uint32_t AddrLength;
 };
 
-inline const AddressType GetAddressType(std::string IP, std::string Port)
+inline const Address GetAddress(std::string IP, std::string Port)
 {
-    AddressType ret;
+    Address ret;
     addrinfo hints;
     addrinfo *result = nullptr;
     addrinfo *iter = nullptr;

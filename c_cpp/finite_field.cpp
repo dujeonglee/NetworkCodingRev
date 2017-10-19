@@ -1,7 +1,9 @@
 #include "finite_field.h"
 #include "common.h"
 
-FiniteField *FiniteField::_instance = new FiniteField;
+using namespace NetworkCoding;
+
+NetworkCoding::FiniteField *NetworkCoding::FiniteField::_instance = new NetworkCoding::FiniteField;
 
 void FiniteField::init()
 {

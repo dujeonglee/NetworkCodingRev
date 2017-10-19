@@ -59,7 +59,7 @@ private:
   uint16_t m_SequenceNumberForService;
   uint16_t m_MinSequenceNumberAwaitingAck;
   uint16_t m_MaxSequenceNumberAwaitingAck;
-  const DataStructures::AddressType m_SenderAddress;
+  const DataTypes::Address m_SenderAddress;
 
 public:
   ReceptionSession(const ReceptionSession &) = delete;
@@ -67,7 +67,7 @@ public:
   ReceptionSession &operator=(const ReceptionSession &) = delete;
   ReceptionSession &operator=(ReceptionSession &&) = delete;
 
-  ReceptionSession(Reception *const Session, const DataStructures::AddressType addr);
+  ReceptionSession(Reception *const Session, const DataTypes::Address addr);
   ~ReceptionSession();
   void Receive(uint8_t *const buffer, const uint16_t length, const sockaddr *const sender_addr, const uint32_t sender_addr_len);
 };
@@ -79,13 +79,13 @@ class Reception
 
 private:
   const int32_t c_Socket;
-  AVLTree<DataStructures::SessionKey, ReceptionSession *> m_Sessions;
+  AVLTree<DataTypes::SessionKey, ReceptionSession *> m_Sessions;
 
 public:
   const std::function<void(uint8_t *const buffer, const uint16_t length, const sockaddr *const sender_addr, const uint32_t sender_addr_len)> m_RxCallback;
   std::mutex m_PacketQueueLock;
   std::condition_variable m_Condition;
-  std::deque<std::tuple<DataStructures::AddressType, uint8_t *>> m_PacketQueue;
+  std::deque<std::tuple<DataTypes::Address, uint8_t *>> m_PacketQueue;
   Reception(const int32_t Socket, const std::function<void(uint8_t *buffer, uint16_t length, const sockaddr *const sender_addr, const uint32_t sender_addr_len)> rx);
   ~Reception();
 

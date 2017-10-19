@@ -140,7 +140,7 @@ JNIEXPORT jint JNICALL Java_dujeonglee_networkcoding_Japi_Receive(JNIEnv *env, j
 {
     uint8_t local_buffer[1500] = {0};
     uint16_t local_buffer_length = sizeof(local_buffer);
-    NetworkCoding::DataStructures::AddressType addr;
+    NetworkCoding::DataTypes::Address addr;
     addr.AddrLength = sizeof(addr);
 
     const bool result = Receive(

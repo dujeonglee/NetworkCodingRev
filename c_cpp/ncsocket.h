@@ -302,7 +302,7 @@ class NCSocket
         {
             return false;
         }
-        const DataStructures::AddressType Addr = DataStructures::GetAddressType(ip, port);
+        const DataTypes::Address Addr = DataTypes::GetAddress(ip, port);
         if (Addr.AddrLength == sizeof(sockaddr_in) && m_Tx[IPVERSION_4] != nullptr)
         {
             return m_Tx[IPVERSION_4]->Connect(Addr, timeout, TransmissionMode, BlockSize, RetransmissionRedundancy);
@@ -320,7 +320,7 @@ class NCSocket
         {
             return;
         }
-        const DataStructures::AddressType Addr = DataStructures::GetAddressType(ip, port);
+        const DataTypes::Address Addr = DataTypes::GetAddress(ip, port);
         if (Addr.AddrLength == sizeof(sockaddr_in) && m_Tx[IPVERSION_4] != nullptr)
         {
             m_Tx[IPVERSION_4]->Disconnect(Addr);
@@ -337,7 +337,7 @@ class NCSocket
         {
             return false;
         }
-        const DataStructures::AddressType Addr = DataStructures::GetAddressType(ip, port);
+        const DataTypes::Address Addr = DataTypes::GetAddress(ip, port);
         if (Addr.AddrLength == sizeof(sockaddr_in) && m_Tx[IPVERSION_4] != nullptr)
         {
             return m_Tx[IPVERSION_4]->Send(Addr, buff, size);
@@ -355,7 +355,7 @@ class NCSocket
         {
             return false;
         }
-        const DataStructures::AddressType Addr = DataStructures::GetAddressType(ip, port);
+        const DataTypes::Address Addr = DataTypes::GetAddress(ip, port);
         if (Addr.AddrLength == sizeof(sockaddr_in) && m_Tx[IPVERSION_4] != nullptr)
         {
             return m_Tx[IPVERSION_4]->Flush(Addr);
@@ -373,7 +373,7 @@ class NCSocket
         {
             return;
         }
-        const DataStructures::AddressType Addr = DataStructures::GetAddressType(ip, port);
+        const DataTypes::Address Addr = DataTypes::GetAddress(ip, port);
         if (Addr.AddrLength == sizeof(sockaddr_in) && m_Tx[IPVERSION_4] != nullptr)
         {
             m_Tx[IPVERSION_4]->Flush(Addr);
