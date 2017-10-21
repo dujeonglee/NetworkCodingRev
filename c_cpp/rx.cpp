@@ -379,7 +379,20 @@ bool ReceptionBlock::Decoding()
                         else
                         {
                             std::unique_lock<std::mutex> Lock(c_Reception->m_PacketQueueLock);
-                            c_Reception->m_PacketQueue.push_back(std::tuple<DataTypes::Address, uint8_t *>(c_Session->m_SenderAddress, pkt));
+                            do
+                            {
+                                try
+                                {
+                                    TEST_EXCEPTION(std::bad_alloc());
+                                    c_Reception->m_PacketQueue.push_back(std::tuple<DataTypes::Address, uint8_t *>(c_Session->m_SenderAddress, pkt));
+                                    break;
+                                }
+                                catch (std::bad_alloc &ex)
+                                {
+                                    EXCEPTION_PRINT;
+                                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                                }
+                            } while (1);
                             c_Reception->m_Condition.notify_one();
                         }
                     });
@@ -464,7 +477,20 @@ void ReceptionBlock::Receive(uint8_t *const buffer, const uint16_t length, const
                                     else
                                     {
                                         std::unique_lock<std::mutex> Lock(c_Reception->m_PacketQueueLock);
-                                        c_Reception->m_PacketQueue.push_back(std::tuple<DataTypes::Address, uint8_t *>(c_Session->m_SenderAddress, pkt));
+                                        do
+                                        {
+                                            try
+                                            {
+                                                TEST_EXCEPTION(std::bad_alloc());
+                                                c_Reception->m_PacketQueue.push_back(std::tuple<DataTypes::Address, uint8_t *>(c_Session->m_SenderAddress, pkt));
+                                                break;
+                                            }
+                                            catch (std::bad_alloc &ex)
+                                            {
+                                                EXCEPTION_PRINT;
+                                                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                                            }
+                                        } while (1);
                                         c_Reception->m_Condition.notify_one();
                                     }
                                 });
@@ -549,7 +575,20 @@ void ReceptionBlock::Receive(uint8_t *const buffer, const uint16_t length, const
                                                 else
                                                 {
                                                     std::unique_lock<std::mutex> Lock(c_Reception->m_PacketQueueLock);
-                                                    c_Reception->m_PacketQueue.push_back(std::tuple<DataTypes::Address, uint8_t *>(c_Session->m_SenderAddress, pkt));
+                                                    do
+                                                    {
+                                                        try
+                                                        {
+                                                            TEST_EXCEPTION(std::bad_alloc());
+                                                            c_Reception->m_PacketQueue.push_back(std::tuple<DataTypes::Address, uint8_t *>(c_Session->m_SenderAddress, pkt));
+                                                            break;
+                                                        }
+                                                        catch (std::bad_alloc &ex)
+                                                        {
+                                                            EXCEPTION_PRINT;
+                                                            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                                                        }
+                                                    } while (1);
                                                     c_Reception->m_Condition.notify_one();
                                                 }
                                             });
@@ -629,7 +668,20 @@ void ReceptionSession::Receive(uint8_t *const buffer, const uint16_t length, con
                                         else
                                         {
                                             std::unique_lock<std::mutex> Lock(c_Reception->m_PacketQueueLock);
-                                            c_Reception->m_PacketQueue.push_back(std::tuple<DataTypes::Address, uint8_t *>(m_SenderAddress, pkt));
+                                            do
+                                            {
+                                                try
+                                                {
+                                                    TEST_EXCEPTION(std::bad_alloc());
+                                                    c_Reception->m_PacketQueue.push_back(std::tuple<DataTypes::Address, uint8_t *>(m_SenderAddress, pkt));
+                                                    break;
+                                                }
+                                                catch (std::bad_alloc &ex)
+                                                {
+                                                    EXCEPTION_PRINT;
+                                                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                                                }
+                                            } while (1);
                                             c_Reception->m_Condition.notify_one();
                                         }
                                     });
