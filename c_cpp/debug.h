@@ -10,7 +10,7 @@
 #define TEST_DROP                                     \
     if (std::rand() % (DROP_RATE) == (DROP_RATE - 1)) \
     {                                                 \
-        continue;                                     \
+        return true;                                  \
     }
 #else
 #define TEST_DROP while (0)
