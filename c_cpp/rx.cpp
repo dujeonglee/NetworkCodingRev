@@ -313,31 +313,31 @@ bool ReceptionBlock::Decoding()
             {
                 if (length - decodingposition > 128)
                 {
-                    Decoding128(DecodeOut.back().get(), m_DecodedPacketBuffer, m_DecodingMatrix, decodingposition, i, row);
+                    DecodingPacket<128>::Run(DecodeOut, m_DecodedPacketBuffer, m_DecodingMatrix, decodingposition, i, row);
                 }
                 else if (length - decodingposition > 64)
                 {
-                    Decoding64(DecodeOut.back().get(), m_DecodedPacketBuffer, m_DecodingMatrix, decodingposition, i, row);
+                    DecodingPacket<64>::Run(DecodeOut, m_DecodedPacketBuffer, m_DecodingMatrix, decodingposition, i, row);
                 }
                 else if (length - decodingposition > 32)
                 {
-                    Decoding32(DecodeOut.back().get(), m_DecodedPacketBuffer, m_DecodingMatrix, decodingposition, i, row);
+                    DecodingPacket<32>::Run(DecodeOut, m_DecodedPacketBuffer, m_DecodingMatrix, decodingposition, i, row);
                 }
                 else if (length - decodingposition > 16)
                 {
-                    Decoding16(DecodeOut.back().get(), m_DecodedPacketBuffer, m_DecodingMatrix, decodingposition, i, row);
+                    DecodingPacket<16>::Run(DecodeOut, m_DecodedPacketBuffer, m_DecodingMatrix, decodingposition, i, row);
                 }
                 else if (length - decodingposition > 8)
                 {
-                    Decoding8(DecodeOut.back().get(), m_DecodedPacketBuffer, m_DecodingMatrix, decodingposition, i, row);
+                    DecodingPacket<8>::Run(DecodeOut, m_DecodedPacketBuffer, m_DecodingMatrix, decodingposition, i, row);
                 }
                 else if (length - decodingposition > 4)
                 {
-                    Decoding4(DecodeOut.back().get(), m_DecodedPacketBuffer, m_DecodingMatrix, decodingposition, i, row);
+                    DecodingPacket<4>::Run(DecodeOut, m_DecodedPacketBuffer, m_DecodingMatrix, decodingposition, i, row);
                 }
                 else if (length - decodingposition > 2)
                 {
-                    Decoding2(DecodeOut.back().get(), m_DecodedPacketBuffer, m_DecodingMatrix, decodingposition, i, row);
+                    DecodingPacket<2>::Run(DecodeOut, m_DecodedPacketBuffer, m_DecodingMatrix, decodingposition, i, row);
                 }
                 else
                 {

@@ -210,31 +210,31 @@ const bool TransmissionBlock::Retransmission()
             {
                 if (length - CodingOffset > 128)
                 {
-                    Encoding128(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
+                    EncodingPacket<128>::Run(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
                 }
                 else if (length - CodingOffset > 64)
                 {
-                    Encoding64(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
+                    EncodingPacket<64>::Run(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
                 }
                 else if (length - CodingOffset > 32)
                 {
-                    Encoding32(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
+                    EncodingPacket<32>::Run(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
                 }
                 else if (length - CodingOffset > 16)
                 {
-                    Encoding16(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
+                    EncodingPacket<16>::Run(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
                 }
                 else if (length - CodingOffset > 8)
                 {
-                    Encoding8(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
+                    EncodingPacket<8>::Run(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
                 }
                 else if (length - CodingOffset > 4)
                 {
-                    Encoding4(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
+                    EncodingPacket<4>::Run(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
                 }
                 else if (length - CodingOffset > 2)
                 {
-                    Encoding2(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
+                    EncodingPacket<2>::Run(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
                 }
                 else
                 {
