@@ -33,7 +33,6 @@ public:
   TransmissionBlock &operator=(const TransmissionBlock &) = delete;
   TransmissionBlock &operator=(TransmissionBlock &&) = delete;
 
-  const uint16_t AckIndex();
   bool Send(uint8_t *const buffer, const uint16_t buffersize);
   const bool Retransmission();
 };
@@ -47,7 +46,8 @@ public:
   std::atomic<bool> m_IsConnected;
   std::atomic<uint16_t> m_MinBlockSequenceNumber;
   std::atomic<uint16_t> m_MaxBlockSequenceNumber;
-  std::atomic<bool> m_AckList[Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION * 2];
+  std::set<uint16_t> m_AckList;
+  std::mutex m_AckListLock;
   uint16_t m_RetransmissionRedundancy;
   uint16_t m_RetransmissionInterval;
   uint8_t m_TransmissionMode;
