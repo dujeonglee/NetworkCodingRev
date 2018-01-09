@@ -126,11 +126,11 @@ const bool TransmissionBlock::Retransmission()
     }
     {
         std::unique_lock<std::mutex> acklock(p_Session->m_AckListLock);
-        if (p_Session->m_AckList.find(m_BlockSequenceNumber) == std::set::end)
+        if (p_Session->m_AckList.find(m_BlockSequenceNumber) == p_Session->m_AckList.end())
         {
             for (uint16_t i = p_Session->m_MinBlockSequenceNumber; i != p_Session->m_MaxBlockSequenceNumber; i++)
             {
-                if (p_Session->m_AckList.find(i) == std::set::end)
+                if (p_Session->m_AckList.find(i) == p_Session->m_AckList.end())
                 {
                     p_Session->m_MinBlockSequenceNumber++;
                 }
@@ -361,8 +361,8 @@ void TransmissionSession::ProcessDataAck(const uint16_t sequence, const uint8_t 
     m_Timer.ImmediateTask(
         [this, sequence, loss]() -> void {
             {
-                std::unqiue_lock<std::mutex> acklock(m_AckListLock);
-                if (m_AckList.find(sequence) == std::set::end)
+                std::unique_lock<std::mutex> acklock(m_AckListLock);
+                if (m_AckList.find(sequence) == m_AckList.end())
                 {
                     return;
                 }
