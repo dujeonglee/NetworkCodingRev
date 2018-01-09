@@ -208,11 +208,7 @@ const bool TransmissionBlock::Retransmission()
             uint16_t CodingOffset = Header::Data::OffSets::CodingOffset;
             while (CodingOffset < length)
             {
-                if (length - CodingOffset > 1024)
-                {
-                    EncodingPacket<1024>::Run(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
-                }
-                else if (length - CodingOffset > 512)
+                if (length - CodingOffset > 512)
                 {
                     EncodingPacket<512>::Run(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
                 }

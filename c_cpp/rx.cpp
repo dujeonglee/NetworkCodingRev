@@ -311,11 +311,7 @@ bool ReceptionBlock::Decoding()
             uint32_t decodingposition = Header::Data::CodingOffset;
             while (decodingposition < length)
             {
-                if (length - decodingposition > 1024)
-                {
-                    DecodingPacket<1024>::Run(DecodeOut, m_DecodedPacketBuffer, m_DecodingMatrix, decodingposition, i, row);
-                }
-                else if (length - decodingposition > 512)
+                if (length - decodingposition > 512)
                 {
                     DecodingPacket<512>::Run(DecodeOut, m_DecodedPacketBuffer, m_DecodingMatrix, decodingposition, i, row);
                 }
