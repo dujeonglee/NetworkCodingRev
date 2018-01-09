@@ -26,7 +26,7 @@ void SendFunction(const char * local_port, const char * remote_ip, const char * 
         exit(-1);
     }
 
-    unsigned char buffer[1424];
+    unsigned char buffer[1024];
     size_t readbytes;
     Send(handle, remote_ip, remote_port, (unsigned char *)filename, strlen(filename));
     while ((readbytes = fread(buffer, 1, sizeof(buffer), p_File)) > 0)
