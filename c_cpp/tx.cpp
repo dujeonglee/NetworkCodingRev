@@ -358,7 +358,14 @@ void TransmissionSession::ProcessPong(const uint16_t rtt)
 {
     m_Timer.ImmediateTask(
         [this, rtt]() -> void {
-            m_RetransmissionInterval = (m_RetransmissionInterval + rtt) / 2;
+            if (rtt < Parameter::MINIMUM_RETRANSMISSION_INTERVAL)
+            {
+                m_RetransmissionInterval = (m_RetransmissionInterval + Parameter::MINIMUM_RETRANSMISSION_INTERVAL) / 2;
+            }
+            else
+            {
+                m_RetransmissionInterval = (m_RetransmissionInterval + rtt) / 2;
+            }
         });
 }
 
@@ -691,14 +698,7 @@ void Transmission::RxHandler(uint8_t *const buffer, const uint16_t size, const s
             (*pp_session)->m_LastPongTime = CLOCK::now().time_since_epoch().count();
             CLOCK::time_point const RecvTime(CLOCK::duration((*pp_session)->m_LastPongTime));
             std::chrono::duration<double> rtt = std::chrono::duration_cast<std::chrono::duration<double>>(RecvTime - SentTime);
-            if (rtt.count() * 1000 < Parameter::MINIMUM_RETRANSMISSION_INTERVAL)
-            {
-                (*pp_session)->ProcessPong(Parameter::MINIMUM_RETRANSMISSION_INTERVAL);
-            }
-            else
-            {
-                (*pp_session)->ProcessPong((uint16_t)(rtt.count() * 1000.));
-            }
+            (*pp_session)->ProcessPong((uint16_t)(rtt.count() * 1000.));
         }
     }
     break;
