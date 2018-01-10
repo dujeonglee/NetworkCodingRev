@@ -32,7 +32,6 @@ TransmissionBlock::~TransmissionBlock()
     }
     m_OriginalPacketBuffer.clear();
     p_Session->m_ConcurrentRetransmissions--;
-    std::cout << "Tx Cnt " << 0 + m_TransmissionCount << std::endl;
 }
 
 bool TransmissionBlock::Send(uint8_t *const buffer, const uint16_t buffersize)
