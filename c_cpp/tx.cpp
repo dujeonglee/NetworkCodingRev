@@ -18,19 +18,21 @@ TransmissionBlock::TransmissionBlock(TransmissionSession *const p_session) : p_S
     p_Session->m_ConcurrentRetransmissions++;
     m_LargestOriginalPacketSize = 0;
     m_TransmissionCount = 0;
-    p_Session->m_AckList[AckIndex()] = false;
+    {
+        std::unique_lock<std::mutex> acklock(p_Session->m_AckListLock);
+        p_Session->m_AckList.insert(m_BlockSequenceNumber);
+    }
 }
 
 TransmissionBlock::~TransmissionBlock()
 {
-    p_Session->m_AckList[AckIndex()] = true;
+    {
+        std::unique_lock<std::mutex> acklock(p_Session->m_AckListLock);
+        p_Session->m_AckList.erase(m_BlockSequenceNumber);
+    }
     m_OriginalPacketBuffer.clear();
     p_Session->m_ConcurrentRetransmissions--;
-}
-
-const uint16_t TransmissionBlock::AckIndex()
-{
-    return m_BlockSequenceNumber % (Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION * 2);
+    std::cout << "Tx Cnt " << 0 + m_TransmissionCount << std::endl;
 }
 
 bool TransmissionBlock::Send(uint8_t *const buffer, const uint16_t buffersize)
@@ -115,29 +117,37 @@ bool TransmissionBlock::Send(uint8_t *const buffer, const uint16_t buffersize)
 // OK
 const bool TransmissionBlock::Retransmission()
 {
-    const uint8_t c_AckIndex = AckIndex();
     if (m_TransmissionMode == Parameter::BEST_EFFORT_TRANSMISSION_MODE)
     {
         if (m_TransmissionCount >= m_OriginalPacketBuffer.size() + m_RetransmissionRedundancy)
         {
-            p_Session->m_AckList[c_AckIndex] = true;
+            std::unique_lock<std::mutex> acklock(p_Session->m_AckListLock);
+            p_Session->m_AckList.erase(m_BlockSequenceNumber);
         }
     }
-    if (p_Session->m_AckList[c_AckIndex] == true)
     {
-        for (uint16_t i = p_Session->m_MinBlockSequenceNumber; i != p_Session->m_MaxBlockSequenceNumber; i++)
+        std::unique_lock<std::mutex> acklock(p_Session->m_AckListLock);
+        if (p_Session->m_AckList.find(m_BlockSequenceNumber) == p_Session->m_AckList.end())
         {
-            if (p_Session->m_AckList[i % (Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION * 2)] == true)
+            for (uint16_t i = p_Session->m_MinBlockSequenceNumber; i != p_Session->m_MaxBlockSequenceNumber; i++)
             {
-                p_Session->m_MinBlockSequenceNumber++;
+                if (p_Session->m_AckList.find(i) == p_Session->m_AckList.end())
+                {
+                    p_Session->m_MinBlockSequenceNumber++;
+                }
+                else
+                {
+                    break;
+                }
             }
-            else
-            {
-                break;
-            }
+            /**
+             * ~TransmissionBlock require m_AckListLock.
+             * Therefore, we must release the lock before calling dtor.
+             **/
+            acklock.unlock();
+            delete this;
+            return false;
         }
-        delete this;
-        return false;
     }
     if (p_Session->m_IsConnected == false)
     {
@@ -271,9 +281,9 @@ TransmissionSession::TransmissionSession(Transmission *const transmission, const
     m_MinBlockSequenceNumber = 0;
     m_MaxBlockSequenceNumber = 0;
     p_TransmissionBlock = nullptr;
-    for (uint32_t i = 0; i < (Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION * 2); i++)
     {
-        m_AckList[i] = true;
+        std::unique_lock<std::mutex> acklock(m_AckListLock);
+        m_AckList.clear();
     }
     m_ConcurrentRetransmissions = 0;
     m_IsConnected = false;
@@ -356,11 +366,14 @@ void TransmissionSession::ProcessDataAck(const uint16_t sequence, const uint8_t 
 {
     m_Timer.ImmediateTask(
         [this, sequence, loss]() -> void {
-            if (m_AckList[sequence % (Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION * 2)] == true)
             {
-                return;
+                std::unique_lock<std::mutex> acklock(m_AckListLock);
+                if (m_AckList.find(sequence) == m_AckList.end())
+                {
+                    return;
+                }
+                m_AckList.erase(sequence);
             }
-            m_AckList[sequence % (Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION * 2)] = true;
             /* To-Do */
             // Update the Avg. loss rate.
         },
