@@ -499,8 +499,7 @@ bool Transmission::Send(const DataTypes::Address Addr, uint8_t *buffer, uint16_t
 
     std::atomic<bool> TransmissionIsCompleted(false);
     std::atomic<bool> TransmissionResult(false);
-    while (p_session->m_ConcurrentRetransmissions >= Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION ||
-           (uint16_t)(p_session->m_MaxBlockSequenceNumber - p_session->m_MinBlockSequenceNumber) >= (uint16_t)Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION)
+    while (p_session->m_ConcurrentRetransmissions >= Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION)
     {
         if (!p_session->m_IsConnected)
         {
