@@ -80,8 +80,9 @@ struct Data : Common
 
 struct DataAck : Common
 {
-    uint16_t m_Sequence;
     uint8_t m_Losses; /*1*/
+    uint8_t m_Sequences;
+    uint16_t m_SequenceList[255];
 } __attribute__((packed, may_alias));
 
 struct Sync : Common

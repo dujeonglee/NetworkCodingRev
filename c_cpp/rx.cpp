@@ -432,13 +432,7 @@ void ReceptionBlock::Receive(uint8_t *const buffer, const uint16_t length, const
     Header::Data *const DataHeader = reinterpret_cast<Header::Data *>(buffer);
     if (m_DecodingReady)
     {
-        Header::DataAck ack;
-        ack.m_Type = Header::Common::HeaderType::DATA_ACK;
-        ack.m_CheckSum = 0;
-        ack.m_Sequence = DataHeader->m_CurrentBlockSequenceNumber;
-        ack.m_Losses = DataHeader->m_TxCount - DataHeader->m_ExpectedRank;
-        ack.m_CheckSum = Checksum::get(reinterpret_cast<uint8_t *>(&ack), sizeof(ack));
-        sendto(c_Reception->c_Socket, (uint8_t *)&ack, sizeof(ack), 0, (sockaddr *)sender_addr, sender_addr_len);
+        c_Session->SendDataAck(DataHeader, sender_addr, sender_addr_len);
         return;
     }
     switch (FindAction(buffer, length))
@@ -614,13 +608,7 @@ void ReceptionBlock::Receive(uint8_t *const buffer, const uint16_t length, const
                     }
                 }
             }
-            Header::DataAck ack;
-            ack.m_Type = Header::Common::HeaderType::DATA_ACK;
-            ack.m_CheckSum = 0;
-            ack.m_Sequence = DataHeader->m_CurrentBlockSequenceNumber;
-            ack.m_Losses = DataHeader->m_TxCount - DataHeader->m_ExpectedRank;
-            ack.m_CheckSum = Checksum::get(reinterpret_cast<uint8_t *>(&ack), sizeof(ack));
-            sendto(c_Reception->c_Socket, (uint8_t *)&ack, sizeof(ack), 0, (sockaddr *)sender_addr, sender_addr_len);
+            c_Session->SendDataAck(DataHeader, sender_addr, sender_addr_len);
         }
         break;
     }
@@ -636,6 +624,35 @@ ReceptionSession::ReceptionSession(Reception *const Session, const DataTypes::Ad
 ReceptionSession::~ReceptionSession()
 {
     m_Blocks.DoSomethingOnAllData([](ReceptionBlock *&block) { delete block; });
+}
+
+void ReceptionSession::SendDataAck(const Header::Data *const header, const sockaddr *const sender_addr, const uint32_t sender_addr_len)
+{
+    Header::DataAck ack;
+    const uint16_t MIN_BLOCK_SEQUENCE = ntohs(header->m_MinBlockSequenceNumber);
+    const uint16_t MAX_BLOCK_SEQUENCE = ntohs(header->m_MaxBlockSequenceNumber);
+
+    ack.m_Type = Header::Common::HeaderType::DATA_ACK;
+    ack.m_Losses = header->m_TxCount - header->m_ExpectedRank;
+    ack.m_Sequences = 0;
+    for (uint16_t i = MIN_BLOCK_SEQUENCE; i <= MAX_BLOCK_SEQUENCE; i++)
+    {
+        ReceptionBlock **const blk = m_Blocks.GetPtr(i);
+        if (blk && (*blk)->m_DecodingReady)
+        {
+            ack.m_SequenceList[ack.m_Sequences++] = htons(i);
+        }
+        if (ack.m_Sequences == 255)
+        {
+            ack.m_CheckSum = 0;
+            ack.m_CheckSum = Checksum::get(reinterpret_cast<uint8_t *>(&ack), sizeof(ack));
+            sendto(c_Reception->c_Socket, (uint8_t *)&ack, sizeof(ack), 0, (sockaddr *)sender_addr, sender_addr_len);
+            ack.m_Sequences = 0;
+        }
+    }
+    ack.m_CheckSum = 0;
+    ack.m_CheckSum = Checksum::get(reinterpret_cast<uint8_t *>(&ack), sizeof(ack) - (255 - ack.m_Sequences) * sizeof(uint16_t));
+    sendto(c_Reception->c_Socket, (uint8_t *)&ack, sizeof(ack) - (255 - ack.m_Sequences) * sizeof(uint16_t), 0, (sockaddr *)sender_addr, sender_addr_len);
 }
 
 void ReceptionSession::Receive(uint8_t *const buffer, const uint16_t length, const sockaddr *const sender_addr, const uint32_t sender_addr_len)
@@ -723,13 +740,7 @@ void ReceptionSession::Receive(uint8_t *const buffer, const uint16_t length, con
         ReceptionBlock **const pp_block = m_Blocks.GetPtr(ntohs(DataHeader->m_CurrentBlockSequenceNumber));
         if (pp_block && (*pp_block)->m_DecodingReady)
         {
-            Header::DataAck ack;
-            ack.m_Type = Header::Common::HeaderType::DATA_ACK;
-            ack.m_CheckSum = 0;
-            ack.m_Sequence = DataHeader->m_CurrentBlockSequenceNumber;
-            ack.m_Losses = DataHeader->m_TxCount - DataHeader->m_ExpectedRank;
-            ack.m_CheckSum = Checksum::get(reinterpret_cast<uint8_t *>(&ack), sizeof(ack));
-            sendto(c_Reception->c_Socket, (uint8_t *)&ack, sizeof(ack), 0, (sockaddr *)sender_addr, sender_addr_len);
+            SendDataAck(DataHeader, sender_addr, sender_addr_len);
         }
         return;
     }
