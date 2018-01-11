@@ -629,8 +629,8 @@ ReceptionSession::~ReceptionSession()
 void ReceptionSession::SendDataAck(const Header::Data *const header, const sockaddr *const sender_addr, const uint32_t sender_addr_len)
 {
     Header::DataAck ack;
-    const uint16_t MIN_BLOCK_SEQUENCE = ntohs(header->m_MinBlockSequenceNumber);
-    const uint16_t MAX_BLOCK_SEQUENCE = ntohs(header->m_MaxBlockSequenceNumber);
+    const uint16_t MIN_BLOCK_SEQUENCE = (ntohs(header->m_MinBlockSequenceNumber) < m_MinSequenceNumberAwaitingAck?ntohs(header->m_MinBlockSequenceNumber):m_MinSequenceNumberAwaitingAck);
+    const uint16_t MAX_BLOCK_SEQUENCE = (ntohs(header->m_MaxBlockSequenceNumber) > m_MaxSequenceNumberAwaitingAck?ntohs(header->m_MaxBlockSequenceNumber):m_MaxSequenceNumberAwaitingAck);
 
     ack.m_Type = Header::Common::HeaderType::DATA_ACK;
     ack.m_Losses = header->m_TxCount - header->m_ExpectedRank;
