@@ -667,14 +667,10 @@ void Transmission::RxHandler(uint8_t *const buffer, const uint16_t size, const s
         TransmissionSession **const pp_session = m_Sessions.GetPtr(key);
         if (pp_session)
         {
-            std::cout<<"Ack ";
             for (uint8_t i = 0; i < Ack->m_Sequences; i++)
             {
-                std::cout<<ntohs(Ack->m_SequenceList[i])<<" ";
                 (*pp_session)->ProcessDataAck(ntohs(Ack->m_SequenceList[i]), Ack->m_Losses);
             }
-            std::cout<<"Loss "<<0+Ack->m_Losses;
-            std::cout<<std::endl;
         }
     }
     break;
