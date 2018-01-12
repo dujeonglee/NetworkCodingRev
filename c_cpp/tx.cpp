@@ -22,6 +22,7 @@ TransmissionBlock::TransmissionBlock(TransmissionSession *const p_session) : p_S
         std::unique_lock<std::mutex> acklock(p_Session->m_AckListLock);
         p_Session->m_AckList.insert(m_BlockSequenceNumber);
     }
+    std::cout << "Start Seq: " << m_BlockSequenceNumber << std::endl;
 }
 
 TransmissionBlock::~TransmissionBlock()
@@ -32,6 +33,7 @@ TransmissionBlock::~TransmissionBlock()
     }
     m_OriginalPacketBuffer.clear();
     p_Session->m_ConcurrentRetransmissions--;
+    std::cout << "End Seq: " << m_BlockSequenceNumber << std::endl;
 }
 
 bool TransmissionBlock::Send(uint8_t *const buffer, const uint16_t buffersize)
@@ -377,14 +379,17 @@ void TransmissionSession::ProcessDataAck(const uint8_t Sequences, const uint16_t
         [this, Seq, Loss]() -> void {
             {
                 std::unique_lock<std::mutex> acklock(m_AckListLock);
+                std::cout << "Ack ";
                 for (uint8_t i = 0; i < Seq.size(); i++)
                 {
+                    std::cout << ntohs(Seq[i]) << " ";
                     if (m_AckList.find(ntohs(Seq[i])) == m_AckList.end())
                     {
                         continue;
                     }
                     m_AckList.erase(ntohs(Seq[i]));
                 }
+                std::cout << std::endl;
             }
             /* To-Do */
             // Update the Avg. loss rate.
@@ -505,7 +510,7 @@ bool Transmission::Send(const DataTypes::Address Addr, uint8_t *buffer, uint16_t
 
     std::atomic<bool> TransmissionIsCompleted(false);
     std::atomic<bool> TransmissionResult(false);
-    while (p_session->m_ConcurrentRetransmissions >= Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION)
+    while (p_session->m_ConcurrentRetransmissions >= Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION + 1)
     {
         if (!p_session->m_IsConnected)
         {

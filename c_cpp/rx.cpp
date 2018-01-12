@@ -629,8 +629,24 @@ ReceptionSession::~ReceptionSession()
 void ReceptionSession::SendDataAck(const Header::Data *const header, const sockaddr *const sender_addr, const uint32_t sender_addr_len)
 {
     Header::DataAck ack;
-    const uint16_t MIN_BLOCK_SEQUENCE = (ntohs(header->m_MinBlockSequenceNumber) < m_MinSequenceNumberAwaitingAck?ntohs(header->m_MinBlockSequenceNumber):m_MinSequenceNumberAwaitingAck);
-    const uint16_t MAX_BLOCK_SEQUENCE = (ntohs(header->m_MaxBlockSequenceNumber) > m_MaxSequenceNumberAwaitingAck?ntohs(header->m_MaxBlockSequenceNumber):m_MaxSequenceNumberAwaitingAck);
+    uint16_t MIN_BLOCK_SEQUENCE = 0;
+    uint16_t MAX_BLOCK_SEQUENCE = 0;
+    if (m_MinSequenceNumberAwaitingAck - (uint16_t)ntohs(header->m_MinBlockSequenceNumber) > (uint16_t)ntohs(header->m_MinBlockSequenceNumber) - m_MinSequenceNumberAwaitingAck)
+    {
+        MIN_BLOCK_SEQUENCE = m_MinSequenceNumberAwaitingAck;
+    }
+    else
+    {
+        MIN_BLOCK_SEQUENCE = ntohs(header->m_MinBlockSequenceNumber);
+    }
+    if (m_MaxSequenceNumberAwaitingAck - (uint16_t)ntohs(header->m_MaxBlockSequenceNumber) < (uint16_t)ntohs(header->m_MaxBlockSequenceNumber) - m_MaxSequenceNumberAwaitingAck)
+    {
+        MAX_BLOCK_SEQUENCE = m_MaxSequenceNumberAwaitingAck;
+    }
+    else
+    {
+        MAX_BLOCK_SEQUENCE = ntohs(header->m_MaxBlockSequenceNumber);
+    }
 
     ack.m_Type = Header::Common::HeaderType::DATA_ACK;
     ack.m_Losses = header->m_TxCount - header->m_ExpectedRank;
@@ -716,6 +732,12 @@ void ReceptionSession::Receive(uint8_t *const buffer, const uint16_t length, con
                 }
                 m_SequenceNumberForService++;
             }
+
+            if (m_Blocks.GetPtr(m_MinSequenceNumberAwaitingAck) && !(*m_Blocks.GetPtr(m_MinSequenceNumberAwaitingAck))->m_DecodingReady)
+            {
+                break;
+            }
+
             m_Blocks.Remove(m_MinSequenceNumberAwaitingAck, [this](ReceptionBlock *&data) {
                 bool result = false;
                 do
