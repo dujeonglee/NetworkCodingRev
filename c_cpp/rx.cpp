@@ -3,8 +3,7 @@
 #include "encoding_decoding_macro.h"
 #include <cstdlib>
 
-#define STRICTLY_ASCENDING_ORDER(a, b, c) ((uint16_t)((uint16_t)(c) - (uint16_t)(a)) > (uint16_t)((uint16_t)(c) - (uint16_t)(b)))
-
+#define IS_OLD_SEQUENCE(a, b) ((uint16_t)((uint16_t)(a) - (uint16_t)(b)) > (uint16_t)((uint16_t)(b) - (uint16_t)(a)))
 using namespace NetworkCoding;
 
 void PRINT(Header::Data *data)
@@ -675,7 +674,7 @@ void ReceptionSession::Receive(uint8_t *const buffer, const uint16_t length, con
 {
     Header::Data *const DataHeader = reinterpret_cast<Header::Data *>(buffer);
     // update min and max sequence.
-    if (STRICTLY_ASCENDING_ORDER((m_MinSequenceNumberAwaitingAck - 1), m_MinSequenceNumberAwaitingAck, ntohs(DataHeader->m_MinBlockSequenceNumber)))
+    if (IS_OLD_SEQUENCE(m_MinSequenceNumberAwaitingAck, ntohs(DataHeader->m_MinBlockSequenceNumber)))
     {
         for (; m_MinSequenceNumberAwaitingAck != ntohs(DataHeader->m_MinBlockSequenceNumber); m_MinSequenceNumberAwaitingAck++)
         {
@@ -744,11 +743,11 @@ void ReceptionSession::Receive(uint8_t *const buffer, const uint16_t length, con
             });
         }
     }
-    if (STRICTLY_ASCENDING_ORDER((m_MaxSequenceNumberAwaitingAck - 1), m_MaxSequenceNumberAwaitingAck, ntohs(DataHeader->m_MaxBlockSequenceNumber)))
+    if (IS_OLD_SEQUENCE(m_MaxSequenceNumberAwaitingAck, ntohs(DataHeader->m_MaxBlockSequenceNumber)))
     {
         m_MaxSequenceNumberAwaitingAck = ntohs(DataHeader->m_MaxBlockSequenceNumber);
     }
-    if (STRICTLY_ASCENDING_ORDER(ntohs(DataHeader->m_CurrentBlockSequenceNumber), m_MinSequenceNumberAwaitingAck, m_MaxSequenceNumberAwaitingAck))
+    if (IS_OLD_SEQUENCE(ntohs(DataHeader->m_CurrentBlockSequenceNumber), m_MinSequenceNumberAwaitingAck))
     {
         // If the sequence is less than min seq send ack and return.
         // But some packets can be received with significant delay.
