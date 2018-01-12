@@ -8,8 +8,6 @@
 
 using namespace std;
 
-#define USE_RX_CALLBACK (0)
-
 void SendFunction(const char * local_port, const char * remote_ip, const char * remote_port, const char * filename)
 {
     void *handle = InitSocket(local_port, 500, 500, nullptr);
