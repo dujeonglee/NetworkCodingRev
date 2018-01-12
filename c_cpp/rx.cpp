@@ -732,12 +732,6 @@ void ReceptionSession::Receive(uint8_t *const buffer, const uint16_t length, con
                 }
                 m_SequenceNumberForService++;
             }
-
-            if (m_Blocks.GetPtr(m_MinSequenceNumberAwaitingAck) && !(*m_Blocks.GetPtr(m_MinSequenceNumberAwaitingAck))->m_DecodingReady)
-            {
-                break;
-            }
-
             m_Blocks.Remove(m_MinSequenceNumberAwaitingAck, [this](ReceptionBlock *&data) {
                 bool result = false;
                 do
