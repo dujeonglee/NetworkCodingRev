@@ -353,32 +353,38 @@ const bool TransmissionSession::SendPing()
     return true;
 }
 
-void TransmissionSession::ProcessPong(const uint16_t rtt)
+void TransmissionSession::ProcessPong(const uint16_t Rtt)
 {
     m_Timer.ImmediateTask(
-        [this, rtt]() -> void {
-            if (rtt < Parameter::MINIMUM_RETRANSMISSION_INTERVAL)
+        [this, Rtt]() -> void {
+            if (Rtt < Parameter::MINIMUM_RETRANSMISSION_INTERVAL)
             {
                 m_RetransmissionInterval = (m_RetransmissionInterval + Parameter::MINIMUM_RETRANSMISSION_INTERVAL) / 2;
             }
             else
             {
-                m_RetransmissionInterval = (m_RetransmissionInterval + rtt) / 2;
+                m_RetransmissionInterval = (m_RetransmissionInterval + Rtt) / 2;
             }
         });
 }
 
-void TransmissionSession::ProcessDataAck(const uint16_t sequence, const uint8_t loss)
+void TransmissionSession::ProcessDataAck(const uint8_t Sequences, const uint16_t *const Sequencelist, const uint8_t Loss)
 {
+    // the iterator constructor can also be used to construct from arrays:
+    const std::vector<uint16_t> Seq(Sequencelist, Sequencelist + Sequences);
+
     m_Timer.ImmediateTask(
-        [this, sequence, loss]() -> void {
+        [this, Seq, Loss]() -> void {
             {
                 std::unique_lock<std::mutex> acklock(m_AckListLock);
-                if (m_AckList.find(sequence) == m_AckList.end())
+                for (uint8_t i = 0; i < Seq.size(); i++)
                 {
-                    return;
+                    if (m_AckList.find(ntohs(Seq[i])) == m_AckList.end())
+                    {
+                        continue;
+                    }
+                    m_AckList.erase(ntohs(Seq[i]));
                 }
-                m_AckList.erase(sequence);
             }
             /* To-Do */
             // Update the Avg. loss rate.
@@ -666,10 +672,7 @@ void Transmission::RxHandler(uint8_t *const buffer, const uint16_t size, const s
         TransmissionSession **const pp_session = m_Sessions.GetPtr(key);
         if (pp_session)
         {
-            for (uint8_t i = 0; i < Ack->m_Sequences; i++)
-            {
-                (*pp_session)->ProcessDataAck(ntohs(Ack->m_SequenceList[i]), Ack->m_Losses);
-            }
+            (*pp_session)->ProcessDataAck(Ack->m_Sequences, Ack->m_SequenceList, Ack->m_Losses);
         }
     }
     break;

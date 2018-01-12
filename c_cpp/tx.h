@@ -81,8 +81,8 @@ public:
   void ChangeRetransmissionRedundancy(const uint16_t RetransmissionRedundancy);
   void ChangeSessionParameter(const Parameter::TRANSMISSION_MODE TransmissionMode, const Parameter::BLOCK_SIZE BlockSize, const uint16_t RetransmissionRedundancy);
   const bool SendPing();
-  void ProcessPong(const uint16_t rtt);
-  void ProcessDataAck(const uint16_t sequence, const uint8_t loss);
+  void ProcessPong(const uint16_t Rtt);
+  void ProcessDataAck(const uint8_t Sequences, const uint16_t *const Sequencelist, const uint8_t Loss);
   void ProcessSyncAck(const uint16_t sequence);
 };
 
