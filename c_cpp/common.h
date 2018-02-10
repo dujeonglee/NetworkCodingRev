@@ -32,6 +32,8 @@
 
 #include "debug.h"
 
+using namespace dujeonglee::basiclibrary;
+
 namespace NetworkCoding
 {
 namespace Header
