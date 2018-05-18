@@ -15,7 +15,6 @@ TransmissionBlock::TransmissionBlock(TransmissionSession *const p_session) : p_S
                                                                              m_BlockSequenceNumber(p_session->m_MaxBlockSequenceNumber.fetch_add(1, std::memory_order_relaxed)),
                                                                              m_RetransmissionRedundancy(p_session->m_RetransmissionRedundancy)
 {
-    p_Session->m_ConcurrentRetransmissions++;
     m_LargestOriginalPacketSize = 0;
     m_TransmissionCount = 0;
     {
@@ -31,8 +30,20 @@ TransmissionBlock::~TransmissionBlock()
         std::unique_lock<std::mutex> acklock(p_Session->m_AckListLock);
         p_Session->m_AckList.erase(m_BlockSequenceNumber);
     }
+    for (uint32_t i = 0; i < m_OriginalPacketBuffer.size(); i++)
+    {
+        Header::Data *const DataHeader = reinterpret_cast<Header::Data *>(m_OriginalPacketBuffer[i].get());
+        if (p_Session->m_BytesUnacked >= ntohs(DataHeader->m_TotalSize))
+        {
+            p_Session->m_BytesUnacked.fetch_sub(ntohs(DataHeader->m_TotalSize));
+        }
+        else
+        {
+            std::cout << "CWND Error" << std::endl;
+            p_Session->m_BytesUnacked = 0;
+        }
+    }
     m_OriginalPacketBuffer.clear();
-    p_Session->m_ConcurrentRetransmissions--;
     std::cout << "End Seq: " << m_BlockSequenceNumber << std::endl;
 }
 
@@ -93,24 +104,11 @@ bool TransmissionBlock::Send(uint8_t *const buffer, const uint16_t buffersize)
     }
     memcpy(DataHeader->m_Codes + m_BlockSize, buffer, buffersize);
     DataHeader->m_CheckSum = Checksum::get(m_OriginalPacketBuffer[m_TransmissionCount].get(), ntohs(DataHeader->m_TotalSize));
-    sendto(p_Session->c_Socket, m_OriginalPacketBuffer[m_TransmissionCount++].get(), ntohs(DataHeader->m_TotalSize), 0, (sockaddr *)&p_Session->c_Addr.Addr, p_Session->c_Addr.AddrLength);
-
-    if ((m_TransmissionCount == m_BlockSize))
+    //sendto(p_Session->c_Socket, m_OriginalPacketBuffer[m_TransmissionCount++].get(), ntohs(DataHeader->m_TotalSize), 0, (sockaddr *)&p_Session->c_Addr.Addr, p_Session->c_Addr.AddrLength);
+    p_Session->PushDataPacket(m_OriginalPacketBuffer[m_TransmissionCount++].get(), ntohs(DataHeader->m_TotalSize), true, this);
+    if (m_TransmissionCount == m_BlockSize)
     {
         p_Session->p_TransmissionBlock = nullptr;
-        p_Session->m_Timer.PeriodicTaskAdv(
-            [this]() -> std::tuple<bool, uint32_t, uint32_t> {
-                const bool schedulenextretransmission = Retransmission();
-                if (schedulenextretransmission)
-                {
-                    const uint32_t priority = (p_Session->m_MinBlockSequenceNumber == m_BlockSequenceNumber ? TransmissionSession::MIDDLE_PRIORITY : TransmissionSession::LOW_PRIORITY);
-                    return std::make_tuple(schedulenextretransmission, p_Session->m_RetransmissionInterval, priority);
-                }
-                else
-                {
-                    return std::make_tuple(false, 0, 0);
-                }
-            });
     }
     return true;
 }
@@ -265,7 +263,8 @@ const bool TransmissionBlock::Retransmission()
             }
         }
         RemedyHeader->m_CheckSum = Checksum::get(m_RemedyPacketBuffer, ntohs(RemedyHeader->m_TotalSize));
-        sendto(p_Session->c_Socket, m_RemedyPacketBuffer, ntohs(RemedyHeader->m_TotalSize), 0, (sockaddr *)&p_Session->c_Addr.Addr, p_Session->c_Addr.AddrLength);
+        //sendto(p_Session->c_Socket, m_RemedyPacketBuffer, ntohs(RemedyHeader->m_TotalSize), 0, (sockaddr *)&p_Session->c_Addr.Addr, p_Session->c_Addr.AddrLength);
+        p_Session->PushDataPacket(m_RemedyPacketBuffer, ntohs(RemedyHeader->m_TotalSize), false, this);
     }
     return true;
 }
@@ -286,14 +285,30 @@ TransmissionSession::TransmissionSession(Transmission *const transmission, const
         std::unique_lock<std::mutex> acklock(m_AckListLock);
         m_AckList.clear();
     }
-    m_ConcurrentRetransmissions = 0;
+    m_BytesUnacked = 0;
+    m_CongestionWindow = 1024 * 500;
+
     m_IsConnected = false;
+    m_Timer.PeriodicTaskAdv([this]() -> std::tuple<bool, uint32_t, uint32_t> {
+        const bool ret = PopDataPacket();
+        return std::make_tuple(true, (ret ? m_RetransmissionInterval : Parameter::MINIMUM_RETRANSMISSION_INTERVAL), 0);
+    });
+    /* Congestion window......
+    */
 }
 
 /*OK*/
 TransmissionSession::~TransmissionSession()
 {
     m_Timer.Stop();
+    while (m_TxQueue.size())
+    {
+        if (std::get<2>(m_TxQueue.front()) == false)
+        {
+            delete[] std::get<0>(m_TxQueue.front());
+        }
+        m_TxQueue.pop();
+    }
 }
 
 /*OK*/
@@ -409,6 +424,71 @@ void TransmissionSession::ProcessSyncAck(const uint16_t sequence)
         TransmissionSession::HIGH_PRIORITY);
 }
 
+void TransmissionSession::PushDataPacket(uint8_t *const buffer, const uint16_t size, bool orig, TransmissionBlock *const block)
+{
+    /**
+     * We do not count retransmission packets as unacked packet.
+     * Retransmission is transmitted regardless of m_BytesUnacked.
+     */
+    if (orig)
+    {
+        if (m_BytesUnacked >= m_CongestionWindow)
+        {
+            return;
+        }
+        m_BytesUnacked.fetch_add(size);
+    }
+    m_Timer.ImmediateTask(
+        [this, buffer, size, orig, block]() -> void {
+            if (orig)
+            {
+                m_TxQueue.push(std::make_tuple(buffer, size, orig, block));
+            }
+            else
+            {
+                uint8_t *cpy = new uint8_t[size];
+                memcpy(cpy, buffer, size);
+                m_TxQueue.push(std::make_tuple(cpy, size, orig, block));
+            }
+        },
+        TransmissionSession::HIGH_PRIORITY);
+}
+
+bool TransmissionSession::PopDataPacket()
+{
+    if (m_TxQueue.size() == 0)
+    {
+        return false;
+    }
+    const int ret = sendto(c_Socket, std::get<0>(m_TxQueue.front()), std::get<1>(m_TxQueue.front()), 0, (sockaddr *)&c_Addr.Addr, c_Addr.AddrLength);
+    if (ret < 0)
+    {
+        return false;
+    }
+    else
+    {
+        Header::Data *const DataHeader = reinterpret_cast<Header::Data *>(std::get<0>(m_TxQueue.front()));
+        /**
+         * Start retransmission timeout if the packet is FLAGS_END_OF_BLK.
+         */
+        if (DataHeader->m_Flags & Header::Data::FLAGS_END_OF_BLK)
+        {
+            TransmissionBlock *const block = std::get<3>(m_TxQueue.front());
+            m_Timer.ScheduleTaskNoExcept(m_RetransmissionInterval,
+                                         [block]() -> void {
+                                             block->Retransmission();
+                                         },
+                                         (m_MinBlockSequenceNumber == block->m_BlockSequenceNumber ? TransmissionSession::MIDDLE_PRIORITY : TransmissionSession::LOW_PRIORITY));
+        }
+        if (std::get<2>(m_TxQueue.front()) == false)
+        {
+            delete[] std::get<0>(m_TxQueue.front());
+        }
+        m_TxQueue.pop();
+        return true;
+    }
+}
+
 ////////////////////////////////////////////////////////////
 /////////////// Transmission
 /* OK */
@@ -510,7 +590,10 @@ bool Transmission::Send(const DataTypes::Address Addr, uint8_t *buffer, uint16_t
 
     std::atomic<bool> TransmissionIsCompleted(false);
     std::atomic<bool> TransmissionResult(false);
-    while (p_session->m_ConcurrentRetransmissions >= Parameter::MAXIMUM_NUMBER_OF_CONCURRENT_RETRANSMISSION + 1)
+    /**
+     * Block sending until there are availalbe congestion window for this packet.
+     */
+    while (p_session->m_BytesUnacked + buffersize > p_session->m_CongestionWindow)
     {
         if (!p_session->m_IsConnected)
         {
@@ -518,6 +601,7 @@ bool Transmission::Send(const DataTypes::Address Addr, uint8_t *buffer, uint16_t
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
+
     const uint32_t TransmissionIsScheduled = p_session->m_Timer.ImmediateTask(
         [buffer, buffersize, p_session, &TransmissionIsCompleted, &TransmissionResult]() -> void {
             // 1. Get Transmission Block
@@ -583,26 +667,13 @@ bool Transmission::Flush(const DataTypes::Address Addr)
     {
         return false;
     }
-    const uint32_t TaskID = p_session->m_Timer.ImmediateTask(
+    const uint32_t TaskID = p_session->m_Timer.ImmediateTaskNoExcept(
         [p_session]() -> void {
             // 1. Get Transmission Block
             if (p_session->p_TransmissionBlock)
             {
                 TransmissionBlock *const block = p_session->p_TransmissionBlock;
-                p_session->m_Timer.PeriodicTaskAdv(
-                    [p_session, block]() -> std::tuple<bool, uint32_t, uint32_t> {
-                        const bool schedulenextretransmission = block->Retransmission();
-                        if (schedulenextretransmission)
-                        {
-                            const uint32_t priority = (p_session->m_MinBlockSequenceNumber == block->m_BlockSequenceNumber ? TransmissionSession::MIDDLE_PRIORITY : TransmissionSession::LOW_PRIORITY);
-                            return std::make_tuple(schedulenextretransmission, p_session->m_RetransmissionInterval, priority);
-                        }
-                        else
-                        {
-                            return std::make_tuple(false, 0, 0);
-                        }
-                    });
-                p_session->p_TransmissionBlock = nullptr;
+                block->Retransmission();
             }
         },
         TransmissionSession::LOW_PRIORITY);
@@ -629,7 +700,7 @@ void Transmission::WaitUntilTxIsCompleted(const DataTypes::Address Addr)
     {
         return;
     }
-    while (p_session->m_IsConnected && p_session->m_ConcurrentRetransmissions > 0)
+    while (p_session->m_IsConnected && p_session->m_BytesUnacked > 0)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
@@ -649,7 +720,7 @@ void Transmission::Disconnect(const DataTypes::Address Addr)
         }
     }
     (*pp_session)->m_IsConnected = false;
-    while (0 < (*pp_session)->m_ConcurrentRetransmissions)
+    while (0 < (*pp_session)->m_BytesUnacked)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }

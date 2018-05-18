@@ -61,9 +61,11 @@ public:
   };
   SingleShotTimer<TaskPriority::PRIORITY_LEVELS, 1> m_Timer;
   std::atomic<CLOCK::time_point::duration::rep> m_LastPongTime;
+  std::queue<std::tuple<uint8_t *const, const uint16_t, const bool, TransmissionBlock *const>> m_TxQueue;
 
   TransmissionBlock *p_TransmissionBlock;
-  std::atomic<uint32_t> m_ConcurrentRetransmissions;
+  std::atomic<uint32_t> m_CongestionWindow;
+  std::atomic<uint32_t> m_BytesUnacked;
 
   TransmissionSession(Transmission *const transmission, const int32_t Socket, const DataTypes::Address Addr,
                       const Parameter::TRANSMISSION_MODE TransmissionMode = Parameter::TRANSMISSION_MODE::RELIABLE_TRANSMISSION_MODE,
@@ -84,6 +86,8 @@ public:
   void ProcessPong(const uint16_t Rtt);
   void ProcessDataAck(const uint8_t Sequences, const uint16_t *const Sequencelist, const uint8_t Loss);
   void ProcessSyncAck(const uint16_t sequence);
+  void PushDataPacket(uint8_t *const buffer, const uint16_t size, bool orig, TransmissionBlock *const block);
+  bool PopDataPacket();
 };
 
 class Transmission
@@ -111,6 +115,6 @@ public:
 public:
   void RxHandler(uint8_t *const buffer, const uint16_t size, const sockaddr *const sender_addr, const uint32_t sender_addr_len);
 };
-}
+} // namespace NetworkCoding
 
 #endif // TX_H
