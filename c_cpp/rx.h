@@ -69,7 +69,7 @@ public:
 
   ReceptionSession(Reception *const Session, const DataTypes::Address addr);
   ~ReceptionSession();
-  void SendDataAck(const Header::Data *const header, const sockaddr *const sender_addr, const uint32_t sender_addr_len);
+  void SendDataAck(const Header::Data *const header, const sockaddr *const sender_addr, const uint32_t sender_addr_len, const uint8_t completed = 1);
   void Receive(uint8_t *const buffer, const uint16_t length, const sockaddr *const sender_addr, const uint32_t sender_addr_len);
 };
 

@@ -12,7 +12,7 @@
 
 // C++ Standard Library Header
 #include <iostream>
-#include <set>
+#include <map>
 #include <vector>
 #include <queue>
 #include <atomic>
@@ -27,6 +27,7 @@
 // C++ Library Header
 #include "ThreadPool.h"
 #include "AVLTree.h"
+#include "Map.h"
 #include "SingleShotTimer.h"
 #include "finite_field.h"
 
@@ -82,9 +83,9 @@ struct Data : Common
 
 struct DataAck : Common
 {
-    uint8_t m_Losses; /*1*/
-    uint8_t m_Sequences;
-    uint16_t m_SequenceList[255];
+    uint8_t m_Rank;
+    uint8_t m_Losses;
+    uint16_t m_BlockSequenceNumber;
 } __attribute__((packed, may_alias));
 
 struct Sync : Common
@@ -111,6 +112,7 @@ const uint16_t MAXIMUM_BUFFER_SIZE = 1500;                     /* 1500 Bytes */
 const uint16_t PING_INTERVAL = 100;                            /* 100 ms     */
 const double CONNECTION_TIMEOUT = 10.0;                        /* 10 s       */
 const uint16_t MINIMUM_RETRANSMISSION_INTERVAL = 10;           /* 10 ms      */
+const uint32_t MINIMUN_CONGESTION_WINDOW_SIZE = 1000*10;          /*  10KB      */
 enum TRANSMISSION_MODE : uint8_t
 {
     RELIABLE_TRANSMISSION_MODE = 0,

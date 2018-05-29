@@ -20,6 +20,7 @@ public:
   const uint16_t m_RetransmissionRedundancy;
   uint16_t m_LargestOriginalPacketSize;
   uint8_t m_TransmissionCount;
+  uint8_t m_AckedRank;
 
   uint8_t m_RemedyPacketBuffer[Parameter::MAXIMUM_BUFFER_SIZE];
   std::vector<std::unique_ptr<uint8_t[]>> m_OriginalPacketBuffer;
@@ -46,10 +47,10 @@ public:
   std::atomic<bool> m_IsConnected;
   std::atomic<uint16_t> m_MinBlockSequenceNumber;
   std::atomic<uint16_t> m_MaxBlockSequenceNumber;
-  std::set<uint16_t> m_AckList;
+  std::map<int32_t, int16_t> m_AckList;
   std::mutex m_AckListLock;
+  uint16_t m_RoundTripTime;
   uint16_t m_RetransmissionRedundancy;
-  uint16_t m_RetransmissionInterval;
   uint8_t m_TransmissionMode;
   uint8_t m_BlockSize;
   enum TaskPriority
@@ -84,10 +85,10 @@ public:
   void ChangeSessionParameter(const Parameter::TRANSMISSION_MODE TransmissionMode, const Parameter::BLOCK_SIZE BlockSize, const uint16_t RetransmissionRedundancy);
   const bool SendPing();
   void ProcessPong(const uint16_t Rtt);
-  void ProcessDataAck(const uint8_t Sequences, const uint16_t *const Sequencelist, const uint8_t Loss);
+  void ProcessDataAck(const uint8_t Rank, const uint8_t Loss, const uint16_t Sequence);
   void ProcessSyncAck(const uint16_t sequence);
   void PushDataPacket(uint8_t *const buffer, const uint16_t size, bool orig, TransmissionBlock *const block);
-  bool PopDataPacket();
+  uint16_t PopDataPacket();
 };
 
 class Transmission
