@@ -210,7 +210,7 @@ const bool TransmissionBlock::Retransmission()
         RemedyHeader->m_CurrentBlockSequenceNumber = htons(m_BlockSequenceNumber);
         RemedyHeader->m_MaxBlockSequenceNumber = htons(p_Session->m_MaxBlockSequenceNumber.load());
         RemedyHeader->m_ExpectedRank = m_OriginalPacketBuffer.size();
-        RemedyHeader->m_MaximumRank = m_BlockSize;
+        RemedyHeader->m_MaximumRank = m_OriginalPacketBuffer.size();
         RemedyHeader->m_Flags = Header::Data::FLAGS_END_OF_BLK;
         RemedyHeader->m_TxCount = ++m_TransmissionCount;
         RemedyHeader->m_CheckSum = 0;
@@ -308,10 +308,6 @@ TransmissionSession::~TransmissionSession()
         }
         m_TxQueue.pop();
     }
-    {
-        std::unique_lock<std::mutex> acklock(m_AckListLock);
-        m_AckList.clear();
-    }
 }
 
 /*OK*/
@@ -388,11 +384,11 @@ void TransmissionSession::ProcessPong(const uint16_t Rtt)
         });
 }
 
-void TransmissionSession::ProcessDataAck(const uint8_t Rank, const uint8_t Loss, const uint16_t Sequence)
+void TransmissionSession::ProcessDataAck(const uint8_t Rank, const uint8_t MaxRank, const uint8_t Loss, const uint16_t Sequence)
 {
     // the iterator constructor can also be used to construct from arrays:
     m_Timer.ImmediateTask(
-        [this, Rank, Loss, Sequence]() -> void {
+        [this, Rank, MaxRank, Loss, Sequence]() -> void {
             {
                 std::map<int32_t,int16_t>::iterator it;
                 std::unique_lock<std::mutex> acklock(m_AckListLock);
@@ -401,6 +397,10 @@ void TransmissionSession::ProcessDataAck(const uint8_t Rank, const uint8_t Loss,
                 if (it != m_AckList.end())
                 {
                     it->second = Rank;
+                }
+                if(it->second >= MaxRank)
+                {
+                    m_AckList.erase(it);
                 }
             }
             /* To-Do */
@@ -695,6 +695,7 @@ bool Transmission::Flush(const DataTypes::Address Addr)
             {
                 TransmissionBlock *const block = p_session->p_TransmissionBlock;
                 block->Retransmission();
+                p_session->p_TransmissionBlock = nullptr;
             }
         },
         TransmissionSession::LOW_PRIORITY);
@@ -769,7 +770,7 @@ void Transmission::RxHandler(uint8_t *const buffer, const uint16_t size, const s
         TransmissionSession **const pp_session = m_Sessions.GetPtr(key);
         if (pp_session)
         {
-            (*pp_session)->ProcessDataAck(Ack->m_Rank, Ack->m_Losses, Ack->m_BlockSequenceNumber);
+            (*pp_session)->ProcessDataAck(Ack->m_Rank, Ack->m_MaxRank, Ack->m_Losses, Ack->m_BlockSequenceNumber);
         }
     }
     break;

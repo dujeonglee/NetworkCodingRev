@@ -85,7 +85,7 @@ public:
   void ChangeSessionParameter(const Parameter::TRANSMISSION_MODE TransmissionMode, const Parameter::BLOCK_SIZE BlockSize, const uint16_t RetransmissionRedundancy);
   const bool SendPing();
   void ProcessPong(const uint16_t Rtt);
-  void ProcessDataAck(const uint8_t Rank, const uint8_t Loss, const uint16_t Sequence);
+  void ProcessDataAck(const uint8_t Rank, const uint8_t MaxRank, const uint8_t Loss, const uint16_t Sequence);
   void ProcessSyncAck(const uint16_t sequence);
   void PushDataPacket(uint8_t *const buffer, const uint16_t size, bool orig, TransmissionBlock *const block);
   uint16_t PopDataPacket();

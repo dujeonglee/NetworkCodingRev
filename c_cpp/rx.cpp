@@ -632,6 +632,7 @@ void ReceptionSession::SendDataAck(const Header::Data *const header, const socka
     Header::DataAck ack;
     ack.m_Type = Header::Common::HeaderType::DATA_ACK;
     ack.m_Rank = rank;
+    ack.m_MaxRank = header->m_MaximumRank;
     ack.m_Losses = header->m_TxCount - header->m_ExpectedRank;
     ack.m_BlockSequenceNumber = header->m_CurrentBlockSequenceNumber;
     ack.m_CheckSum = 0;

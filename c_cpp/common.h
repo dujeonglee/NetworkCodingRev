@@ -27,7 +27,6 @@
 // C++ Library Header
 #include "ThreadPool.h"
 #include "AVLTree.h"
-#include "Map.h"
 #include "SingleShotTimer.h"
 #include "finite_field.h"
 
@@ -84,6 +83,7 @@ struct Data : Common
 struct DataAck : Common
 {
     uint8_t m_Rank;
+    uint8_t m_MaxRank;
     uint8_t m_Losses;
     uint16_t m_BlockSequenceNumber;
 } __attribute__((packed, may_alias));
