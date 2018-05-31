@@ -290,10 +290,6 @@ TransmissionSession::TransmissionSession(Transmission *const transmission, const
     m_CongestionWindow = Parameter::MINIMUN_CONGESTION_WINDOW_SIZE;
 
     m_IsConnected = false;
-    m_Timer.PeriodicTaskAdv([this]() -> std::tuple<bool, uint32_t, uint32_t> {
-        PopDataPacket();
-        return std::make_tuple(true, 0, 0);
-    });
 }
 
 /*OK*/
@@ -417,6 +413,13 @@ void TransmissionSession::ProcessSyncAck(const uint16_t sequence)
             {
                 m_IsConnected = true;
             }
+            m_Timer.PeriodicTaskAdv(
+                0,
+                [this]() -> const bool {
+                    PopDataPacket();
+                    return m_IsConnected;
+                },
+                TransmissionSession::HIGH_PRIORITY);
         },
         TransmissionSession::HIGH_PRIORITY);
 }
