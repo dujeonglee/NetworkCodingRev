@@ -413,7 +413,7 @@ void TransmissionSession::ProcessSyncAck(const uint16_t sequence)
             {
                 m_IsConnected = true;
             }
-            m_Timer.PeriodicTaskAdv(
+            m_Timer.PeriodicTask(
                 0,
                 [this]() -> const bool {
                     PopDataPacket();
