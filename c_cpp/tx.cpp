@@ -492,7 +492,11 @@ uint16_t TransmissionSession::PopDataPacket()
                                          std::unique_lock<std::mutex> lock(m_AckListLock);
                                          std::map<int32_t,int16_t>::iterator it;
                                          it = m_AckList.find(sequence);
-                                         if (it != m_AckList.end() && it->second >= expected_rank)
+                                         if (it == m_AckList.end())
+                                         {
+                                             m_CongestionWindow = m_CongestionWindow * 2;
+                                         }
+                                         else if(it->second >= expected_rank)
                                          {
                                              m_CongestionWindow = m_CongestionWindow * 2;
                                          }
