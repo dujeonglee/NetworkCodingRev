@@ -3,7 +3,7 @@
 
 INCLUDES := -I../basiclibrary/avltree -I../basiclibrary/threadpool -I../basiclibrary/singleshottimer
 OPTIMIZATIONCPPFLAGS := -O3
-BASICCPPFLAGS := -c -Wall -std=c++0x
+BASICCPPFLAGS := -c -Wall -std=c++0x -D_GLIBCXX_USE_NANOSLEEP=1
 CPP := g++
 
 LIBOUT := ../lib
