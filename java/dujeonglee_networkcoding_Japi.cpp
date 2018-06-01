@@ -10,7 +10,7 @@
  * Signature: (Ljava/lang/String;II)J
  */
 JNIEXPORT jlong JNICALL
-Java_dujeonglee_networkcoding_Japi_InitSocket(JNIEnv *env, jobject obj, jstring port, jint rxTimeout, jint txTimeout)
+Java_dujeonglee_networkcoding_Japi_initSocket(JNIEnv *env, jobject obj, jstring port, jint rxTimeout, jint txTimeout)
 {
     const char *nativePort = env->GetStringUTFChars(port, 0);
 
@@ -26,7 +26,7 @@ Java_dujeonglee_networkcoding_Japi_InitSocket(JNIEnv *env, jobject obj, jstring 
  * Signature: (JLjava/lang/String;Ljava/lang/String;IIII)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_dujeonglee_networkcoding_Japi_Connect(JNIEnv *env, jobject obj, jlong handle, jstring ip, jstring port, jint timeout, jint transmissionMode, jint blockSize, jint retransmissionRedundancy)
+Java_dujeonglee_networkcoding_Japi_connect(JNIEnv *env, jobject obj, jlong handle, jstring ip, jstring port, jint timeout, jint transmissionMode, jint blockSize, jint retransmissionRedundancy)
 {
     const char *nativeIp = env->GetStringUTFChars(ip, 0);
     const char *nativePort = env->GetStringUTFChars(port, 0);
@@ -51,7 +51,7 @@ Java_dujeonglee_networkcoding_Japi_Connect(JNIEnv *env, jobject obj, jlong handl
  * Signature: (JLjava/lang/String;Ljava/lang/String;)V
  */
 JNIEXPORT void JNICALL
-Java_dujeonglee_networkcoding_Japi_Disconnect(JNIEnv *env, jobject obj, jlong handle, jstring ip, jstring port)
+Java_dujeonglee_networkcoding_Japi_disconnect(JNIEnv *env, jobject obj, jlong handle, jstring ip, jstring port)
 {
     const char *nativeIp = env->GetStringUTFChars(ip, 0);
     const char *nativePort = env->GetStringUTFChars(port, 0);
@@ -71,7 +71,7 @@ Java_dujeonglee_networkcoding_Japi_Disconnect(JNIEnv *env, jobject obj, jlong ha
  * Signature: (JLjava/lang/String;Ljava/lang/String;[BI)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_dujeonglee_networkcoding_Japi_Send(JNIEnv *env, jobject obj, jlong handle, jstring ip, jstring port, jbyteArray buffer, jint size)
+Java_dujeonglee_networkcoding_Japi_send(JNIEnv *env, jobject obj, jlong handle, jstring ip, jstring port, jbyteArray buffer, jint size)
 {
     const char *nativeIp = env->GetStringUTFChars(ip, 0);
     const char *nativePort = env->GetStringUTFChars(port, 0);
@@ -96,7 +96,7 @@ Java_dujeonglee_networkcoding_Japi_Send(JNIEnv *env, jobject obj, jlong handle, 
  * Signature: (JLjava/lang/String;Ljava/lang/String;)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_dujeonglee_networkcoding_Japi_Flush(JNIEnv *env, jobject obj, jlong handle, jstring ip, jstring port)
+Java_dujeonglee_networkcoding_Japi_flush(JNIEnv *env, jobject obj, jlong handle, jstring ip, jstring port)
 {
     const char *nativeIp = env->GetStringUTFChars(ip, 0);
     const char *nativePort = env->GetStringUTFChars(port, 0);
@@ -117,7 +117,7 @@ Java_dujeonglee_networkcoding_Japi_Flush(JNIEnv *env, jobject obj, jlong handle,
 * Signature: (JLjava/lang/String;Ljava/lang/String;)V
 */
 JNIEXPORT void JNICALL
-Java_dujeonglee_networkcoding_Japi_WaitUntilTxIsCompleted(JNIEnv *env, jobject obj, jlong handle, jstring ip, jstring port)
+Java_dujeonglee_networkcoding_Japi_waitUntilTxIsCompleted(JNIEnv *env, jobject obj, jlong handle, jstring ip, jstring port)
 {
     const char *nativeIp = env->GetStringUTFChars(ip, 0);
     const char *nativePort = env->GetStringUTFChars(port, 0);
@@ -136,7 +136,7 @@ Java_dujeonglee_networkcoding_Japi_WaitUntilTxIsCompleted(JNIEnv *env, jobject o
  * Method:    Receive
  * Signature: (J[BI[Ljava/lang/String;II)I
  */
-JNIEXPORT jint JNICALL Java_dujeonglee_networkcoding_Japi_Receive(JNIEnv *env, jobject obj, jlong handle, jbyteArray buffer, jint bufferSize, jobjectArray senderInfo, jint senderInfoSize, jint timeout)
+JNIEXPORT jint JNICALL Java_dujeonglee_networkcoding_Japi_receive(JNIEnv *env, jobject obj, jlong handle, jbyteArray buffer, jint bufferSize, jobjectArray senderInfo, jint senderInfoSize, jint timeout)
 {
     uint8_t local_buffer[1500] = {0};
     uint16_t local_buffer_length = sizeof(local_buffer);
@@ -205,7 +205,7 @@ JNIEXPORT jint JNICALL Java_dujeonglee_networkcoding_Japi_Receive(JNIEnv *env, j
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_dujeonglee_networkcoding_Japi_FreeSocket(JNIEnv *env, jobject obj, jlong handle)
+Java_dujeonglee_networkcoding_Japi_freeSocket(JNIEnv *env, jobject obj, jlong handle)
 {
     FreeSocket(reinterpret_cast<void *>(handle));
 }
