@@ -3,7 +3,7 @@
 STATIC_LIBRARY := ../../lib/libncsocket.a
 DYNAMIC_LIBRARY := ../../lib/libncsocket.so
 OPTIMIZATIONCPPFLAGS := -O3
-BASICCPPFLAGS := -c -Wall -std=c++0x
+BASICCPPFLAGS := -c -Wall -std=c++0x -D_GLIBCXX_USE_NANOSLEEP=1
 INCLUDES := -I../../lib
 CPP := g++
 
