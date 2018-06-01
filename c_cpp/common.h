@@ -148,12 +148,23 @@ inline const SessionKey GetSessionKey(const sockaddr *addr, int size)
 {
     if (size == sizeof(sockaddr_in))
     {
-        SessionKey ret = {((sockaddr_in *)addr)->sin_addr.s_addr, ((sockaddr_in *)addr)->sin_port};
+        SessionKey ret;
+        ret.m_EUI  = ((sockaddr_in *)addr)->sin_addr.s_addr;
+        ret.m_Port = ((sockaddr_in *)addr)->sin_port;
         return ret;
     }
     else
     {
-        SessionKey ret = {((uint64_t *)(((sockaddr_in6 *)addr)->sin6_addr.s6_addr))[1], ((sockaddr_in6 *)addr)->sin6_port};
+        SessionKey ret;
+        ret.m_EUI  = ((uint64_t)(((sockaddr_in6 *)addr)->sin6_addr.s6_addr)[8]);
+        ret.m_EUI  = ((uint64_t)(((sockaddr_in6 *)addr)->sin6_addr.s6_addr)[9])  << 8;
+        ret.m_EUI  = ((uint64_t)(((sockaddr_in6 *)addr)->sin6_addr.s6_addr)[10]) << 16;
+        ret.m_EUI  = ((uint64_t)(((sockaddr_in6 *)addr)->sin6_addr.s6_addr)[11]) << 24;
+        ret.m_EUI  = ((uint64_t)(((sockaddr_in6 *)addr)->sin6_addr.s6_addr)[12]) << 32;
+        ret.m_EUI  = ((uint64_t)(((sockaddr_in6 *)addr)->sin6_addr.s6_addr)[13]) << 40;
+        ret.m_EUI  = ((uint64_t)(((sockaddr_in6 *)addr)->sin6_addr.s6_addr)[14]) << 48;
+        ret.m_EUI  = ((uint64_t)(((sockaddr_in6 *)addr)->sin6_addr.s6_addr)[15]) << 56;
+        ret.m_Port = ((sockaddr_in6 *)addr)->sin6_port;
         return ret;
     }
 }
