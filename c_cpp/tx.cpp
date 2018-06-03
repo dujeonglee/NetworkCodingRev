@@ -386,7 +386,7 @@ void TransmissionSession::ProcessDataAck(const uint8_t Rank, const uint8_t MaxRa
     m_Timer.ImmediateTask(
         [this, Rank, MaxRank, Loss, Sequence]() -> void {
             {
-                std::map<int32_t,int16_t>::iterator it;
+                std::map<int32_t, int16_t>::iterator it;
                 std::unique_lock<std::mutex> acklock(m_AckListLock);
                 std::cout << "Ack ";
                 it = m_AckList.find((int32_t)ntohs(Sequence));
@@ -394,7 +394,7 @@ void TransmissionSession::ProcessDataAck(const uint8_t Rank, const uint8_t MaxRa
                 {
                     it->second = Rank;
                 }
-                if(it->second >= MaxRank)
+                if (it->second >= MaxRank)
                 {
                     m_AckList.erase(it);
                 }
@@ -434,6 +434,7 @@ void TransmissionSession::PushDataPacket(uint8_t *const buffer, const uint16_t s
     {
         if (m_BytesUnacked >= m_CongestionWindow)
         {
+            std::cout << "Warning: m_BytesUnacked >= m_CongestionWindow" << std::endl;
             return;
         }
         m_BytesUnacked.fetch_add(size);
@@ -493,13 +494,13 @@ uint16_t TransmissionSession::PopDataPacket()
         m_Timer.ScheduleTaskNoExcept(m_RoundTripTime,
                                      [this, sequence, expected_rank]() -> void {
                                          std::unique_lock<std::mutex> lock(m_AckListLock);
-                                         std::map<int32_t,int16_t>::iterator it;
+                                         std::map<int32_t, int16_t>::iterator it;
                                          it = m_AckList.find(sequence);
                                          if (it == m_AckList.end())
                                          {
                                              m_CongestionWindow = m_CongestionWindow * 2;
                                          }
-                                         else if(it->second >= expected_rank)
+                                         else if (it->second >= expected_rank)
                                          {
                                              m_CongestionWindow = m_CongestionWindow * 2;
                                          }
