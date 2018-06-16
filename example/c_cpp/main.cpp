@@ -8,14 +8,14 @@
 
 using namespace std;
 
-void SendFunction(const char * local_port, const char * remote_ip, const char * remote_port, const char * filename)
+void SendFunction(const char *local_port, const char *remote_ip, const char *remote_port, const char *filename)
 {
     void *handle = InitSocket(local_port, 500, 500, nullptr);
     do
     {
         std::cout << "Connect to " << remote_ip << ":" << remote_port << "." << std::endl;
     } while (false == Connect(handle, remote_ip, remote_port, 1000, 0, 32, 0));
-
+    std::cout << "Connected to " << remote_ip << ":" << remote_port << "." << std::endl;
     FILE *p_File = nullptr;
     p_File = fopen(filename, "r");
     if (p_File == nullptr)
@@ -137,6 +137,10 @@ void AsyncReceiveFunction(const char *port)
             {
                 if (!(length == 1 && buffer[0] == 0xff))
                 {
+                    if (length == 1)
+                    {
+                        std::cout << "buffer[0] = " << 0 + buffer[0] << std::endl;
+                    }
                     fwrite(buffer, 1, length, p_File);
                     mbyte_received += ((float)length / (1000000.));
                 }
@@ -150,6 +154,7 @@ void AsyncReceiveFunction(const char *port)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
     fclose(p_File);
     p_File = nullptr;
     FreeSocket(handle);

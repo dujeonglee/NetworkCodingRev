@@ -22,15 +22,10 @@ TransmissionBlock::TransmissionBlock(TransmissionSession *const p_session) : p_S
         std::unique_lock<std::mutex> acklock(p_Session->m_AckListLock);
         p_Session->m_AckList[(int32_t)m_BlockSequenceNumber] = 0;
     }
-    std::cout << "Start Seq: " << m_BlockSequenceNumber << std::endl;
 }
 
 TransmissionBlock::~TransmissionBlock()
 {
-    {
-        std::unique_lock<std::mutex> acklock(p_Session->m_AckListLock);
-        p_Session->m_AckList.erase((int32_t)m_BlockSequenceNumber);
-    }
     for (uint32_t i = 0; i < m_OriginalPacketBuffer.size(); i++)
     {
         Header::Data *const DataHeader = reinterpret_cast<Header::Data *>(m_OriginalPacketBuffer[i].get());
@@ -45,7 +40,6 @@ TransmissionBlock::~TransmissionBlock()
         }
     }
     m_OriginalPacketBuffer.clear();
-    std::cout << "End Seq: " << m_BlockSequenceNumber << std::endl;
 }
 
 bool TransmissionBlock::Send(uint8_t *const buffer, const uint16_t buffersize)
@@ -105,7 +99,6 @@ bool TransmissionBlock::Send(uint8_t *const buffer, const uint16_t buffersize)
     }
     memcpy(DataHeader->m_Codes + m_BlockSize, buffer, buffersize);
     DataHeader->m_CheckSum = Checksum::get(m_OriginalPacketBuffer[m_TransmissionCount].get(), ntohs(DataHeader->m_TotalSize));
-    //sendto(p_Session->c_Socket, m_OriginalPacketBuffer[m_TransmissionCount++].get(), ntohs(DataHeader->m_TotalSize), 0, (sockaddr *)&p_Session->c_Addr.Addr, p_Session->c_Addr.AddrLength);
     p_Session->PushDataPacket(m_OriginalPacketBuffer[m_TransmissionCount++].get(), ntohs(DataHeader->m_TotalSize), true, this);
     if (m_TransmissionCount == m_BlockSize)
     {
@@ -147,10 +140,6 @@ const bool TransmissionBlock::Retransmission()
             acklock.unlock();
             delete this;
             return false;
-        }
-        else
-        {
-            p_Session->m_CongestionWindow.fetch_sub(p_Session->m_CongestionWindow / 2);
         }
     }
     if (p_Session->m_IsConnected == false)
@@ -210,7 +199,7 @@ const bool TransmissionBlock::Retransmission()
         RemedyHeader->m_CurrentBlockSequenceNumber = htons(m_BlockSequenceNumber);
         RemedyHeader->m_MaxBlockSequenceNumber = htons(p_Session->m_MaxBlockSequenceNumber.load());
         RemedyHeader->m_ExpectedRank = m_OriginalPacketBuffer.size();
-        RemedyHeader->m_MaximumRank = m_OriginalPacketBuffer.size();
+        RemedyHeader->m_MaximumRank = m_BlockSize;
         RemedyHeader->m_Flags = Header::Data::FLAGS_END_OF_BLK;
         RemedyHeader->m_TxCount = ++m_TransmissionCount;
         RemedyHeader->m_CheckSum = 0;
@@ -268,7 +257,6 @@ const bool TransmissionBlock::Retransmission()
             }
         }
         RemedyHeader->m_CheckSum = Checksum::get(m_RemedyPacketBuffer, ntohs(RemedyHeader->m_TotalSize));
-        //sendto(p_Session->c_Socket, m_RemedyPacketBuffer, ntohs(RemedyHeader->m_TotalSize), 0, (sockaddr *)&p_Session->c_Addr.Addr, p_Session->c_Addr.AddrLength);
         p_Session->PushDataPacket(m_RemedyPacketBuffer, ntohs(RemedyHeader->m_TotalSize), false, this);
     }
     return true;
@@ -287,7 +275,7 @@ TransmissionSession::TransmissionSession(Transmission *const transmission, const
     m_MaxBlockSequenceNumber = 0;
     p_TransmissionBlock = nullptr;
     m_BytesUnacked = 0;
-    m_CongestionWindow = Parameter::MINIMUN_CONGESTION_WINDOW_SIZE;
+    m_CongestionWindow = Parameter::MINIMUM_CONGESTION_WINDOW_SIZE;
 
     m_IsConnected = false;
 }
@@ -312,7 +300,8 @@ void TransmissionSession::ChangeTransmissionMode(const Parameter::TRANSMISSION_M
     m_Timer.ImmediateTask(
         [this, TransmissionMode]() -> void {
             m_TransmissionMode = TransmissionMode;
-        });
+        },
+        TransmissionSession::HIGH_PRIORITY);
 }
 
 /*OK*/
@@ -321,7 +310,8 @@ void TransmissionSession::ChangeBlockSize(const Parameter::BLOCK_SIZE BlockSize)
     m_Timer.ImmediateTask(
         [this, BlockSize]() -> void {
             m_BlockSize = BlockSize;
-        });
+        },
+        TransmissionSession::HIGH_PRIORITY);
 }
 
 /*OK*/
@@ -330,7 +320,8 @@ void TransmissionSession::ChangeRetransmissionRedundancy(const uint16_t Retransm
     m_Timer.ImmediateTask(
         [this, RetransmissionRedundancy]() -> void {
             m_RetransmissionRedundancy = RetransmissionRedundancy;
-        });
+        },
+        TransmissionSession::HIGH_PRIORITY);
 }
 
 /*OK*/
@@ -341,7 +332,8 @@ void TransmissionSession::ChangeSessionParameter(const Parameter::TRANSMISSION_M
             m_TransmissionMode = TransmissionMode;
             m_BlockSize = BlockSize;
             m_RetransmissionRedundancy = RetransmissionRedundancy;
-        });
+        },
+        TransmissionSession::HIGH_PRIORITY);
 }
 
 const bool TransmissionSession::SendPing()
@@ -377,7 +369,8 @@ void TransmissionSession::ProcessPong(const uint16_t Rtt)
             {
                 m_RoundTripTime = (m_RoundTripTime + Rtt) / 2;
             }
-        });
+        },
+        TransmissionSession::HIGH_PRIORITY);
 }
 
 void TransmissionSession::ProcessDataAck(const uint8_t Rank, const uint8_t MaxRank, const uint8_t Loss, const uint16_t Sequence)
@@ -388,7 +381,6 @@ void TransmissionSession::ProcessDataAck(const uint8_t Rank, const uint8_t MaxRa
             {
                 std::map<int32_t, int16_t>::iterator it;
                 std::unique_lock<std::mutex> acklock(m_AckListLock);
-                std::cout << "Ack ";
                 it = m_AckList.find((int32_t)ntohs(Sequence));
                 if (it != m_AckList.end())
                 {
@@ -416,10 +408,11 @@ void TransmissionSession::ProcessSyncAck(const uint16_t sequence)
             m_Timer.PeriodicTask(
                 0,
                 [this]() -> const bool {
-                    PopDataPacket();
+                    while (PopDataPacket())
+                        ;
                     return m_IsConnected;
                 },
-                TransmissionSession::HIGH_PRIORITY);
+                TransmissionSession::LOW_PRIORITY);
         },
         TransmissionSession::HIGH_PRIORITY);
 }
@@ -432,11 +425,6 @@ void TransmissionSession::PushDataPacket(uint8_t *const buffer, const uint16_t s
      */
     if (orig)
     {
-        if (m_BytesUnacked >= m_CongestionWindow)
-        {
-            std::cout << "Warning: m_BytesUnacked >= m_CongestionWindow" << std::endl;
-            return;
-        }
         m_BytesUnacked.fetch_add(size);
     }
     m_Timer.ImmediateTask(
@@ -452,7 +440,7 @@ void TransmissionSession::PushDataPacket(uint8_t *const buffer, const uint16_t s
                 m_TxQueue.push(std::make_tuple(cpy, size, orig, block));
             }
         },
-        TransmissionSession::HIGH_PRIORITY);
+        TransmissionSession::LOW_PRIORITY);
 }
 
 uint16_t TransmissionSession::PopDataPacket()
@@ -498,18 +486,32 @@ uint16_t TransmissionSession::PopDataPacket()
                                          it = m_AckList.find(sequence);
                                          if (it == m_AckList.end())
                                          {
-                                             m_CongestionWindow = m_CongestionWindow * 2;
+                                             if (m_CongestionWindow * 2 > Parameter::MAXIMUM_CONGESTION_WINDOW_SIZE)
+                                             {
+                                                 m_CongestionWindow = Parameter::MAXIMUM_CONGESTION_WINDOW_SIZE;
+                                             }
+                                             else
+                                             {
+                                                 m_CongestionWindow = m_CongestionWindow * 2;
+                                             }
                                          }
                                          else if (it->second >= expected_rank)
                                          {
-                                             m_CongestionWindow = m_CongestionWindow * 2;
+                                             if (m_CongestionWindow * 2 > Parameter::MAXIMUM_CONGESTION_WINDOW_SIZE)
+                                             {
+                                                 m_CongestionWindow = Parameter::MAXIMUM_CONGESTION_WINDOW_SIZE;
+                                             }
+                                             else
+                                             {
+                                                 m_CongestionWindow = m_CongestionWindow * 2;
+                                             }
                                          }
                                          else
                                          {
                                              m_CongestionWindow = m_CongestionWindow / 2;
-                                             if (m_CongestionWindow < Parameter::MINIMUN_CONGESTION_WINDOW_SIZE)
+                                             if (m_CongestionWindow < Parameter::MINIMUM_CONGESTION_WINDOW_SIZE)
                                              {
-                                                 m_CongestionWindow = Parameter::MINIMUN_CONGESTION_WINDOW_SIZE;
+                                                 m_CongestionWindow = Parameter::MINIMUM_CONGESTION_WINDOW_SIZE;
                                              }
                                          }
                                      },
@@ -706,7 +708,7 @@ bool Transmission::Flush(const DataTypes::Address Addr)
                 p_session->p_TransmissionBlock = nullptr;
             }
         },
-        TransmissionSession::LOW_PRIORITY);
+        TransmissionSession::HIGH_PRIORITY);
     return IMMEDIATE_TASK_ID == TaskID;
 }
 

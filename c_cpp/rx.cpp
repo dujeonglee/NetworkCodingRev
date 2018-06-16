@@ -348,10 +348,7 @@ bool ReceptionBlock::Decoding()
                 }
                 else
                 {
-                    for (; decodingposition < length; decodingposition++)
-                    {
-                        DecodeOut.back().get()[decodingposition] ^= FiniteField::instance()->mul(m_DecodingMatrix[row].get()[i], m_DecodedPacketBuffer[i].get()[decodingposition]);
-                    }
+                    DecodingPacket<1>::Run(DecodeOut, m_DecodedPacketBuffer, m_DecodingMatrix, decodingposition, i, row);
                 }
             }
         }
@@ -529,7 +526,7 @@ void ReceptionBlock::Receive(uint8_t *const buffer, const uint16_t length, const
     // Continue with decoding.
     case DECODING:
         rank = m_DecodedPacketBuffer.size() + m_EncodedPacketBuffer.size();
-        if (DataHeader->m_ExpectedRank ==  rank &&
+        if (DataHeader->m_ExpectedRank == rank &&
             (DataHeader->m_Flags & Header::Data::DataHeaderFlag::FLAGS_END_OF_BLK))
         {
             // Decoding.
