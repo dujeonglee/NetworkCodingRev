@@ -12,56 +12,56 @@ extern "C" {
  * Method:    InitSocket
  * Signature: (Ljava/lang/String;II)J
  */
-JNIEXPORT jlong JNICALL Java_dujeonglee_networkcoding_Japi_InitSocket(JNIEnv *, jobject, jstring, jint, jint);
+JNIEXPORT jlong JNICALL Java_dujeonglee_networkcoding_Japi_initSocket(JNIEnv *, jobject, jstring, jint, jint);
 
 /*
  * Class:     dujeonglee_networkcoding_Japi
  * Method:    Connect
  * Signature: (JLjava/lang/String;Ljava/lang/String;IIII)Z
  */
-JNIEXPORT jboolean JNICALL Java_dujeonglee_networkcoding_Japi_Connect(JNIEnv *, jobject, jlong, jstring, jstring, jint, jint, jint, jint);
+JNIEXPORT jboolean JNICALL Java_dujeonglee_networkcoding_Japi_connect(JNIEnv *, jobject, jlong, jstring, jstring, jint, jint, jint, jint);
 
 /*
  * Class:     dujeonglee_networkcoding_Japi
  * Method:    Disconnect
  * Signature: (JLjava/lang/String;Ljava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_dujeonglee_networkcoding_Japi_Disconnect(JNIEnv *, jobject, jlong, jstring, jstring);
+JNIEXPORT void JNICALL Java_dujeonglee_networkcoding_Japi_disconnect(JNIEnv *, jobject, jlong, jstring, jstring);
 
 /*
  * Class:     dujeonglee_networkcoding_Japi
  * Method:    Send
  * Signature: (JLjava/lang/String;Ljava/lang/String;[BI)Z
  */
-JNIEXPORT jboolean JNICALL Java_dujeonglee_networkcoding_Japi_Send(JNIEnv *, jobject, jlong, jstring, jstring, jbyteArray, jint);
+JNIEXPORT jboolean JNICALL Java_dujeonglee_networkcoding_Japi_send(JNIEnv *, jobject, jlong, jstring, jstring, jbyteArray, jint);
 
 /*
  * Class:     dujeonglee_networkcoding_Japi
  * Method:    Flush
  * Signature: (JLjava/lang/String;Ljava/lang/String;)Z
  */
-JNIEXPORT jboolean JNICALL Java_dujeonglee_networkcoding_Japi_Flush(JNIEnv *, jobject, jlong, jstring, jstring);
+JNIEXPORT jboolean JNICALL Java_dujeonglee_networkcoding_Japi_flush(JNIEnv *, jobject, jlong, jstring, jstring);
 
 /*
  * Class:     dujeonglee_networkcoding_Japi
  * Method:    WaitUntilTxIsCompleted
  * Signature: (JLjava/lang/String;Ljava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_dujeonglee_networkcoding_Japi_WaitUntilTxIsCompleted(JNIEnv *, jobject, jlong, jstring, jstring);
+JNIEXPORT void JNICALL Java_dujeonglee_networkcoding_Japi_waitUntilTxIsCompleted(JNIEnv *, jobject, jlong, jstring, jstring);
 
 /*
  * Class:     dujeonglee_networkcoding_Japi
  * Method:    Receive
  * Signature: (J[BI[Ljava/lang/String;II)I
  */
-JNIEXPORT jint JNICALL Java_dujeonglee_networkcoding_Japi_Receive(JNIEnv *, jobject, jlong, jbyteArray, jint, jobjectArray, jint, jint);
+JNIEXPORT jint JNICALL Java_dujeonglee_networkcoding_Japi_receive(JNIEnv *, jobject, jlong, jbyteArray, jint, jobjectArray, jint, jint);
 
 /*
  * Class:     dujeonglee_networkcoding_Japi
  * Method:    FreeSocket
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_dujeonglee_networkcoding_Japi_FreeSocket(JNIEnv *, jobject, jlong);
+JNIEXPORT void JNICALL Java_dujeonglee_networkcoding_Japi_freeSocket(JNIEnv *, jobject, jlong);
 
 #ifdef __cplusplus
 }

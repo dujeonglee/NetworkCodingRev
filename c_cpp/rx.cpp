@@ -348,10 +348,7 @@ bool ReceptionBlock::Decoding()
                 }
                 else
                 {
-                    for (; decodingposition < length; decodingposition++)
-                    {
-                        DecodeOut.back().get()[decodingposition] ^= FiniteField::instance()->mul(m_DecodingMatrix[row].get()[i], m_DecodedPacketBuffer[i].get()[decodingposition]);
-                    }
+                    DecodingPacket<1>::Run(DecodeOut, m_DecodedPacketBuffer, m_DecodingMatrix, decodingposition, i, row);
                 }
             }
         }
@@ -429,9 +426,10 @@ ReceptionBlock::~ReceptionBlock()
 void ReceptionBlock::Receive(uint8_t *const buffer, const uint16_t length, const sockaddr *const sender_addr, const uint32_t sender_addr_len)
 {
     Header::Data *const DataHeader = reinterpret_cast<Header::Data *>(buffer);
+    uint8_t rank = 0;
     if (m_DecodingReady)
     {
-        c_Session->SendDataAck(DataHeader, sender_addr, sender_addr_len);
+        c_Session->SendDataAck(DataHeader, sender_addr, sender_addr_len, DataHeader->m_MaximumRank);
         return;
     }
     switch (FindAction(buffer, length))
@@ -527,7 +525,8 @@ void ReceptionBlock::Receive(uint8_t *const buffer, const uint16_t length, const
         }
     // Continue with decoding.
     case DECODING:
-        if ((DataHeader->m_ExpectedRank == (m_DecodedPacketBuffer.size() + m_EncodedPacketBuffer.size())) &&
+        rank = m_DecodedPacketBuffer.size() + m_EncodedPacketBuffer.size();
+        if (DataHeader->m_ExpectedRank == rank &&
             (DataHeader->m_Flags & Header::Data::DataHeaderFlag::FLAGS_END_OF_BLK))
         {
             // Decoding.
@@ -607,8 +606,8 @@ void ReceptionBlock::Receive(uint8_t *const buffer, const uint16_t length, const
                     }
                 }
             }
-            c_Session->SendDataAck(DataHeader, sender_addr, sender_addr_len);
         }
+        c_Session->SendDataAck(DataHeader, sender_addr, sender_addr_len, rank);
         break;
     }
 }
@@ -625,49 +624,17 @@ ReceptionSession::~ReceptionSession()
     m_Blocks.DoSomethingOnAllData([](ReceptionBlock *&block) { delete block; });
 }
 
-void ReceptionSession::SendDataAck(const Header::Data *const header, const sockaddr *const sender_addr, const uint32_t sender_addr_len)
+void ReceptionSession::SendDataAck(const Header::Data *const header, const sockaddr *const sender_addr, const uint32_t sender_addr_len, const uint8_t rank)
 {
     Header::DataAck ack;
-    uint16_t MIN_BLOCK_SEQUENCE = 0;
-    uint16_t MAX_BLOCK_SEQUENCE = 0;
-    if (m_MinSequenceNumberAwaitingAck - (uint16_t)ntohs(header->m_MinBlockSequenceNumber) > (uint16_t)ntohs(header->m_MinBlockSequenceNumber) - m_MinSequenceNumberAwaitingAck)
-    {
-        MIN_BLOCK_SEQUENCE = m_MinSequenceNumberAwaitingAck;
-    }
-    else
-    {
-        MIN_BLOCK_SEQUENCE = ntohs(header->m_MinBlockSequenceNumber);
-    }
-    if (m_MaxSequenceNumberAwaitingAck - (uint16_t)ntohs(header->m_MaxBlockSequenceNumber) < (uint16_t)ntohs(header->m_MaxBlockSequenceNumber) - m_MaxSequenceNumberAwaitingAck)
-    {
-        MAX_BLOCK_SEQUENCE = m_MaxSequenceNumberAwaitingAck;
-    }
-    else
-    {
-        MAX_BLOCK_SEQUENCE = ntohs(header->m_MaxBlockSequenceNumber);
-    }
-
     ack.m_Type = Header::Common::HeaderType::DATA_ACK;
+    ack.m_Rank = rank;
+    ack.m_MaxRank = header->m_MaximumRank;
     ack.m_Losses = header->m_TxCount - header->m_ExpectedRank;
-    ack.m_Sequences = 0;
-    for (uint16_t i = MIN_BLOCK_SEQUENCE; i <= MAX_BLOCK_SEQUENCE; i++)
-    {
-        ReceptionBlock **const blk = m_Blocks.GetPtr(i);
-        if (blk && (*blk)->m_DecodingReady)
-        {
-            ack.m_SequenceList[ack.m_Sequences++] = htons(i);
-        }
-        if (ack.m_Sequences == 255)
-        {
-            ack.m_CheckSum = 0;
-            ack.m_CheckSum = Checksum::get(reinterpret_cast<uint8_t *>(&ack), sizeof(ack));
-            sendto(c_Reception->c_Socket, (uint8_t *)&ack, sizeof(ack), 0, (sockaddr *)sender_addr, sender_addr_len);
-            ack.m_Sequences = 0;
-        }
-    }
+    ack.m_BlockSequenceNumber = header->m_CurrentBlockSequenceNumber;
     ack.m_CheckSum = 0;
-    ack.m_CheckSum = Checksum::get(reinterpret_cast<uint8_t *>(&ack), sizeof(ack) - (255 - ack.m_Sequences) * sizeof(uint16_t));
-    sendto(c_Reception->c_Socket, (uint8_t *)&ack, sizeof(ack) - (255 - ack.m_Sequences) * sizeof(uint16_t), 0, (sockaddr *)sender_addr, sender_addr_len);
+    ack.m_CheckSum = Checksum::get(reinterpret_cast<uint8_t *>(&ack), sizeof(ack));
+    sendto(c_Reception->c_Socket, (uint8_t *)&ack, sizeof(ack), 0, (sockaddr *)sender_addr, sender_addr_len);
 }
 
 void ReceptionSession::Receive(uint8_t *const buffer, const uint16_t length, const sockaddr *const sender_addr, const uint32_t sender_addr_len)
@@ -755,7 +722,7 @@ void ReceptionSession::Receive(uint8_t *const buffer, const uint16_t length, con
         ReceptionBlock **const pp_block = m_Blocks.GetPtr(ntohs(DataHeader->m_CurrentBlockSequenceNumber));
         if (pp_block && (*pp_block)->m_DecodingReady)
         {
-            SendDataAck(DataHeader, sender_addr, sender_addr_len);
+            SendDataAck(DataHeader, sender_addr, sender_addr_len, DataHeader->m_MaximumRank);
         }
         return;
     }

@@ -12,7 +12,7 @@
 
 // C++ Standard Library Header
 #include <iostream>
-#include <set>
+#include <map>
 #include <vector>
 #include <queue>
 #include <atomic>
@@ -82,9 +82,10 @@ struct Data : Common
 
 struct DataAck : Common
 {
-    uint8_t m_Losses; /*1*/
-    uint8_t m_Sequences;
-    uint16_t m_SequenceList[255];
+    uint8_t m_Rank;
+    uint8_t m_MaxRank;
+    uint8_t m_Losses;
+    uint16_t m_BlockSequenceNumber;
 } __attribute__((packed, may_alias));
 
 struct Sync : Common
@@ -111,6 +112,8 @@ const uint16_t MAXIMUM_BUFFER_SIZE = 1500;                     /* 1500 Bytes */
 const uint16_t PING_INTERVAL = 100;                            /* 100 ms     */
 const double CONNECTION_TIMEOUT = 10.0;                        /* 10 s       */
 const uint16_t MINIMUM_RETRANSMISSION_INTERVAL = 10;           /* 10 ms      */
+const uint32_t MAXIMUM_CONGESTION_WINDOW_SIZE = 2*1000*1000;  /*  10MB      */
+const uint32_t MINIMUM_CONGESTION_WINDOW_SIZE = 1000*64;       /*  10KB      */
 enum TRANSMISSION_MODE : uint8_t
 {
     RELIABLE_TRANSMISSION_MODE = 0,
@@ -146,12 +149,23 @@ inline const SessionKey GetSessionKey(const sockaddr *addr, int size)
 {
     if (size == sizeof(sockaddr_in))
     {
-        SessionKey ret = {((sockaddr_in *)addr)->sin_addr.s_addr, ((sockaddr_in *)addr)->sin_port};
+        SessionKey ret;
+        ret.m_EUI  = ((sockaddr_in *)addr)->sin_addr.s_addr;
+        ret.m_Port = ((sockaddr_in *)addr)->sin_port;
         return ret;
     }
     else
     {
-        SessionKey ret = {((uint64_t *)(((sockaddr_in6 *)addr)->sin6_addr.s6_addr))[1], ((sockaddr_in6 *)addr)->sin6_port};
+        SessionKey ret;
+        ret.m_EUI  = ((uint64_t)(((sockaddr_in6 *)addr)->sin6_addr.s6_addr)[8]);
+        ret.m_EUI  = ((uint64_t)(((sockaddr_in6 *)addr)->sin6_addr.s6_addr)[9])  << 8;
+        ret.m_EUI  = ((uint64_t)(((sockaddr_in6 *)addr)->sin6_addr.s6_addr)[10]) << 16;
+        ret.m_EUI  = ((uint64_t)(((sockaddr_in6 *)addr)->sin6_addr.s6_addr)[11]) << 24;
+        ret.m_EUI  = ((uint64_t)(((sockaddr_in6 *)addr)->sin6_addr.s6_addr)[12]) << 32;
+        ret.m_EUI  = ((uint64_t)(((sockaddr_in6 *)addr)->sin6_addr.s6_addr)[13]) << 40;
+        ret.m_EUI  = ((uint64_t)(((sockaddr_in6 *)addr)->sin6_addr.s6_addr)[14]) << 48;
+        ret.m_EUI  = ((uint64_t)(((sockaddr_in6 *)addr)->sin6_addr.s6_addr)[15]) << 56;
+        ret.m_Port = ((sockaddr_in6 *)addr)->sin6_port;
         return ret;
     }
 }

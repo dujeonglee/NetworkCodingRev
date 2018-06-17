@@ -11,10 +11,10 @@ public class Main
             byte[] buffer = new byte[1500];
             String[] info = new String[2];
             final Japi ncsocket = new Japi();
-            final long handle = ncsocket.InitSocket(args[0], 500, 500);
+            final long handle = ncsocket.initSocket(args[0], 500, 500);
             
             do {
-                int ret = ncsocket.Receive(handle, buffer, buffer.length, info, info.length, 500);
+                int ret = ncsocket.receive(handle, buffer, buffer.length, info, info.length, 500);
                 if(ret == 1 && buffer[0] == BYEBYE)
                 {
                     System.out.println("Bye.");
@@ -29,7 +29,7 @@ public class Main
                     System.out.println("Receive timeout.");
                 }
             } while (true);
-            ncsocket.FreeSocket(handle);
+            ncsocket.freeSocket(handle);
         }
         else if(args.length == 3)
         {
@@ -43,8 +43,8 @@ public class Main
             buffer[5] = 0;
             String[] info = new String[2];
             final Japi ncsocket = new Japi();
-            final long handle = ncsocket.InitSocket(args[0], 500, 500);
-            while(false==ncsocket.Connect(handle, args[1], args[2], 1000, 0, 8, 0))
+            final long handle = ncsocket.initSocket(args[0], 500, 500);
+            while(false==ncsocket.connect(handle, args[1], args[2], 1000, 0, 8, 0))
             {
                 System.out.println("Connecting to "+args[1]+":"+args[2]+".");
             }
@@ -52,15 +52,15 @@ public class Main
             for(int i = 0 ; i < 100 ; i++)
             {
                 buffer[5] = (byte)i;
-                if(true == ncsocket.Send(handle, args[1], args[2], buffer, 5))
+                if(true == ncsocket.send(handle, args[1], args[2], buffer, 5))
                 {
                     System.out.println("Sent data.");
                 }
             }
             buffer[0] = BYEBYE;
-            ncsocket.Send(handle, args[1], args[2], buffer, 1);
-            ncsocket.WaitUntilTxIsCompleted(handle, args[1], args[2]);
-            ncsocket.FreeSocket(handle);
+            ncsocket.send(handle, args[1], args[2], buffer, 1);
+            ncsocket.waitUntilTxIsCompleted(handle, args[1], args[2]);
+            ncsocket.freeSocket(handle);
         }
         else
         {
