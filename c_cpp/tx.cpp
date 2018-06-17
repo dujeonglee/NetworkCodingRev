@@ -283,6 +283,7 @@ TransmissionSession::TransmissionSession(Transmission *const transmission, const
 /*OK*/
 TransmissionSession::~TransmissionSession()
 {
+    m_IsConnected = false;
     m_Timer.Stop();
     while (m_TxQueue.size())
     {
