@@ -251,7 +251,7 @@ const bool TransmissionBlock::Retransmission()
                 {
                     for (; CodingOffset < length; CodingOffset++)
                     {
-                        m_RemedyPacketBuffer[CodingOffset] ^= FiniteField::instance()->mul(OriginalBuffer[CodingOffset], RandomCoefficients[PacketIndex]);
+                        EncodingPacket<1>::Run(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
                     }
                 }
             }
