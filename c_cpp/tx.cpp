@@ -249,7 +249,7 @@ const bool TransmissionBlock::Retransmission()
                 }
                 else
                 {
-                    for (; CodingOffset < length; CodingOffset++)
+                    for (; CodingOffset < length;)
                     {
                         EncodingPacket<1>::Run(m_RemedyPacketBuffer, OriginalBuffer, RandomCoefficients, CodingOffset, PacketIndex);
                     }
