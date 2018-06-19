@@ -348,7 +348,10 @@ bool ReceptionBlock::Decoding()
                 }
                 else
                 {
-                    DecodingPacket<1>::Run(DecodeOut, m_DecodedPacketBuffer, m_DecodingMatrix, decodingposition, i, row);
+                    for (; decodingposition < length; decodingposition++)
+                    {
+                        DecodingPacket<1>::Run(DecodeOut, m_DecodedPacketBuffer, m_DecodingMatrix, decodingposition, i, row);
+                    }
                 }
             }
         }
