@@ -1,0 +1,113 @@
+\hypertarget{api_8cpp}{}\section{/home/dujeonglee/\+Network\+Coding\+Rev/c\+\_\+cpp/api.cpp File Reference}
+\label{api_8cpp}\index{/home/dujeonglee/\+Network\+Coding\+Rev/c\+\_\+cpp/api.\+cpp@{/home/dujeonglee/\+Network\+Coding\+Rev/c\+\_\+cpp/api.\+cpp}}
+{\ttfamily \#include \char`\"{}api.\+h\char`\"{}}\\*
+{\ttfamily \#include \char`\"{}ncsocket.\+h\char`\"{}}\\*
+Include dependency graph for api.\+cpp\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{api_8cpp__incl}
+\end{center}
+\end{figure}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+void $\ast$ \hyperlink{api_8cpp_a54f4d0e3c3e776574ae33de8fc7e0532}{Init\+Socket} (const char $\ast$const local\+\_\+port, const uint32\+\_\+t Rx\+Timeout, const uint32\+\_\+t Tx\+Timeout, const std\+::function$<$ void(uint8\+\_\+t $\ast$const buffer, const uint16\+\_\+t length, const void $\ast$const sender\+\_\+addr, const uint32\+\_\+t sender\+\_\+addr\+\_\+len)$>$ cb)
+\item 
+bool \hyperlink{api_8cpp_a9667591a4992743a2fdc23c522b1a95f}{Connect} (void $\ast$const handle, const char $\ast$const ip, const char $\ast$const port, const uint32\+\_\+t timeout, const uint8\+\_\+t Transmission\+Mode, const uint8\+\_\+t Block\+Size, const uint16\+\_\+t Retransmission\+Redundancy)
+\item 
+void \hyperlink{api_8cpp_ad588a8206955cddf85e2fd04c9254bf7}{Disconnect} (void $\ast$const handle, const char $\ast$const ip, const char $\ast$const port)
+\item 
+bool \hyperlink{api_8cpp_a29363b43f2198ee45a2748b9ae6b0757}{Send} (void $\ast$const handle, const char $\ast$const ip, const char $\ast$const port, uint8\+\_\+t $\ast$const buff, const uint16\+\_\+t size)
+\item 
+bool \hyperlink{api_8cpp_a3ff240b3bf98c3d8f768ef66b1c51082}{Flush} (void $\ast$const handle, const char $\ast$const ip, const char $\ast$const port)
+\item 
+void \hyperlink{api_8cpp_afeb903740106a90a82fae5f37d10690e}{Wait\+Until\+Tx\+Is\+Completed} (void $\ast$const handle, const char $\ast$const ip, const char $\ast$const port)
+\item 
+bool \hyperlink{api_8cpp_ad8547f292eb9a8b94cbc9a9995bcaa5a}{Receive} (void $\ast$const handle, uint8\+\_\+t $\ast$const buffer, uint16\+\_\+t $\ast$const length, void $\ast$const address, uint32\+\_\+t $\ast$const sender\+\_\+addr\+\_\+len, uint32\+\_\+t timeout)
+\item 
+void \hyperlink{api_8cpp_ab3016f37874e411f7a868806bb52bcfd}{Free\+Socket} (void $\ast$handle)
+\end{DoxyCompactItemize}
+
+
+\subsection{Function Documentation}
+\index{api.\+cpp@{api.\+cpp}!Connect@{Connect}}
+\index{Connect@{Connect}!api.\+cpp@{api.\+cpp}}
+\subsubsection[{\texorpdfstring{Connect(void $\ast$const handle, const char $\ast$const ip, const char $\ast$const port, const uint32\+\_\+t timeout, const uint8\+\_\+t Transmission\+Mode, const uint8\+\_\+t Block\+Size, const uint16\+\_\+t Retransmission\+Redundancy)}{Connect(void *const handle, const char *const ip, const char *const port, const uint32_t timeout, const uint8_t TransmissionMode, const uint8_t BlockSize, const uint16_t RetransmissionRedundancy)}}]{\setlength{\rightskip}{0pt plus 5cm}bool Connect (
+\begin{DoxyParamCaption}
+\item[{void $\ast$const}]{handle, }
+\item[{const char $\ast$const}]{ip, }
+\item[{const char $\ast$const}]{port, }
+\item[{const uint32\+\_\+t}]{timeout, }
+\item[{const uint8\+\_\+t}]{Transmission\+Mode, }
+\item[{const uint8\+\_\+t}]{Block\+Size, }
+\item[{const uint16\+\_\+t}]{Retransmission\+Redundancy}
+\end{DoxyParamCaption}
+)}\hypertarget{api_8cpp_a9667591a4992743a2fdc23c522b1a95f}{}\label{api_8cpp_a9667591a4992743a2fdc23c522b1a95f}
+\index{api.\+cpp@{api.\+cpp}!Disconnect@{Disconnect}}
+\index{Disconnect@{Disconnect}!api.\+cpp@{api.\+cpp}}
+\subsubsection[{\texorpdfstring{Disconnect(void $\ast$const handle, const char $\ast$const ip, const char $\ast$const port)}{Disconnect(void *const handle, const char *const ip, const char *const port)}}]{\setlength{\rightskip}{0pt plus 5cm}void Disconnect (
+\begin{DoxyParamCaption}
+\item[{void $\ast$const}]{handle, }
+\item[{const char $\ast$const}]{ip, }
+\item[{const char $\ast$const}]{port}
+\end{DoxyParamCaption}
+)}\hypertarget{api_8cpp_ad588a8206955cddf85e2fd04c9254bf7}{}\label{api_8cpp_ad588a8206955cddf85e2fd04c9254bf7}
+\index{api.\+cpp@{api.\+cpp}!Flush@{Flush}}
+\index{Flush@{Flush}!api.\+cpp@{api.\+cpp}}
+\subsubsection[{\texorpdfstring{Flush(void $\ast$const handle, const char $\ast$const ip, const char $\ast$const port)}{Flush(void *const handle, const char *const ip, const char *const port)}}]{\setlength{\rightskip}{0pt plus 5cm}bool Flush (
+\begin{DoxyParamCaption}
+\item[{void $\ast$const}]{handle, }
+\item[{const char $\ast$const}]{ip, }
+\item[{const char $\ast$const}]{port}
+\end{DoxyParamCaption}
+)}\hypertarget{api_8cpp_a3ff240b3bf98c3d8f768ef66b1c51082}{}\label{api_8cpp_a3ff240b3bf98c3d8f768ef66b1c51082}
+\index{api.\+cpp@{api.\+cpp}!Free\+Socket@{Free\+Socket}}
+\index{Free\+Socket@{Free\+Socket}!api.\+cpp@{api.\+cpp}}
+\subsubsection[{\texorpdfstring{Free\+Socket(void $\ast$handle)}{FreeSocket(void *handle)}}]{\setlength{\rightskip}{0pt plus 5cm}void Free\+Socket (
+\begin{DoxyParamCaption}
+\item[{void $\ast$}]{handle}
+\end{DoxyParamCaption}
+)}\hypertarget{api_8cpp_ab3016f37874e411f7a868806bb52bcfd}{}\label{api_8cpp_ab3016f37874e411f7a868806bb52bcfd}
+\index{api.\+cpp@{api.\+cpp}!Init\+Socket@{Init\+Socket}}
+\index{Init\+Socket@{Init\+Socket}!api.\+cpp@{api.\+cpp}}
+\subsubsection[{\texorpdfstring{Init\+Socket(const char $\ast$const local\+\_\+port, const uint32\+\_\+t Rx\+Timeout, const uint32\+\_\+t Tx\+Timeout, const std\+::function$<$ void(uint8\+\_\+t $\ast$const buffer, const uint16\+\_\+t length, const void $\ast$const sender\+\_\+addr, const uint32\+\_\+t sender\+\_\+addr\+\_\+len)$>$ cb)}{InitSocket(const char *const local_port, const uint32_t RxTimeout, const uint32_t TxTimeout, const std::function< void(uint8_t *const buffer, const uint16_t length, const void *const sender_addr, const uint32_t sender_addr_len)> cb)}}]{\setlength{\rightskip}{0pt plus 5cm}void$\ast$ Init\+Socket (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$const}]{local\+\_\+port, }
+\item[{const uint32\+\_\+t}]{Rx\+Timeout, }
+\item[{const uint32\+\_\+t}]{Tx\+Timeout, }
+\item[{const std\+::function$<$ void(uint8\+\_\+t $\ast$const buffer, const uint16\+\_\+t length, const void $\ast$const sender\+\_\+addr, const uint32\+\_\+t sender\+\_\+addr\+\_\+len)$>$}]{cb}
+\end{DoxyParamCaption}
+)}\hypertarget{api_8cpp_a54f4d0e3c3e776574ae33de8fc7e0532}{}\label{api_8cpp_a54f4d0e3c3e776574ae33de8fc7e0532}
+\index{api.\+cpp@{api.\+cpp}!Receive@{Receive}}
+\index{Receive@{Receive}!api.\+cpp@{api.\+cpp}}
+\subsubsection[{\texorpdfstring{Receive(void $\ast$const handle, uint8\+\_\+t $\ast$const buffer, uint16\+\_\+t $\ast$const length, void $\ast$const address, uint32\+\_\+t $\ast$const sender\+\_\+addr\+\_\+len, uint32\+\_\+t timeout)}{Receive(void *const handle, uint8_t *const buffer, uint16_t *const length, void *const address, uint32_t *const sender_addr_len, uint32_t timeout)}}]{\setlength{\rightskip}{0pt plus 5cm}bool Receive (
+\begin{DoxyParamCaption}
+\item[{void $\ast$const}]{handle, }
+\item[{uint8\+\_\+t $\ast$const}]{buffer, }
+\item[{uint16\+\_\+t $\ast$const}]{length, }
+\item[{void $\ast$const}]{address, }
+\item[{uint32\+\_\+t $\ast$const}]{sender\+\_\+addr\+\_\+len, }
+\item[{uint32\+\_\+t}]{timeout}
+\end{DoxyParamCaption}
+)}\hypertarget{api_8cpp_ad8547f292eb9a8b94cbc9a9995bcaa5a}{}\label{api_8cpp_ad8547f292eb9a8b94cbc9a9995bcaa5a}
+\index{api.\+cpp@{api.\+cpp}!Send@{Send}}
+\index{Send@{Send}!api.\+cpp@{api.\+cpp}}
+\subsubsection[{\texorpdfstring{Send(void $\ast$const handle, const char $\ast$const ip, const char $\ast$const port, uint8\+\_\+t $\ast$const buff, const uint16\+\_\+t size)}{Send(void *const handle, const char *const ip, const char *const port, uint8_t *const buff, const uint16_t size)}}]{\setlength{\rightskip}{0pt plus 5cm}bool Send (
+\begin{DoxyParamCaption}
+\item[{void $\ast$const}]{handle, }
+\item[{const char $\ast$const}]{ip, }
+\item[{const char $\ast$const}]{port, }
+\item[{uint8\+\_\+t $\ast$const}]{buff, }
+\item[{const uint16\+\_\+t}]{size}
+\end{DoxyParamCaption}
+)}\hypertarget{api_8cpp_a29363b43f2198ee45a2748b9ae6b0757}{}\label{api_8cpp_a29363b43f2198ee45a2748b9ae6b0757}
+\index{api.\+cpp@{api.\+cpp}!Wait\+Until\+Tx\+Is\+Completed@{Wait\+Until\+Tx\+Is\+Completed}}
+\index{Wait\+Until\+Tx\+Is\+Completed@{Wait\+Until\+Tx\+Is\+Completed}!api.\+cpp@{api.\+cpp}}
+\subsubsection[{\texorpdfstring{Wait\+Until\+Tx\+Is\+Completed(void $\ast$const handle, const char $\ast$const ip, const char $\ast$const port)}{WaitUntilTxIsCompleted(void *const handle, const char *const ip, const char *const port)}}]{\setlength{\rightskip}{0pt plus 5cm}void Wait\+Until\+Tx\+Is\+Completed (
+\begin{DoxyParamCaption}
+\item[{void $\ast$const}]{handle, }
+\item[{const char $\ast$const}]{ip, }
+\item[{const char $\ast$const}]{port}
+\end{DoxyParamCaption}
+)}\hypertarget{api_8cpp_afeb903740106a90a82fae5f37d10690e}{}\label{api_8cpp_afeb903740106a90a82fae5f37d10690e}

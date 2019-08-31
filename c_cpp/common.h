@@ -75,7 +75,7 @@ struct Data : Common
     };
     // ^^^ This part is not encoded ^^^ //
     uint16_t m_PayloadSize;
-    uint8_t m_LastIndicator;
+    uint8_t m_LastIndicator;                        ///< @todo This is reserved for support of fragmentation.
     uint8_t m_Codes[1];
     // ^^^ This part is encoded ^^^ //
 } __attribute__((packed, may_alias));

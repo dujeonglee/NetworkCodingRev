@@ -1,0 +1,43 @@
+\hypertarget{class_network_coding_1_1_n_c_socket}{}\section{Network\+Coding\+:\+:N\+C\+Socket Class Reference}
+\label{class_network_coding_1_1_n_c_socket}\index{Network\+Coding\+::\+N\+C\+Socket@{Network\+Coding\+::\+N\+C\+Socket}}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+{\bfseries N\+C\+Socket} (const \hyperlink{class_network_coding_1_1_n_c_socket}{N\+C\+Socket} \&)=delete\hypertarget{class_network_coding_1_1_n_c_socket_a23e2cac75f11b839938b2acbaf3acaa7}{}\label{class_network_coding_1_1_n_c_socket_a23e2cac75f11b839938b2acbaf3acaa7}
+
+\item 
+{\bfseries N\+C\+Socket} (\hyperlink{class_network_coding_1_1_n_c_socket}{N\+C\+Socket} \&\&)=delete\hypertarget{class_network_coding_1_1_n_c_socket_a135586fbe7ba03e08a258172bf32bd44}{}\label{class_network_coding_1_1_n_c_socket_a135586fbe7ba03e08a258172bf32bd44}
+
+\item 
+{\bfseries N\+C\+Socket} (const std\+::string P\+O\+RT, const uint32\+\_\+t R\+X\+T\+I\+M\+E\+O\+UT, const uint32\+\_\+t T\+X\+T\+I\+M\+E\+O\+UT, const std\+::function$<$ void(uint8\+\_\+t $\ast$const buffer, const uint16\+\_\+t length, const sockaddr $\ast$const sender\+\_\+addr, const uint32\+\_\+t sender\+\_\+addr\+\_\+len)$>$ rx)\hypertarget{class_network_coding_1_1_n_c_socket_acf1ee3b4bebbe25a6dd6dfdee9b1fdfb}{}\label{class_network_coding_1_1_n_c_socket_acf1ee3b4bebbe25a6dd6dfdee9b1fdfb}
+
+\item 
+\hyperlink{class_network_coding_1_1_n_c_socket}{N\+C\+Socket} \& {\bfseries operator=} (const \hyperlink{class_network_coding_1_1_n_c_socket}{N\+C\+Socket} \&)=delete\hypertarget{class_network_coding_1_1_n_c_socket_a440c01c767596edc5dab1bc9f80824f3}{}\label{class_network_coding_1_1_n_c_socket_a440c01c767596edc5dab1bc9f80824f3}
+
+\item 
+\hyperlink{class_network_coding_1_1_n_c_socket}{N\+C\+Socket} \& {\bfseries operator=} (\hyperlink{class_network_coding_1_1_n_c_socket}{N\+C\+Socket} \&\&)=delete\hypertarget{class_network_coding_1_1_n_c_socket_ab8ca12964a95b2a54d86a7b4e6325ca9}{}\label{class_network_coding_1_1_n_c_socket_ab8ca12964a95b2a54d86a7b4e6325ca9}
+
+\item 
+bool {\bfseries Connect} (const std\+::string ip, const std\+::string port, const uint32\+\_\+t timeout, const Parameter\+::\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+DE Transmission\+Mode, const Parameter\+::\+B\+L\+O\+C\+K\+\_\+\+S\+I\+ZE Block\+Size, const uint16\+\_\+t Retransmission\+Redundancy)\hypertarget{class_network_coding_1_1_n_c_socket_a1374c825f9a5403fbccf48b55ba051fd}{}\label{class_network_coding_1_1_n_c_socket_a1374c825f9a5403fbccf48b55ba051fd}
+
+\item 
+void {\bfseries Disconnect} (const std\+::string ip, const std\+::string port)\hypertarget{class_network_coding_1_1_n_c_socket_a96394c488e1f394c624202c85a60e9e0}{}\label{class_network_coding_1_1_n_c_socket_a96394c488e1f394c624202c85a60e9e0}
+
+\item 
+bool {\bfseries Send} (const std\+::string ip, const std\+::string port, uint8\+\_\+t $\ast$const buff, const uint16\+\_\+t size)\hypertarget{class_network_coding_1_1_n_c_socket_a68d0a54287a8ccaad0635cac3e24d8b2}{}\label{class_network_coding_1_1_n_c_socket_a68d0a54287a8ccaad0635cac3e24d8b2}
+
+\item 
+bool {\bfseries Flush} (const std\+::string ip, const std\+::string port)\hypertarget{class_network_coding_1_1_n_c_socket_a2a507dbb11c5c85c1604c45466f2ae87}{}\label{class_network_coding_1_1_n_c_socket_a2a507dbb11c5c85c1604c45466f2ae87}
+
+\item 
+void {\bfseries Wait\+Until\+Tx\+Is\+Completed} (const std\+::string ip, const std\+::string port)\hypertarget{class_network_coding_1_1_n_c_socket_ac7d30bf07839598f790e702766e720cd}{}\label{class_network_coding_1_1_n_c_socket_ac7d30bf07839598f790e702766e720cd}
+
+\item 
+bool {\bfseries Receive} (uint8\+\_\+t $\ast$const buffer, uint16\+\_\+t $\ast$const length, sockaddr $\ast$const sender\+\_\+addr, uint32\+\_\+t $\ast$const sender\+\_\+addr\+\_\+len, uint32\+\_\+t timeout)\hypertarget{class_network_coding_1_1_n_c_socket_afb8b2cf0fa29cd712f4cee4edc6d71b8}{}\label{class_network_coding_1_1_n_c_socket_afb8b2cf0fa29cd712f4cee4edc6d71b8}
+
+\end{DoxyCompactItemize}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/home/dujeonglee/\+Network\+Coding\+Rev/c\+\_\+cpp/ncsocket.\+h\end{DoxyCompactItemize}

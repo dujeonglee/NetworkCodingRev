@@ -1,0 +1,44 @@
+\hypertarget{class_network_coding_1_1_reception}{}\section{Network\+Coding\+:\+:Reception Class Reference}
+\label{class_network_coding_1_1_reception}\index{Network\+Coding\+::\+Reception@{Network\+Coding\+::\+Reception}}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+{\bfseries Reception} (const int32\+\_\+t Socket, const std\+::function$<$ void(uint8\+\_\+t $\ast$buffer, uint16\+\_\+t length, const sockaddr $\ast$const sender\+\_\+addr, const uint32\+\_\+t sender\+\_\+addr\+\_\+len)$>$ rx)\hypertarget{class_network_coding_1_1_reception_a217e7e7924e2f8d7d0e93c95eb7802d0}{}\label{class_network_coding_1_1_reception_a217e7e7924e2f8d7d0e93c95eb7802d0}
+
+\item 
+void {\bfseries Rx\+Handler} (uint8\+\_\+t $\ast$const buffer, const uint16\+\_\+t size, const sockaddr $\ast$const sender\+\_\+addr, const uint32\+\_\+t sender\+\_\+addr\+\_\+len)\hypertarget{class_network_coding_1_1_reception_ad726803ebdc2d2761e0e11f6affcd488}{}\label{class_network_coding_1_1_reception_ad726803ebdc2d2761e0e11f6affcd488}
+
+\item 
+bool {\bfseries Receive} (uint8\+\_\+t $\ast$const buffer, uint16\+\_\+t $\ast$const length, sockaddr $\ast$const sender\+\_\+addr, uint32\+\_\+t $\ast$const sender\+\_\+addr\+\_\+len, uint32\+\_\+t timeout)\hypertarget{class_network_coding_1_1_reception_a1b1a8112382aeb967f46b73e385954d7}{}\label{class_network_coding_1_1_reception_a1b1a8112382aeb967f46b73e385954d7}
+
+\end{DoxyCompactItemize}
+\subsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+const std\+::function$<$ void(uint8\+\_\+t $\ast$const buffer, const uint16\+\_\+t length, const sockaddr $\ast$const sender\+\_\+addr, const uint32\+\_\+t sender\+\_\+addr\+\_\+len)$>$ {\bfseries m\+\_\+\+Rx\+Callback}\hypertarget{class_network_coding_1_1_reception_af4982d41ddad866f366f7d17a29c7de0}{}\label{class_network_coding_1_1_reception_af4982d41ddad866f366f7d17a29c7de0}
+
+\item 
+std\+::mutex {\bfseries m\+\_\+\+Packet\+Queue\+Lock}\hypertarget{class_network_coding_1_1_reception_a49d297f20d3c70cc334ff76846d912d4}{}\label{class_network_coding_1_1_reception_a49d297f20d3c70cc334ff76846d912d4}
+
+\item 
+std\+::condition\+\_\+variable {\bfseries m\+\_\+\+Condition}\hypertarget{class_network_coding_1_1_reception_ad79660bdfc37f6d0f1c5d91059ba0c8e}{}\label{class_network_coding_1_1_reception_ad79660bdfc37f6d0f1c5d91059ba0c8e}
+
+\item 
+std\+::deque$<$ std\+::tuple$<$ \hyperlink{class_network_coding_1_1_data_types_1_1_address}{Data\+Types\+::\+Address}, uint8\+\_\+t $\ast$ $>$ $>$ {\bfseries m\+\_\+\+Packet\+Queue}\hypertarget{class_network_coding_1_1_reception_adc73afa8de48a266ff81eef3a023e3b4}{}\label{class_network_coding_1_1_reception_adc73afa8de48a266ff81eef3a023e3b4}
+
+\end{DoxyCompactItemize}
+\subsection*{Friends}
+\begin{DoxyCompactItemize}
+\item 
+class {\bfseries Reception\+Block}\hypertarget{class_network_coding_1_1_reception_a3b0db9f68934c426ad673e63d3183b29}{}\label{class_network_coding_1_1_reception_a3b0db9f68934c426ad673e63d3183b29}
+
+\item 
+class {\bfseries Reception\+Session}\hypertarget{class_network_coding_1_1_reception_a6ed072e1f429e5e4bda0467d37cf64b8}{}\label{class_network_coding_1_1_reception_a6ed072e1f429e5e4bda0467d37cf64b8}
+
+\end{DoxyCompactItemize}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/home/dujeonglee/\+Network\+Coding\+Rev/c\+\_\+cpp/rx.\+h\item 
+/home/dujeonglee/\+Network\+Coding\+Rev/c\+\_\+cpp/rx.\+cpp\end{DoxyCompactItemize}

@@ -1,0 +1,466 @@
+\hypertarget{class_network_coding_1_1_transmission_session}{}\section{Network\+Coding\+:\+:Transmission\+Session Class Reference}
+\label{class_network_coding_1_1_transmission_session}\index{Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}}
+
+
+Network coding session.  
+
+
+
+
+{\ttfamily \#include $<$tx.\+h$>$}
+
+
+
+Collaboration diagram for Network\+Coding\+:\+:Transmission\+Session\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_network_coding_1_1_transmission_session__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Types}
+\begin{DoxyCompactItemize}
+\item 
+enum \hyperlink{class_network_coding_1_1_transmission_session_aa224de09cc46cfd07df11e4ddeff7472}{Task\+Priority} \{ {\bfseries H\+I\+G\+H\+\_\+\+P\+R\+I\+O\+R\+I\+TY} = 0, 
+{\bfseries M\+I\+D\+D\+L\+E\+\_\+\+P\+R\+I\+O\+R\+I\+TY}, 
+{\bfseries L\+O\+W\+\_\+\+P\+R\+I\+O\+R\+I\+TY}, 
+{\bfseries P\+R\+I\+O\+R\+I\+T\+Y\+\_\+\+L\+E\+V\+E\+LS}
+ \}\hypertarget{class_network_coding_1_1_transmission_session_aa224de09cc46cfd07df11e4ddeff7472}{}\label{class_network_coding_1_1_transmission_session_aa224de09cc46cfd07df11e4ddeff7472}
+\begin{DoxyCompactList}\small\item\em $<$ Priority of lambda task queued on m\+\_\+\+Timer. \end{DoxyCompactList}
+\end{DoxyCompactItemize}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{class_network_coding_1_1_transmission_session_a4ab773a704ec3740cbf222cad7e45262}{Transmission\+Session} (\hyperlink{class_network_coding_1_1_transmission}{Transmission} $\ast$const transmission, const int32\+\_\+t Socket, const \hyperlink{class_network_coding_1_1_data_types_1_1_address}{Data\+Types\+::\+Address} Addr, const Parameter\+::\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+DE Transmission\+Mode=Parameter\+::\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+D\+E\+::\+R\+E\+L\+I\+A\+B\+L\+E\+\_\+\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+DE, const Parameter\+::\+B\+L\+O\+C\+K\+\_\+\+S\+I\+ZE Block\+Size=Parameter\+::\+B\+L\+O\+C\+K\+\_\+\+S\+I\+Z\+E\+::\+B\+L\+O\+C\+K\+\_\+\+S\+I\+Z\+E\+\_\+04, const uint16\+\_\+t Retransmission\+Redundancy=0)
+\begin{DoxyCompactList}\small\item\em Construct a new \hyperlink{class_network_coding_1_1_transmission_session}{Transmission\+Session} object. \end{DoxyCompactList}\item 
+{\bfseries Transmission\+Session} (const \hyperlink{class_network_coding_1_1_transmission_session}{Transmission\+Session} \&)=delete\hypertarget{class_network_coding_1_1_transmission_session_ad6ea42437c5b6233d5785fe6c2126c1b}{}\label{class_network_coding_1_1_transmission_session_ad6ea42437c5b6233d5785fe6c2126c1b}
+
+\item 
+{\bfseries Transmission\+Session} (\hyperlink{class_network_coding_1_1_transmission_session}{Transmission\+Session} \&\&)=delete\hypertarget{class_network_coding_1_1_transmission_session_a455fee7d9cb4c90bacb304ad37373548}{}\label{class_network_coding_1_1_transmission_session_a455fee7d9cb4c90bacb304ad37373548}
+
+\item 
+\hyperlink{class_network_coding_1_1_transmission_session_a56c1ac128002a5e5e554511dba2d6a1d}{$\sim$\+Transmission\+Session} ()
+\begin{DoxyCompactList}\small\item\em Destroy the \hyperlink{class_network_coding_1_1_transmission_session}{Transmission\+Session} object. \end{DoxyCompactList}\item 
+\hyperlink{class_network_coding_1_1_transmission_session}{Transmission\+Session} \& {\bfseries operator=} (const \hyperlink{class_network_coding_1_1_transmission_session}{Transmission\+Session} \&)=delete\hypertarget{class_network_coding_1_1_transmission_session_a9005d3d1bfb5e5ef8b0a3c01f1426406}{}\label{class_network_coding_1_1_transmission_session_a9005d3d1bfb5e5ef8b0a3c01f1426406}
+
+\item 
+\hyperlink{class_network_coding_1_1_transmission_session}{Transmission\+Session} \& {\bfseries operator=} (\hyperlink{class_network_coding_1_1_transmission_session}{Transmission\+Session} \&\&)=delete\hypertarget{class_network_coding_1_1_transmission_session_a51b0867e33647c0f0556992d4a099829}{}\label{class_network_coding_1_1_transmission_session_a51b0867e33647c0f0556992d4a099829}
+
+\item 
+void \hyperlink{class_network_coding_1_1_transmission_session_a99838e572cbc7b5876d59d767e399a4e}{Change\+Transmission\+Mode} (const Parameter\+::\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+DE Transmission\+Mode)
+\begin{DoxyCompactList}\small\item\em Change transmission mode. The change will take effect from the next \hyperlink{class_network_coding_1_1_transmission_block}{Transmission\+Block}. \end{DoxyCompactList}\item 
+void \hyperlink{class_network_coding_1_1_transmission_session_aaeb60cbe08b7ba62291dbfff17ed987d}{Change\+Block\+Size} (const Parameter\+::\+B\+L\+O\+C\+K\+\_\+\+S\+I\+ZE Block\+Size)
+\begin{DoxyCompactList}\small\item\em Change block size. The change will take effect from the next \hyperlink{class_network_coding_1_1_transmission_block}{Transmission\+Block}. \end{DoxyCompactList}\item 
+void \hyperlink{class_network_coding_1_1_transmission_session_ae3d21866fedfd756de3d7ab6d2151ec4}{Change\+Retransmission\+Redundancy} (const uint16\+\_\+t Retransmission\+Redundancy)
+\begin{DoxyCompactList}\small\item\em Change retransmission redundancy. Retransmission redundancy is only valid for B\+E\+S\+T\+\_\+\+E\+F\+F\+O\+R\+T\+\_\+\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+DE. The change will take effect from the next \hyperlink{class_network_coding_1_1_transmission_block}{Transmission\+Block}. \end{DoxyCompactList}\item 
+void \hyperlink{class_network_coding_1_1_transmission_session_a4a2f5696da8bd656d1b250d2319f1212}{Change\+Session\+Parameter} (const Parameter\+::\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+DE Transmission\+Mode, const Parameter\+::\+B\+L\+O\+C\+K\+\_\+\+S\+I\+ZE Block\+Size, const uint16\+\_\+t Retransmission\+Redundancy)
+\begin{DoxyCompactList}\small\item\em Change the above session parameters at the same time. The changes will take effect from the next \hyperlink{class_network_coding_1_1_transmission_block}{Transmission\+Block}. \end{DoxyCompactList}\item 
+const bool \hyperlink{class_network_coding_1_1_transmission_session_a732d177580449a1473cea103465b1c5b}{Send\+Ping} ()
+\begin{DoxyCompactList}\small\item\em Send ping packet to the remote host. \end{DoxyCompactList}\item 
+void \hyperlink{class_network_coding_1_1_transmission_session_a208883657ae7c03b6405fd949bc06d7a}{Process\+Pong} (const uint16\+\_\+t Rtt)
+\begin{DoxyCompactList}\small\item\em Process pong packet. \end{DoxyCompactList}\item 
+void \hyperlink{class_network_coding_1_1_transmission_session_a31f038cb688e2e95e40f63821baf34a8}{Process\+Data\+Ack} (const uint8\+\_\+t Rank, const uint8\+\_\+t Max\+Rank, const uint8\+\_\+t Loss, const uint16\+\_\+t Sequence)
+\begin{DoxyCompactList}\small\item\em Process ack. \end{DoxyCompactList}\item 
+void \hyperlink{class_network_coding_1_1_transmission_session_adf9cb35f78ec3f03d92ec4d46faa1c66}{Process\+Sync\+Ack} (const uint16\+\_\+t sequence)
+\begin{DoxyCompactList}\small\item\em Process ack sync. \end{DoxyCompactList}\item 
+void \hyperlink{class_network_coding_1_1_transmission_session_ae248b2c48a54243ce1e47837337231df}{Push\+Data\+Packet} (uint8\+\_\+t $\ast$const buffer, const uint16\+\_\+t size, bool orig, \hyperlink{class_network_coding_1_1_transmission_block}{Transmission\+Block} $\ast$const block)
+\begin{DoxyCompactList}\small\item\em Enqueue a packet into m\+\_\+\+Tx\+Queue for transmission. \end{DoxyCompactList}\item 
+uint16\+\_\+t \hyperlink{class_network_coding_1_1_transmission_session_adeda0f8096e8fa5845d4f0377193cf73}{Pop\+Data\+Packet} ()
+\begin{DoxyCompactList}\small\item\em Dequeue a packet from m\+\_\+\+Tx\+Queue and transmit the packet. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{class_network_coding_1_1_transmission}{Transmission} $\ast$const \hyperlink{class_network_coding_1_1_transmission_session_a76808b9fb4d31f1c471ef313e50aff54}{c\+\_\+\+Transmission}\hypertarget{class_network_coding_1_1_transmission_session_a76808b9fb4d31f1c471ef313e50aff54}{}\label{class_network_coding_1_1_transmission_session_a76808b9fb4d31f1c471ef313e50aff54}
+
+\begin{DoxyCompactList}\small\item\em Pointer of the \hyperlink{class_network_coding_1_1_transmission}{Transmission} object that this session is associated. \end{DoxyCompactList}\item 
+const int32\+\_\+t \hyperlink{class_network_coding_1_1_transmission_session_a9d0373f0889c3f9ed0cead43c8cfefa9}{c\+\_\+\+Socket}\hypertarget{class_network_coding_1_1_transmission_session_a9d0373f0889c3f9ed0cead43c8cfefa9}{}\label{class_network_coding_1_1_transmission_session_a9d0373f0889c3f9ed0cead43c8cfefa9}
+
+\begin{DoxyCompactList}\small\item\em Socket descriptor used to transmit and receive packets. \end{DoxyCompactList}\item 
+const \hyperlink{class_network_coding_1_1_data_types_1_1_address}{Data\+Types\+::\+Address} \hyperlink{class_network_coding_1_1_transmission_session_a7ab84397c986b771ff4332746d9d948a}{c\+\_\+\+Addr}
+\begin{DoxyCompactList}\small\item\em Remote host\textquotesingle{}s address. \end{DoxyCompactList}\item 
+std\+::atomic$<$ bool $>$ \hyperlink{class_network_coding_1_1_transmission_session_aa12eab14f68b6e4dc5e2de25ff017282}{m\+\_\+\+Is\+Connected}\hypertarget{class_network_coding_1_1_transmission_session_aa12eab14f68b6e4dc5e2de25ff017282}{}\label{class_network_coding_1_1_transmission_session_aa12eab14f68b6e4dc5e2de25ff017282}
+
+\begin{DoxyCompactList}\small\item\em Boolean variable indicating connection status. \end{DoxyCompactList}\item 
+std\+::atomic$<$ uint16\+\_\+t $>$ \hyperlink{class_network_coding_1_1_transmission_session_a3c5449f03555c74ccff2e4d0b99c13d9}{m\+\_\+\+Min\+Block\+Sequence\+Number}\hypertarget{class_network_coding_1_1_transmission_session_a3c5449f03555c74ccff2e4d0b99c13d9}{}\label{class_network_coding_1_1_transmission_session_a3c5449f03555c74ccff2e4d0b99c13d9}
+
+\begin{DoxyCompactList}\small\item\em Minimum block sequence number under transmission. \end{DoxyCompactList}\item 
+std\+::atomic$<$ uint16\+\_\+t $>$ \hyperlink{class_network_coding_1_1_transmission_session_ada3247219b3f08a5c65b1d804bfa976c}{m\+\_\+\+Max\+Block\+Sequence\+Number}\hypertarget{class_network_coding_1_1_transmission_session_ada3247219b3f08a5c65b1d804bfa976c}{}\label{class_network_coding_1_1_transmission_session_ada3247219b3f08a5c65b1d804bfa976c}
+
+\begin{DoxyCompactList}\small\item\em Maximum block sequence number under transmission. \end{DoxyCompactList}\item 
+std\+::map$<$ int32\+\_\+t, int16\+\_\+t $>$ \hyperlink{class_network_coding_1_1_transmission_session_aa7b466f696587e66d2a961701d552a6a}{m\+\_\+\+Ack\+List}\hypertarget{class_network_coding_1_1_transmission_session_aa7b466f696587e66d2a961701d552a6a}{}\label{class_network_coding_1_1_transmission_session_aa7b466f696587e66d2a961701d552a6a}
+
+\begin{DoxyCompactList}\small\item\em A pair of block sequence number(int32\+\_\+t) and acked rank(int16\+\_\+t). \end{DoxyCompactList}\item 
+std\+::mutex \hyperlink{class_network_coding_1_1_transmission_session_aa6c2b27cc410ad42e72f1daaec900600}{m\+\_\+\+Ack\+List\+Lock}\hypertarget{class_network_coding_1_1_transmission_session_aa6c2b27cc410ad42e72f1daaec900600}{}\label{class_network_coding_1_1_transmission_session_aa6c2b27cc410ad42e72f1daaec900600}
+
+\begin{DoxyCompactList}\small\item\em Lock for m\+\_\+\+Ack\+List. \end{DoxyCompactList}\item 
+uint16\+\_\+t \hyperlink{class_network_coding_1_1_transmission_session_a7888abd5fd616a2cf7d9953b570b492c}{m\+\_\+\+Round\+Trip\+Time}
+\begin{DoxyCompactList}\small\item\em Measured R\+TT. It is measured using ping and pong packets. \end{DoxyCompactList}\item 
+uint16\+\_\+t \hyperlink{class_network_coding_1_1_transmission_session_a3b8bbbaab2050d0c5a47ecec913bada4}{m\+\_\+\+Retransmission\+Redundancy}
+\begin{DoxyCompactList}\small\item\em Maximum number of remedy packets. It is valid only when mode is B\+E\+S\+T\+\_\+\+E\+F\+F\+O\+R\+T\+\_\+\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+DE. \end{DoxyCompactList}\item 
+uint8\+\_\+t \hyperlink{class_network_coding_1_1_transmission_session_affd2b90f3eb8788d1a2228a0293ebbcf}{m\+\_\+\+Transmission\+Mode}
+\begin{DoxyCompactList}\small\item\em Mode. \end{DoxyCompactList}\item 
+uint8\+\_\+t \hyperlink{class_network_coding_1_1_transmission_session_a262e1ebcc22845e897947ddb5713c71b}{m\+\_\+\+Block\+Size}
+\begin{DoxyCompactList}\small\item\em Block size. \end{DoxyCompactList}\item 
+Single\+Shot\+Timer$<$ Task\+Priority\+::\+P\+R\+I\+O\+R\+I\+T\+Y\+\_\+\+L\+E\+V\+E\+LS, 1 $>$ \hyperlink{class_network_coding_1_1_transmission_session_a73487485091c27671139faa56b28ac2a}{m\+\_\+\+Timer}
+\begin{DoxyCompactList}\small\item\em Single-\/threaded work queue. \end{DoxyCompactList}\item 
+std\+::atomic$<$ C\+L\+O\+C\+K\+::time\+\_\+point\+::duration\+::rep $>$ \hyperlink{class_network_coding_1_1_transmission_session_abb6d66fd378f02bb7147e9b0faca7fd5}{m\+\_\+\+Last\+Pong\+Time}\hypertarget{class_network_coding_1_1_transmission_session_abb6d66fd378f02bb7147e9b0faca7fd5}{}\label{class_network_coding_1_1_transmission_session_abb6d66fd378f02bb7147e9b0faca7fd5}
+
+\begin{DoxyCompactList}\small\item\em Last pong time. It is used to measure R\+TT. \end{DoxyCompactList}\item 
+std\+::queue$<$ std\+::tuple$<$ uint8\+\_\+t $\ast$const, const uint16\+\_\+t, const bool, \hyperlink{class_network_coding_1_1_transmission_block}{Transmission\+Block} $\ast$const  $>$ $>$ \hyperlink{class_network_coding_1_1_transmission_session_a1cd636a998d235ce74ee38097792aac0}{m\+\_\+\+Tx\+Queue}\hypertarget{class_network_coding_1_1_transmission_session_a1cd636a998d235ce74ee38097792aac0}{}\label{class_network_coding_1_1_transmission_session_a1cd636a998d235ce74ee38097792aac0}
+
+\begin{DoxyCompactList}\small\item\em Tx buffer. \end{DoxyCompactList}\item 
+\hyperlink{class_network_coding_1_1_transmission_block}{Transmission\+Block} $\ast$ \hyperlink{class_network_coding_1_1_transmission_session_acc18d6b10a856b3dfda76c7b85899911}{p\+\_\+\+Transmission\+Block}\hypertarget{class_network_coding_1_1_transmission_session_acc18d6b10a856b3dfda76c7b85899911}{}\label{class_network_coding_1_1_transmission_session_acc18d6b10a856b3dfda76c7b85899911}
+
+\begin{DoxyCompactList}\small\item\em Pointer of the \hyperlink{class_network_coding_1_1_transmission_block}{Transmission\+Block} object currently in transmission. \end{DoxyCompactList}\item 
+std\+::atomic$<$ uint32\+\_\+t $>$ \hyperlink{class_network_coding_1_1_transmission_session_adbefe1608512aa1e65782ad6f49fed2e}{m\+\_\+\+Congestion\+Window}\hypertarget{class_network_coding_1_1_transmission_session_adbefe1608512aa1e65782ad6f49fed2e}{}\label{class_network_coding_1_1_transmission_session_adbefe1608512aa1e65782ad6f49fed2e}
+
+\begin{DoxyCompactList}\small\item\em Congestion window size. It is doubled whenever ack is received within m\+\_\+\+Round\+Trip\+Time. \end{DoxyCompactList}\item 
+std\+::atomic$<$ uint32\+\_\+t $>$ \hyperlink{class_network_coding_1_1_transmission_session_a27ee5813374da47482b72295b85548f4}{m\+\_\+\+Bytes\+Unacked}\hypertarget{class_network_coding_1_1_transmission_session_a27ee5813374da47482b72295b85548f4}{}\label{class_network_coding_1_1_transmission_session_a27ee5813374da47482b72295b85548f4}
+
+\begin{DoxyCompactList}\small\item\em Bytes unacked m\+\_\+\+Bytes\+Unacked $<$ m\+\_\+\+Congestion\+Window. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Network coding session. 
+
+\begin{DoxyRefDesc}{Todo}
+\item[\hyperlink{todo__todo000004}{Todo}]Implement socket bonding on multiple interfaces. \{ socket, m\+\_\+\+Round\+Trip\+Time, m\+\_\+\+Congestion\+Window, m\+\_\+\+Bytes\+Unacked \} \end{DoxyRefDesc}
+
+
+\subsection{Constructor \& Destructor Documentation}
+\index{Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}!Transmission\+Session@{Transmission\+Session}}
+\index{Transmission\+Session@{Transmission\+Session}!Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}}
+\subsubsection[{\texorpdfstring{Transmission\+Session(\+Transmission $\ast$const transmission, const int32\+\_\+t Socket, const Data\+Types\+::\+Address Addr, const Parameter\+::\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+D\+E Transmission\+Mode=\+Parameter\+::\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+D\+E\+::\+R\+E\+L\+I\+A\+B\+L\+E\+\_\+\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+D\+E, const Parameter\+::\+B\+L\+O\+C\+K\+\_\+\+S\+I\+Z\+E Block\+Size=\+Parameter\+::\+B\+L\+O\+C\+K\+\_\+\+S\+I\+Z\+E\+::\+B\+L\+O\+C\+K\+\_\+\+S\+I\+Z\+E\+\_\+04, const uint16\+\_\+t Retransmission\+Redundancy=0)}{TransmissionSession(Transmission *const transmission, const int32_t Socket, const DataTypes::Address Addr, const Parameter::TRANSMISSION_MODE TransmissionMode=Parameter::TRANSMISSION_MODE::RELIABLE_TRANSMISSION_MODE, const Parameter::BLOCK_SIZE BlockSize=Parameter::BLOCK_SIZE::BLOCK_SIZE_04, const uint16_t RetransmissionRedundancy=0)}}]{\setlength{\rightskip}{0pt plus 5cm}Transmission\+Session\+::\+Transmission\+Session (
+\begin{DoxyParamCaption}
+\item[{{\bf Transmission} $\ast$const}]{transmission, }
+\item[{const int32\+\_\+t}]{Socket, }
+\item[{const {\bf Data\+Types\+::\+Address}}]{Addr, }
+\item[{const Parameter\+::\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+DE}]{Transmission\+Mode = {\ttfamily Parameter\+:\+:TRANSMISSION\+\_\+MODE\+:\+:RELIABLE\+\_\+TRANSMISSION\+\_\+MODE}, }
+\item[{const Parameter\+::\+B\+L\+O\+C\+K\+\_\+\+S\+I\+ZE}]{Block\+Size = {\ttfamily Parameter\+:\+:BLOCK\+\_\+SIZE\+:\+:BLOCK\+\_\+SIZE\+\_\+04}, }
+\item[{const uint16\+\_\+t}]{Retransmission\+Redundancy = {\ttfamily 0}}
+\end{DoxyParamCaption}
+)}\hypertarget{class_network_coding_1_1_transmission_session_a4ab773a704ec3740cbf222cad7e45262}{}\label{class_network_coding_1_1_transmission_session_a4ab773a704ec3740cbf222cad7e45262}
+
+
+Construct a new \hyperlink{class_network_coding_1_1_transmission_session}{Transmission\+Session} object. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em transmission} & \+: Pointer of the \hyperlink{class_network_coding_1_1_transmission}{Transmission} object that this session is associated. \\
+\hline
+{\em Socket} & \+: Socket descriptor for this session. \\
+\hline
+{\em Addr} & \+: Remote host\textquotesingle{}s address. \\
+\hline
+\end{DoxyParams}
+\begin{DoxySeeAlso}{See also}
+\hyperlink{class_network_coding_1_1_data_types_1_1_address}{Network\+Coding\+::\+Data\+Types\+::\+Address}. 
+\end{DoxySeeAlso}
+
+\begin{DoxyParams}{Parameters}
+{\em Transmission\+Mode} & \+: mode. \\
+\hline
+\end{DoxyParams}
+\begin{DoxySeeAlso}{See also}
+Parameter\+::\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+DE (default R\+E\+L\+I\+A\+B\+L\+E\+\_\+\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+DE). 
+\end{DoxySeeAlso}
+
+\begin{DoxyParams}{Parameters}
+{\em Block\+Size} & \+: The size of block. \\
+\hline
+\end{DoxyParams}
+\begin{DoxySeeAlso}{See also}
+Network\+Coding\+::\+Parameter\+::\+B\+L\+O\+C\+K\+\_\+\+S\+I\+ZE (default B\+L\+O\+C\+K\+\_\+\+S\+I\+Z\+E\+\_\+04). 
+\end{DoxySeeAlso}
+
+\begin{DoxyParams}{Parameters}
+{\em Retransmission\+Redundancy} & \+: Retransmission redundancy. It is valid only when mode is B\+E\+S\+T\+\_\+\+E\+F\+F\+O\+R\+T\+\_\+\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+DE (default 0). \\
+\hline
+\end{DoxyParams}
+Initialize all member variables.\index{Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}!````~Transmission\+Session@{$\sim$\+Transmission\+Session}}
+\index{````~Transmission\+Session@{$\sim$\+Transmission\+Session}!Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}}
+\subsubsection[{\texorpdfstring{$\sim$\+Transmission\+Session()}{~TransmissionSession()}}]{\setlength{\rightskip}{0pt plus 5cm}Transmission\+Session\+::$\sim$\+Transmission\+Session (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}\hypertarget{class_network_coding_1_1_transmission_session_a56c1ac128002a5e5e554511dba2d6a1d}{}\label{class_network_coding_1_1_transmission_session_a56c1ac128002a5e5e554511dba2d6a1d}
+
+
+Destroy the \hyperlink{class_network_coding_1_1_transmission_session}{Transmission\+Session} object. 
+
+
+\begin{DoxyEnumerate}
+\item Set m\+\_\+\+Is\+Connected as disconnected, i.\+e. false.
+\item Stop m\+\_\+\+Timer.
+\item Clear m\+\_\+\+Tx\+Queue.
+\end{DoxyEnumerate}
+
+\subsection{Member Function Documentation}
+\index{Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}!Change\+Block\+Size@{Change\+Block\+Size}}
+\index{Change\+Block\+Size@{Change\+Block\+Size}!Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}}
+\subsubsection[{\texorpdfstring{Change\+Block\+Size(const Parameter\+::\+B\+L\+O\+C\+K\+\_\+\+S\+I\+Z\+E Block\+Size)}{ChangeBlockSize(const Parameter::BLOCK_SIZE BlockSize)}}]{\setlength{\rightskip}{0pt plus 5cm}void Transmission\+Session\+::\+Change\+Block\+Size (
+\begin{DoxyParamCaption}
+\item[{const Parameter\+::\+B\+L\+O\+C\+K\+\_\+\+S\+I\+ZE}]{Block\+Size}
+\end{DoxyParamCaption}
+)}\hypertarget{class_network_coding_1_1_transmission_session_aaeb60cbe08b7ba62291dbfff17ed987d}{}\label{class_network_coding_1_1_transmission_session_aaeb60cbe08b7ba62291dbfff17ed987d}
+
+
+Change block size. The change will take effect from the next \hyperlink{class_network_coding_1_1_transmission_block}{Transmission\+Block}. 
+
+\begin{DoxySeeAlso}{See also}
+Network\+Coding\+::\+Parameter\+::\+B\+L\+O\+C\+K\+\_\+\+S\+I\+ZE 
+\end{DoxySeeAlso}
+
+\begin{DoxyParams}{Parameters}
+{\em Block\+Size} & \+: block size \\
+\hline
+\end{DoxyParams}
+Session parameter updates are serialized using m\+\_\+\+Timer.\index{Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}!Change\+Retransmission\+Redundancy@{Change\+Retransmission\+Redundancy}}
+\index{Change\+Retransmission\+Redundancy@{Change\+Retransmission\+Redundancy}!Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}}
+\subsubsection[{\texorpdfstring{Change\+Retransmission\+Redundancy(const uint16\+\_\+t Retransmission\+Redundancy)}{ChangeRetransmissionRedundancy(const uint16_t RetransmissionRedundancy)}}]{\setlength{\rightskip}{0pt plus 5cm}void Transmission\+Session\+::\+Change\+Retransmission\+Redundancy (
+\begin{DoxyParamCaption}
+\item[{const uint16\+\_\+t}]{Retransmission\+Redundancy}
+\end{DoxyParamCaption}
+)}\hypertarget{class_network_coding_1_1_transmission_session_ae3d21866fedfd756de3d7ab6d2151ec4}{}\label{class_network_coding_1_1_transmission_session_ae3d21866fedfd756de3d7ab6d2151ec4}
+
+
+Change retransmission redundancy. Retransmission redundancy is only valid for B\+E\+S\+T\+\_\+\+E\+F\+F\+O\+R\+T\+\_\+\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+DE. The change will take effect from the next \hyperlink{class_network_coding_1_1_transmission_block}{Transmission\+Block}. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em Retransmission\+Redundancy} & \\
+\hline
+\end{DoxyParams}
+Session parameter updates are serialized using m\+\_\+\+Timer.\index{Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}!Change\+Session\+Parameter@{Change\+Session\+Parameter}}
+\index{Change\+Session\+Parameter@{Change\+Session\+Parameter}!Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}}
+\subsubsection[{\texorpdfstring{Change\+Session\+Parameter(const Parameter\+::\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+D\+E Transmission\+Mode, const Parameter\+::\+B\+L\+O\+C\+K\+\_\+\+S\+I\+Z\+E Block\+Size, const uint16\+\_\+t Retransmission\+Redundancy)}{ChangeSessionParameter(const Parameter::TRANSMISSION_MODE TransmissionMode, const Parameter::BLOCK_SIZE BlockSize, const uint16_t RetransmissionRedundancy)}}]{\setlength{\rightskip}{0pt plus 5cm}void Transmission\+Session\+::\+Change\+Session\+Parameter (
+\begin{DoxyParamCaption}
+\item[{const Parameter\+::\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+DE}]{Transmission\+Mode, }
+\item[{const Parameter\+::\+B\+L\+O\+C\+K\+\_\+\+S\+I\+ZE}]{Block\+Size, }
+\item[{const uint16\+\_\+t}]{Retransmission\+Redundancy}
+\end{DoxyParamCaption}
+)}\hypertarget{class_network_coding_1_1_transmission_session_a4a2f5696da8bd656d1b250d2319f1212}{}\label{class_network_coding_1_1_transmission_session_a4a2f5696da8bd656d1b250d2319f1212}
+
+
+Change the above session parameters at the same time. The changes will take effect from the next \hyperlink{class_network_coding_1_1_transmission_block}{Transmission\+Block}. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em Transmission\+Mode} & \+: mode \\
+\hline
+{\em Block\+Size} & \+: block size \\
+\hline
+{\em Retransmission\+Redundancy} & \+: Retransmission redundancy \\
+\hline
+\end{DoxyParams}
+Session parameter updates are serialized using m\+\_\+\+Timer.\index{Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}!Change\+Transmission\+Mode@{Change\+Transmission\+Mode}}
+\index{Change\+Transmission\+Mode@{Change\+Transmission\+Mode}!Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}}
+\subsubsection[{\texorpdfstring{Change\+Transmission\+Mode(const Parameter\+::\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+D\+E Transmission\+Mode)}{ChangeTransmissionMode(const Parameter::TRANSMISSION_MODE TransmissionMode)}}]{\setlength{\rightskip}{0pt plus 5cm}void Transmission\+Session\+::\+Change\+Transmission\+Mode (
+\begin{DoxyParamCaption}
+\item[{const Parameter\+::\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+DE}]{Transmission\+Mode}
+\end{DoxyParamCaption}
+)}\hypertarget{class_network_coding_1_1_transmission_session_a99838e572cbc7b5876d59d767e399a4e}{}\label{class_network_coding_1_1_transmission_session_a99838e572cbc7b5876d59d767e399a4e}
+
+
+Change transmission mode. The change will take effect from the next \hyperlink{class_network_coding_1_1_transmission_block}{Transmission\+Block}. 
+
+\begin{DoxySeeAlso}{See also}
+Network\+Coding\+::\+Parameter\+::\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+DE 
+\end{DoxySeeAlso}
+
+\begin{DoxyParams}{Parameters}
+{\em Transmission\+Mode} & \+: mode \\
+\hline
+\end{DoxyParams}
+Session parameter updates are serialized using m\+\_\+\+Timer.\index{Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}!Pop\+Data\+Packet@{Pop\+Data\+Packet}}
+\index{Pop\+Data\+Packet@{Pop\+Data\+Packet}!Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}}
+\subsubsection[{\texorpdfstring{Pop\+Data\+Packet()}{PopDataPacket()}}]{\setlength{\rightskip}{0pt plus 5cm}uint16\+\_\+t Transmission\+Session\+::\+Pop\+Data\+Packet (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}\hypertarget{class_network_coding_1_1_transmission_session_adeda0f8096e8fa5845d4f0377193cf73}{}\label{class_network_coding_1_1_transmission_session_adeda0f8096e8fa5845d4f0377193cf73}
+
+
+Dequeue a packet from m\+\_\+\+Tx\+Queue and transmit the packet. 
+
+\begin{DoxyReturn}{Returns}
+uint16\+\_\+t \+: Non-\/negative size of the transmitted packet. 0 on failure. 
+\end{DoxyReturn}
+Start retransmission timeout if the packet is F\+L\+A\+G\+S\+\_\+\+E\+N\+D\+\_\+\+O\+F\+\_\+\+B\+LK.
+
+Schedule ack timeout for both original and network coding packets.\index{Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}!Process\+Data\+Ack@{Process\+Data\+Ack}}
+\index{Process\+Data\+Ack@{Process\+Data\+Ack}!Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}}
+\subsubsection[{\texorpdfstring{Process\+Data\+Ack(const uint8\+\_\+t Rank, const uint8\+\_\+t Max\+Rank, const uint8\+\_\+t Loss, const uint16\+\_\+t Sequence)}{ProcessDataAck(const uint8_t Rank, const uint8_t MaxRank, const uint8_t Loss, const uint16_t Sequence)}}]{\setlength{\rightskip}{0pt plus 5cm}void Transmission\+Session\+::\+Process\+Data\+Ack (
+\begin{DoxyParamCaption}
+\item[{const uint8\+\_\+t}]{Rank, }
+\item[{const uint8\+\_\+t}]{Max\+Rank, }
+\item[{const uint8\+\_\+t}]{Loss, }
+\item[{const uint16\+\_\+t}]{Sequence}
+\end{DoxyParamCaption}
+)}\hypertarget{class_network_coding_1_1_transmission_session_a31f038cb688e2e95e40f63821baf34a8}{}\label{class_network_coding_1_1_transmission_session_a31f038cb688e2e95e40f63821baf34a8}
+
+
+Process ack. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em Rank} & \+: Acknowleged rank \\
+\hline
+{\em Max\+Rank} & \+: Expected max rank \\
+\hline
+{\em Loss} & \+: Packet loss measured at receiver \\
+\hline
+{\em Sequence} & \+: Sequence number of \hyperlink{class_network_coding_1_1_transmission_block}{Transmission\+Block} of this ack \\
+\hline
+\end{DoxyParams}
+Proccess ack. It is serialized by m\+\_\+\+Timer. \begin{DoxyRefDesc}{Todo}
+\item[\hyperlink{todo__todo000003}{Todo}]Retransmission can be further optimized by using loss rate. E.\+g., we can immediately transmit encoded packet at the end of transmission without waiting the ack. \end{DoxyRefDesc}
+\index{Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}!Process\+Pong@{Process\+Pong}}
+\index{Process\+Pong@{Process\+Pong}!Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}}
+\subsubsection[{\texorpdfstring{Process\+Pong(const uint16\+\_\+t Rtt)}{ProcessPong(const uint16_t Rtt)}}]{\setlength{\rightskip}{0pt plus 5cm}void Transmission\+Session\+::\+Process\+Pong (
+\begin{DoxyParamCaption}
+\item[{const uint16\+\_\+t}]{Rtt}
+\end{DoxyParamCaption}
+)}\hypertarget{class_network_coding_1_1_transmission_session_a208883657ae7c03b6405fd949bc06d7a}{}\label{class_network_coding_1_1_transmission_session_a208883657ae7c03b6405fd949bc06d7a}
+
+
+Process pong packet. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em Rtt} & \+: Round-\/trip-\/time of ping-\/pong \\
+\hline
+\end{DoxyParams}
+Update m\+\_\+\+Round\+Trip\+Time, which is used for retransmission interval. It is serialized using m\+\_\+\+Timer.\index{Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}!Process\+Sync\+Ack@{Process\+Sync\+Ack}}
+\index{Process\+Sync\+Ack@{Process\+Sync\+Ack}!Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}}
+\subsubsection[{\texorpdfstring{Process\+Sync\+Ack(const uint16\+\_\+t sequence)}{ProcessSyncAck(const uint16_t sequence)}}]{\setlength{\rightskip}{0pt plus 5cm}void Transmission\+Session\+::\+Process\+Sync\+Ack (
+\begin{DoxyParamCaption}
+\item[{const uint16\+\_\+t}]{sequence}
+\end{DoxyParamCaption}
+)}\hypertarget{class_network_coding_1_1_transmission_session_adf9cb35f78ec3f03d92ec4d46faa1c66}{}\label{class_network_coding_1_1_transmission_session_adf9cb35f78ec3f03d92ec4d46faa1c66}
+
+
+Process ack sync. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em sequence} & \+: The initial \hyperlink{class_network_coding_1_1_transmission_block}{Transmission\+Block}\textquotesingle{}s sequence number. \\
+\hline
+\end{DoxyParams}
+\index{Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}!Push\+Data\+Packet@{Push\+Data\+Packet}}
+\index{Push\+Data\+Packet@{Push\+Data\+Packet}!Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}}
+\subsubsection[{\texorpdfstring{Push\+Data\+Packet(uint8\+\_\+t $\ast$const buffer, const uint16\+\_\+t size, bool orig, Transmission\+Block $\ast$const block)}{PushDataPacket(uint8_t *const buffer, const uint16_t size, bool orig, TransmissionBlock *const block)}}]{\setlength{\rightskip}{0pt plus 5cm}void Transmission\+Session\+::\+Push\+Data\+Packet (
+\begin{DoxyParamCaption}
+\item[{uint8\+\_\+t $\ast$const}]{buffer, }
+\item[{const uint16\+\_\+t}]{size, }
+\item[{bool}]{orig, }
+\item[{{\bf Transmission\+Block} $\ast$const}]{block}
+\end{DoxyParamCaption}
+)}\hypertarget{class_network_coding_1_1_transmission_session_ae248b2c48a54243ce1e47837337231df}{}\label{class_network_coding_1_1_transmission_session_ae248b2c48a54243ce1e47837337231df}
+
+
+Enqueue a packet into m\+\_\+\+Tx\+Queue for transmission. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em buffer} & \+: The packet to transmit. \\
+\hline
+{\em size} & \+: Size of the packet \\
+\hline
+{\em orig} & \+: True (Original packet) False (Encoded packet) \\
+\hline
+{\em block} & \+: \hyperlink{class_network_coding_1_1_transmission_block}{Transmission\+Block} that this packet is associated. \\
+\hline
+\end{DoxyParams}
+We do not count retransmission packets as unacked packet. Retransmission is transmitted regardless of m\+\_\+\+Bytes\+Unacked.\index{Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}!Send\+Ping@{Send\+Ping}}
+\index{Send\+Ping@{Send\+Ping}!Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}}
+\subsubsection[{\texorpdfstring{Send\+Ping()}{SendPing()}}]{\setlength{\rightskip}{0pt plus 5cm}const bool Transmission\+Session\+::\+Send\+Ping (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}\hypertarget{class_network_coding_1_1_transmission_session_a732d177580449a1473cea103465b1c5b}{}\label{class_network_coding_1_1_transmission_session_a732d177580449a1473cea103465b1c5b}
+
+
+Send ping packet to the remote host. 
+
+\begin{DoxyReturn}{Returns}
+true \+: Reschedule ping transmission. 
+
+false \+: Stop sending ping. 
+\end{DoxyReturn}
+
+\begin{DoxyEnumerate}
+\item Check last pong time. If we have not received pong from remote host more than C\+O\+N\+N\+E\+C\+T\+I\+O\+N\+\_\+\+T\+I\+M\+E\+O\+UT then we trigger disconnection for this session and stop sending ping.
+\item Send ping packet to remote host.
+\item Schedule next ping transmission.
+\end{DoxyEnumerate}
+
+\subsection{Member Data Documentation}
+\index{Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}!c\+\_\+\+Addr@{c\+\_\+\+Addr}}
+\index{c\+\_\+\+Addr@{c\+\_\+\+Addr}!Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}}
+\subsubsection[{\texorpdfstring{c\+\_\+\+Addr}{c_Addr}}]{\setlength{\rightskip}{0pt plus 5cm}const {\bf Data\+Types\+::\+Address} Network\+Coding\+::\+Transmission\+Session\+::c\+\_\+\+Addr}\hypertarget{class_network_coding_1_1_transmission_session_a7ab84397c986b771ff4332746d9d948a}{}\label{class_network_coding_1_1_transmission_session_a7ab84397c986b771ff4332746d9d948a}
+
+
+Remote host\textquotesingle{}s address. 
+
+\begin{DoxySeeAlso}{See also}
+\hyperlink{class_network_coding_1_1_data_types_1_1_address}{Network\+Coding\+::\+Data\+Types\+::\+Address} 
+\end{DoxySeeAlso}
+\index{Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}!m\+\_\+\+Block\+Size@{m\+\_\+\+Block\+Size}}
+\index{m\+\_\+\+Block\+Size@{m\+\_\+\+Block\+Size}!Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}}
+\subsubsection[{\texorpdfstring{m\+\_\+\+Block\+Size}{m_BlockSize}}]{\setlength{\rightskip}{0pt plus 5cm}uint8\+\_\+t Network\+Coding\+::\+Transmission\+Session\+::m\+\_\+\+Block\+Size}\hypertarget{class_network_coding_1_1_transmission_session_a262e1ebcc22845e897947ddb5713c71b}{}\label{class_network_coding_1_1_transmission_session_a262e1ebcc22845e897947ddb5713c71b}
+
+
+Block size. 
+
+\begin{DoxySeeAlso}{See also}
+Network\+Coding\+::\+Parameter\+::\+B\+L\+O\+C\+K\+\_\+\+S\+I\+ZE. 
+\end{DoxySeeAlso}
+\index{Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}!m\+\_\+\+Retransmission\+Redundancy@{m\+\_\+\+Retransmission\+Redundancy}}
+\index{m\+\_\+\+Retransmission\+Redundancy@{m\+\_\+\+Retransmission\+Redundancy}!Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}}
+\subsubsection[{\texorpdfstring{m\+\_\+\+Retransmission\+Redundancy}{m_RetransmissionRedundancy}}]{\setlength{\rightskip}{0pt plus 5cm}uint16\+\_\+t Network\+Coding\+::\+Transmission\+Session\+::m\+\_\+\+Retransmission\+Redundancy}\hypertarget{class_network_coding_1_1_transmission_session_a3b8bbbaab2050d0c5a47ecec913bada4}{}\label{class_network_coding_1_1_transmission_session_a3b8bbbaab2050d0c5a47ecec913bada4}
+
+
+Maximum number of remedy packets. It is valid only when mode is B\+E\+S\+T\+\_\+\+E\+F\+F\+O\+R\+T\+\_\+\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+DE. 
+
+\begin{DoxySeeAlso}{See also}
+Network\+Coding\+::\+Parameter\+::\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+DE. 
+\end{DoxySeeAlso}
+\index{Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}!m\+\_\+\+Round\+Trip\+Time@{m\+\_\+\+Round\+Trip\+Time}}
+\index{m\+\_\+\+Round\+Trip\+Time@{m\+\_\+\+Round\+Trip\+Time}!Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}}
+\subsubsection[{\texorpdfstring{m\+\_\+\+Round\+Trip\+Time}{m_RoundTripTime}}]{\setlength{\rightskip}{0pt plus 5cm}uint16\+\_\+t Network\+Coding\+::\+Transmission\+Session\+::m\+\_\+\+Round\+Trip\+Time}\hypertarget{class_network_coding_1_1_transmission_session_a7888abd5fd616a2cf7d9953b570b492c}{}\label{class_network_coding_1_1_transmission_session_a7888abd5fd616a2cf7d9953b570b492c}
+
+
+Measured R\+TT. It is measured using ping and pong packets. 
+
+\begin{DoxySeeAlso}{See also}
+\hyperlink{struct_network_coding_1_1_header_1_1_ping}{Network\+Coding\+::\+Header\+::\+Ping} 
+
+\hyperlink{struct_network_coding_1_1_header_1_1_pong}{Network\+Coding\+::\+Header\+::\+Pong} 
+\end{DoxySeeAlso}
+\index{Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}!m\+\_\+\+Timer@{m\+\_\+\+Timer}}
+\index{m\+\_\+\+Timer@{m\+\_\+\+Timer}!Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}}
+\subsubsection[{\texorpdfstring{m\+\_\+\+Timer}{m_Timer}}]{\setlength{\rightskip}{0pt plus 5cm}Single\+Shot\+Timer$<$Task\+Priority\+::\+P\+R\+I\+O\+R\+I\+T\+Y\+\_\+\+L\+E\+V\+E\+LS, 1$>$ Network\+Coding\+::\+Transmission\+Session\+::m\+\_\+\+Timer}\hypertarget{class_network_coding_1_1_transmission_session_a73487485091c27671139faa56b28ac2a}{}\label{class_network_coding_1_1_transmission_session_a73487485091c27671139faa56b28ac2a}
+
+
+Single-\/threaded work queue. 
+
+\begin{DoxySeeAlso}{See also}
+\hyperlink{class_network_coding_1_1_transmission_session_aa224de09cc46cfd07df11e4ddeff7472}{Network\+Coding\+::\+Transmission\+Session\+::\+Task\+Priority} 
+\end{DoxySeeAlso}
+\index{Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}!m\+\_\+\+Transmission\+Mode@{m\+\_\+\+Transmission\+Mode}}
+\index{m\+\_\+\+Transmission\+Mode@{m\+\_\+\+Transmission\+Mode}!Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}}
+\subsubsection[{\texorpdfstring{m\+\_\+\+Transmission\+Mode}{m_TransmissionMode}}]{\setlength{\rightskip}{0pt plus 5cm}uint8\+\_\+t Network\+Coding\+::\+Transmission\+Session\+::m\+\_\+\+Transmission\+Mode}\hypertarget{class_network_coding_1_1_transmission_session_affd2b90f3eb8788d1a2228a0293ebbcf}{}\label{class_network_coding_1_1_transmission_session_affd2b90f3eb8788d1a2228a0293ebbcf}
+
+
+Mode. 
+
+\begin{DoxySeeAlso}{See also}
+Network\+Coding\+::\+Parameter\+::\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+DE. 
+\end{DoxySeeAlso}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/home/dujeonglee/\+Network\+Coding\+Rev/c\+\_\+cpp/tx.\+h\item 
+/home/dujeonglee/\+Network\+Coding\+Rev/c\+\_\+cpp/tx.\+cpp\end{DoxyCompactItemize}

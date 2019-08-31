@@ -1,0 +1,81 @@
+\hypertarget{struct_network_coding_1_1_header_1_1_data}{}\section{Network\+Coding\+:\+:Header\+:\+:Data Struct Reference}
+\label{struct_network_coding_1_1_header_1_1_data}\index{Network\+Coding\+::\+Header\+::\+Data@{Network\+Coding\+::\+Header\+::\+Data}}
+
+
+Inheritance diagram for Network\+Coding\+:\+:Header\+:\+:Data\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=202pt]{struct_network_coding_1_1_header_1_1_data__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for Network\+Coding\+:\+:Header\+:\+:Data\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=202pt]{struct_network_coding_1_1_header_1_1_data__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Types}
+\begin{DoxyCompactItemize}
+\item 
+enum {\bfseries Data\+Header\+Flag} \+: uint8\+\_\+t \{ {\bfseries F\+L\+A\+G\+S\+\_\+\+O\+R\+I\+G\+I\+N\+AL} = 0x1, 
+{\bfseries F\+L\+A\+G\+S\+\_\+\+E\+N\+D\+\_\+\+O\+F\+\_\+\+B\+LK} = 0x2, 
+{\bfseries F\+L\+A\+G\+S\+\_\+\+C\+O\+N\+S\+U\+M\+ED} = 0x4
+ \}\hypertarget{struct_network_coding_1_1_header_1_1_data_ad108d30572fcdb4464fda2c035910b56}{}\label{struct_network_coding_1_1_header_1_1_data_ad108d30572fcdb4464fda2c035910b56}
+
+\item 
+enum {\bfseries Off\+Sets} \+: uint8\+\_\+t \{ {\bfseries Coding\+Offset} = (1 + 1 + 2 + 2 + 2 + 2 + 1 + 1 + 1 + 1)
+ \}\hypertarget{struct_network_coding_1_1_header_1_1_data_a5e55347a78baeebc72fb402fd5e30bfc}{}\label{struct_network_coding_1_1_header_1_1_data_a5e55347a78baeebc72fb402fd5e30bfc}
+
+\end{DoxyCompactItemize}
+\subsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+uint16\+\_\+t {\bfseries m\+\_\+\+Total\+Size}\hypertarget{struct_network_coding_1_1_header_1_1_data_a0eee10996f4c999d5fa17105c376e619}{}\label{struct_network_coding_1_1_header_1_1_data_a0eee10996f4c999d5fa17105c376e619}
+
+\item 
+uint16\+\_\+t {\bfseries m\+\_\+\+Min\+Block\+Sequence\+Number}\hypertarget{struct_network_coding_1_1_header_1_1_data_aba45c425ef186557b1707e2071aae988}{}\label{struct_network_coding_1_1_header_1_1_data_aba45c425ef186557b1707e2071aae988}
+
+\item 
+uint16\+\_\+t {\bfseries m\+\_\+\+Current\+Block\+Sequence\+Number}\hypertarget{struct_network_coding_1_1_header_1_1_data_a771d12a3f6cf0651e0b89558cd50e4ec}{}\label{struct_network_coding_1_1_header_1_1_data_a771d12a3f6cf0651e0b89558cd50e4ec}
+
+\item 
+uint16\+\_\+t {\bfseries m\+\_\+\+Max\+Block\+Sequence\+Number}\hypertarget{struct_network_coding_1_1_header_1_1_data_adaa6e93aa9cf7b836f68d58dcb31ff2f}{}\label{struct_network_coding_1_1_header_1_1_data_adaa6e93aa9cf7b836f68d58dcb31ff2f}
+
+\item 
+uint8\+\_\+t {\bfseries m\+\_\+\+Expected\+Rank}\hypertarget{struct_network_coding_1_1_header_1_1_data_aef3bd9133fd1541c8a57bb4398a47685}{}\label{struct_network_coding_1_1_header_1_1_data_aef3bd9133fd1541c8a57bb4398a47685}
+
+\item 
+uint8\+\_\+t {\bfseries m\+\_\+\+Maximum\+Rank}\hypertarget{struct_network_coding_1_1_header_1_1_data_a6f01051deb4fadd59c404e76cc1fe186}{}\label{struct_network_coding_1_1_header_1_1_data_a6f01051deb4fadd59c404e76cc1fe186}
+
+\item 
+uint8\+\_\+t {\bfseries m\+\_\+\+Flags}\hypertarget{struct_network_coding_1_1_header_1_1_data_adf3d88f0abac9a055403c842249b34d3}{}\label{struct_network_coding_1_1_header_1_1_data_adf3d88f0abac9a055403c842249b34d3}
+
+\item 
+uint8\+\_\+t {\bfseries m\+\_\+\+Tx\+Count}\hypertarget{struct_network_coding_1_1_header_1_1_data_ab8f5cc8da3279a862b81ed883ac697cc}{}\label{struct_network_coding_1_1_header_1_1_data_ab8f5cc8da3279a862b81ed883ac697cc}
+
+\item 
+uint16\+\_\+t {\bfseries m\+\_\+\+Payload\+Size}\hypertarget{struct_network_coding_1_1_header_1_1_data_a9718b3a6987a63cdca1a1ae09ef79f24}{}\label{struct_network_coding_1_1_header_1_1_data_a9718b3a6987a63cdca1a1ae09ef79f24}
+
+\item 
+uint8\+\_\+t \hyperlink{struct_network_coding_1_1_header_1_1_data_a21e3e58d1a143834d9c4490613d3c3ff}{m\+\_\+\+Last\+Indicator}
+\item 
+uint8\+\_\+t {\bfseries m\+\_\+\+Codes} \mbox{[}1\mbox{]}\hypertarget{struct_network_coding_1_1_header_1_1_data_ae5000aecfcf9559c5cf47c8eea4d8c02}{}\label{struct_network_coding_1_1_header_1_1_data_ae5000aecfcf9559c5cf47c8eea4d8c02}
+
+\end{DoxyCompactItemize}
+
+
+\subsection{Member Data Documentation}
+\index{Network\+Coding\+::\+Header\+::\+Data@{Network\+Coding\+::\+Header\+::\+Data}!m\+\_\+\+Last\+Indicator@{m\+\_\+\+Last\+Indicator}}
+\index{m\+\_\+\+Last\+Indicator@{m\+\_\+\+Last\+Indicator}!Network\+Coding\+::\+Header\+::\+Data@{Network\+Coding\+::\+Header\+::\+Data}}
+\subsubsection[{\texorpdfstring{m\+\_\+\+Last\+Indicator}{m_LastIndicator}}]{\setlength{\rightskip}{0pt plus 5cm}uint8\+\_\+t Network\+Coding\+::\+Header\+::\+Data\+::m\+\_\+\+Last\+Indicator}\hypertarget{struct_network_coding_1_1_header_1_1_data_a21e3e58d1a143834d9c4490613d3c3ff}{}\label{struct_network_coding_1_1_header_1_1_data_a21e3e58d1a143834d9c4490613d3c3ff}
+\begin{DoxyRefDesc}{Todo}
+\item[\hyperlink{todo__todo000001}{Todo}]This is reserved for support of fragmentation. \end{DoxyRefDesc}
+
+
+The documentation for this struct was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/home/dujeonglee/\+Network\+Coding\+Rev/c\+\_\+cpp/common.\+h\end{DoxyCompactItemize}

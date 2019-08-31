@@ -1,0 +1,43 @@
+\hypertarget{class_network_coding_1_1_transmission}{}\section{Network\+Coding\+:\+:Transmission Class Reference}
+\label{class_network_coding_1_1_transmission}\index{Network\+Coding\+::\+Transmission@{Network\+Coding\+::\+Transmission}}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+{\bfseries Transmission} (const int32\+\_\+t Socket)\hypertarget{class_network_coding_1_1_transmission_a0088c71d39d15bcbdeab5be97ca9c521}{}\label{class_network_coding_1_1_transmission_a0088c71d39d15bcbdeab5be97ca9c521}
+
+\item 
+bool {\bfseries Connect} (const \hyperlink{class_network_coding_1_1_data_types_1_1_address}{Data\+Types\+::\+Address} Addr, uint32\+\_\+t Connection\+Timeout, const Parameter\+::\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+DE Transmission\+Mode, const Parameter\+::\+B\+L\+O\+C\+K\+\_\+\+S\+I\+ZE Block\+Size, const uint16\+\_\+t Retransmission\+Redundancy=0)\hypertarget{class_network_coding_1_1_transmission_acf7b8882079065561cf712db570f1a97}{}\label{class_network_coding_1_1_transmission_acf7b8882079065561cf712db570f1a97}
+
+\item 
+bool \hyperlink{class_network_coding_1_1_transmission_a374d54400d1a31f7d85119670d896aa8}{Send} (const \hyperlink{class_network_coding_1_1_data_types_1_1_address}{Data\+Types\+::\+Address} Addr, uint8\+\_\+t $\ast$const buffer, const uint16\+\_\+t buffersize)
+\item 
+bool {\bfseries Flush} (const \hyperlink{class_network_coding_1_1_data_types_1_1_address}{Data\+Types\+::\+Address} Addr)\hypertarget{class_network_coding_1_1_transmission_a4c843d9330d4c073e69ce82890012e6a}{}\label{class_network_coding_1_1_transmission_a4c843d9330d4c073e69ce82890012e6a}
+
+\item 
+void {\bfseries Wait\+Until\+Tx\+Is\+Completed} (const \hyperlink{class_network_coding_1_1_data_types_1_1_address}{Data\+Types\+::\+Address} Addr)\hypertarget{class_network_coding_1_1_transmission_a3b9dae872646600c26c7dd2864205d25}{}\label{class_network_coding_1_1_transmission_a3b9dae872646600c26c7dd2864205d25}
+
+\item 
+void {\bfseries Disconnect} (const \hyperlink{class_network_coding_1_1_data_types_1_1_address}{Data\+Types\+::\+Address} Addr)\hypertarget{class_network_coding_1_1_transmission_a5de9d315363eae64e7395c3d0ed6ae3b}{}\label{class_network_coding_1_1_transmission_a5de9d315363eae64e7395c3d0ed6ae3b}
+
+\item 
+void {\bfseries Rx\+Handler} (uint8\+\_\+t $\ast$const buffer, const uint16\+\_\+t size, const sockaddr $\ast$const sender\+\_\+addr, const uint32\+\_\+t sender\+\_\+addr\+\_\+len)\hypertarget{class_network_coding_1_1_transmission_ab363fc5b8d61a9fee2ab0331c1d1938e}{}\label{class_network_coding_1_1_transmission_ab363fc5b8d61a9fee2ab0331c1d1938e}
+
+\end{DoxyCompactItemize}
+
+
+\subsection{Member Function Documentation}
+\index{Network\+Coding\+::\+Transmission@{Network\+Coding\+::\+Transmission}!Send@{Send}}
+\index{Send@{Send}!Network\+Coding\+::\+Transmission@{Network\+Coding\+::\+Transmission}}
+\subsubsection[{\texorpdfstring{Send(const Data\+Types\+::\+Address Addr, uint8\+\_\+t $\ast$const buffer, const uint16\+\_\+t buffersize)}{Send(const DataTypes::Address Addr, uint8_t *const buffer, const uint16_t buffersize)}}]{\setlength{\rightskip}{0pt plus 5cm}bool Transmission\+::\+Send (
+\begin{DoxyParamCaption}
+\item[{const {\bf Data\+Types\+::\+Address}}]{Addr, }
+\item[{uint8\+\_\+t $\ast$const}]{buffer, }
+\item[{const uint16\+\_\+t}]{buffersize}
+\end{DoxyParamCaption}
+)}\hypertarget{class_network_coding_1_1_transmission_a374d54400d1a31f7d85119670d896aa8}{}\label{class_network_coding_1_1_transmission_a374d54400d1a31f7d85119670d896aa8}
+Block sending until there are availalbe congestion window for this packet.
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/home/dujeonglee/\+Network\+Coding\+Rev/c\+\_\+cpp/tx.\+h\item 
+/home/dujeonglee/\+Network\+Coding\+Rev/c\+\_\+cpp/tx.\+cpp\end{DoxyCompactItemize}

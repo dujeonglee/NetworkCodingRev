@@ -1,0 +1,171 @@
+\hypertarget{api_8h}{}\section{/home/dujeonglee/\+Network\+Coding\+Rev/c\+\_\+cpp/api.h File Reference}
+\label{api_8h}\index{/home/dujeonglee/\+Network\+Coding\+Rev/c\+\_\+cpp/api.\+h@{/home/dujeonglee/\+Network\+Coding\+Rev/c\+\_\+cpp/api.\+h}}
+{\ttfamily \#include $<$stdint.\+h$>$}\\*
+{\ttfamily \#include $<$functional$>$}\\*
+Include dependency graph for api.\+h\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=213pt]{api_8h__incl}
+\end{center}
+\end{figure}
+This graph shows which files directly or indirectly include this file\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=213pt]{api_8h__dep__incl}
+\end{center}
+\end{figure}
+\subsection*{Typedefs}
+\begin{DoxyCompactItemize}
+\item 
+typedef void($\ast$ \hyperlink{api_8h_a0646127de795872bc46977393d69a9df}{rxcallback}) (uint8\+\_\+t $\ast$const buffer, const uint16\+\_\+t length, const void $\ast$const address, const uint32\+\_\+t sender\+\_\+addr\+\_\+len)
+\item 
+typedef void $\ast$($\ast$ \hyperlink{api_8h_ab34c8f5b26fdf72c1bd3c01646b91b75}{Init\+Socket\+Func\+Type}) (const char $\ast$local\+\_\+port, const uint32\+\_\+t Rx\+Timeout, const uint32\+\_\+t Tx\+Timeout, const \hyperlink{api_8h_a0646127de795872bc46977393d69a9df}{rxcallback} cb)
+\item 
+typedef bool($\ast$ \hyperlink{api_8h_abc99423b44ca2488727d2164514806ac}{Connect\+Func\+Type}) (void $\ast$const handle, const char $\ast$const ip, const char $\ast$const port, const uint32\+\_\+t timeout, const uint8\+\_\+t Transmission\+Mode, const uint8\+\_\+t Block\+Size, const uint16\+\_\+t Retransmission\+Redundancy)
+\item 
+typedef void($\ast$ \hyperlink{api_8h_a35e6327593d358fa8d3d2d7284671de6}{Disconnect\+Func\+Type}) (void $\ast$const handle, const char $\ast$const ip, const char $\ast$const port)
+\item 
+typedef bool($\ast$ \hyperlink{api_8h_a623dcca522d78bfa612c998954b53e3a}{Send\+Func\+Type}) (void $\ast$const handle, const char $\ast$const ip, const char $\ast$const port, uint8\+\_\+t $\ast$const buff, const uint16\+\_\+t size)
+\item 
+typedef bool($\ast$ \hyperlink{api_8h_a17af9f61273f3b5d20b907ac6cdc07d7}{Flush\+Func\+Type}) (void $\ast$const handle, const char $\ast$const ip, const char $\ast$const port)
+\item 
+typedef void($\ast$ \hyperlink{api_8h_a32ba1a737628b6790b12b9445cd60ab1}{Wait\+Until\+Tx\+Is\+Completed\+Func\+Type}) (void $\ast$const handle, const char $\ast$const ip, const char $\ast$const port)
+\item 
+typedef void($\ast$ \hyperlink{api_8h_a084a3416deb4129bdabe423d5f431b70}{Receive\+Func\+Type}) (void $\ast$const handle, uint8\+\_\+t $\ast$const buffer, const uint16\+\_\+t length, const void $\ast$const address, const uint32\+\_\+t sender\+\_\+addr\+\_\+len, uint32\+\_\+t timeout)
+\item 
+typedef void($\ast$ \hyperlink{api_8h_a3c78f8d404490dc0006a77d279a34e7e}{Free\+Socket\+Func\+Type}) (void $\ast$const handle)
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+void $\ast$ \hyperlink{api_8h_a54f4d0e3c3e776574ae33de8fc7e0532}{Init\+Socket} (const char $\ast$const local\+\_\+port, const uint32\+\_\+t Rx\+Timeout, const uint32\+\_\+t Tx\+Timeout, const std\+::function$<$ void(uint8\+\_\+t $\ast$const buffer, const uint16\+\_\+t length, const void $\ast$const sender\+\_\+addr, const uint32\+\_\+t sender\+\_\+addr\+\_\+len)$>$ cb)
+\item 
+bool \hyperlink{api_8h_a9667591a4992743a2fdc23c522b1a95f}{Connect} (void $\ast$const handle, const char $\ast$const ip, const char $\ast$const port, const uint32\+\_\+t timeout, const uint8\+\_\+t Transmission\+Mode, const uint8\+\_\+t Block\+Size, const uint16\+\_\+t Retransmission\+Redundancy)
+\item 
+void \hyperlink{api_8h_ad588a8206955cddf85e2fd04c9254bf7}{Disconnect} (void $\ast$const handle, const char $\ast$const ip, const char $\ast$const port)
+\item 
+bool \hyperlink{api_8h_a29363b43f2198ee45a2748b9ae6b0757}{Send} (void $\ast$const handle, const char $\ast$const ip, const char $\ast$const port, uint8\+\_\+t $\ast$const buff, const uint16\+\_\+t size)
+\item 
+bool \hyperlink{api_8h_a3ff240b3bf98c3d8f768ef66b1c51082}{Flush} (void $\ast$const handle, const char $\ast$const ip, const char $\ast$const port)
+\item 
+void \hyperlink{api_8h_afeb903740106a90a82fae5f37d10690e}{Wait\+Until\+Tx\+Is\+Completed} (void $\ast$const handle, const char $\ast$const ip, const char $\ast$const port)
+\item 
+bool \hyperlink{api_8h_ad8547f292eb9a8b94cbc9a9995bcaa5a}{Receive} (void $\ast$const handle, uint8\+\_\+t $\ast$const buffer, uint16\+\_\+t $\ast$const length, void $\ast$const address, uint32\+\_\+t $\ast$const sender\+\_\+addr\+\_\+len, uint32\+\_\+t timeout)
+\item 
+void \hyperlink{api_8h_a9adbc53d26f81471df33904cf35644d4}{Free\+Socket} (void $\ast$const handle)
+\end{DoxyCompactItemize}
+
+
+\subsection{Typedef Documentation}
+\index{api.\+h@{api.\+h}!Connect\+Func\+Type@{Connect\+Func\+Type}}
+\index{Connect\+Func\+Type@{Connect\+Func\+Type}!api.\+h@{api.\+h}}
+\subsubsection[{\texorpdfstring{Connect\+Func\+Type}{ConnectFuncType}}]{\setlength{\rightskip}{0pt plus 5cm}typedef bool($\ast$ Connect\+Func\+Type) (void $\ast$const handle, const char $\ast$const ip, const char $\ast$const port, const uint32\+\_\+t timeout, const uint8\+\_\+t Transmission\+Mode, const uint8\+\_\+t Block\+Size, const uint16\+\_\+t Retransmission\+Redundancy)}\hypertarget{api_8h_abc99423b44ca2488727d2164514806ac}{}\label{api_8h_abc99423b44ca2488727d2164514806ac}
+\index{api.\+h@{api.\+h}!Disconnect\+Func\+Type@{Disconnect\+Func\+Type}}
+\index{Disconnect\+Func\+Type@{Disconnect\+Func\+Type}!api.\+h@{api.\+h}}
+\subsubsection[{\texorpdfstring{Disconnect\+Func\+Type}{DisconnectFuncType}}]{\setlength{\rightskip}{0pt plus 5cm}typedef void($\ast$ Disconnect\+Func\+Type) (void $\ast$const handle, const char $\ast$const ip, const char $\ast$const port)}\hypertarget{api_8h_a35e6327593d358fa8d3d2d7284671de6}{}\label{api_8h_a35e6327593d358fa8d3d2d7284671de6}
+\index{api.\+h@{api.\+h}!Flush\+Func\+Type@{Flush\+Func\+Type}}
+\index{Flush\+Func\+Type@{Flush\+Func\+Type}!api.\+h@{api.\+h}}
+\subsubsection[{\texorpdfstring{Flush\+Func\+Type}{FlushFuncType}}]{\setlength{\rightskip}{0pt plus 5cm}typedef bool($\ast$ Flush\+Func\+Type) (void $\ast$const handle, const char $\ast$const ip, const char $\ast$const port)}\hypertarget{api_8h_a17af9f61273f3b5d20b907ac6cdc07d7}{}\label{api_8h_a17af9f61273f3b5d20b907ac6cdc07d7}
+\index{api.\+h@{api.\+h}!Free\+Socket\+Func\+Type@{Free\+Socket\+Func\+Type}}
+\index{Free\+Socket\+Func\+Type@{Free\+Socket\+Func\+Type}!api.\+h@{api.\+h}}
+\subsubsection[{\texorpdfstring{Free\+Socket\+Func\+Type}{FreeSocketFuncType}}]{\setlength{\rightskip}{0pt plus 5cm}typedef void($\ast$ Free\+Socket\+Func\+Type) (void $\ast$const handle)}\hypertarget{api_8h_a3c78f8d404490dc0006a77d279a34e7e}{}\label{api_8h_a3c78f8d404490dc0006a77d279a34e7e}
+\index{api.\+h@{api.\+h}!Init\+Socket\+Func\+Type@{Init\+Socket\+Func\+Type}}
+\index{Init\+Socket\+Func\+Type@{Init\+Socket\+Func\+Type}!api.\+h@{api.\+h}}
+\subsubsection[{\texorpdfstring{Init\+Socket\+Func\+Type}{InitSocketFuncType}}]{\setlength{\rightskip}{0pt plus 5cm}typedef void$\ast$($\ast$ Init\+Socket\+Func\+Type) (const char $\ast$local\+\_\+port, const uint32\+\_\+t Rx\+Timeout, const uint32\+\_\+t Tx\+Timeout, const {\bf rxcallback} cb)}\hypertarget{api_8h_ab34c8f5b26fdf72c1bd3c01646b91b75}{}\label{api_8h_ab34c8f5b26fdf72c1bd3c01646b91b75}
+\index{api.\+h@{api.\+h}!Receive\+Func\+Type@{Receive\+Func\+Type}}
+\index{Receive\+Func\+Type@{Receive\+Func\+Type}!api.\+h@{api.\+h}}
+\subsubsection[{\texorpdfstring{Receive\+Func\+Type}{ReceiveFuncType}}]{\setlength{\rightskip}{0pt plus 5cm}typedef void($\ast$ Receive\+Func\+Type) (void $\ast$const handle, uint8\+\_\+t $\ast$const buffer, const uint16\+\_\+t length, const void $\ast$const address, const uint32\+\_\+t sender\+\_\+addr\+\_\+len, uint32\+\_\+t timeout)}\hypertarget{api_8h_a084a3416deb4129bdabe423d5f431b70}{}\label{api_8h_a084a3416deb4129bdabe423d5f431b70}
+\index{api.\+h@{api.\+h}!rxcallback@{rxcallback}}
+\index{rxcallback@{rxcallback}!api.\+h@{api.\+h}}
+\subsubsection[{\texorpdfstring{rxcallback}{rxcallback}}]{\setlength{\rightskip}{0pt plus 5cm}typedef void($\ast$ rxcallback) (uint8\+\_\+t $\ast$const buffer, const uint16\+\_\+t length, const void $\ast$const address, const uint32\+\_\+t sender\+\_\+addr\+\_\+len)}\hypertarget{api_8h_a0646127de795872bc46977393d69a9df}{}\label{api_8h_a0646127de795872bc46977393d69a9df}
+\index{api.\+h@{api.\+h}!Send\+Func\+Type@{Send\+Func\+Type}}
+\index{Send\+Func\+Type@{Send\+Func\+Type}!api.\+h@{api.\+h}}
+\subsubsection[{\texorpdfstring{Send\+Func\+Type}{SendFuncType}}]{\setlength{\rightskip}{0pt plus 5cm}typedef bool($\ast$ Send\+Func\+Type) (void $\ast$const handle, const char $\ast$const ip, const char $\ast$const port, uint8\+\_\+t $\ast$const buff, const uint16\+\_\+t size)}\hypertarget{api_8h_a623dcca522d78bfa612c998954b53e3a}{}\label{api_8h_a623dcca522d78bfa612c998954b53e3a}
+\index{api.\+h@{api.\+h}!Wait\+Until\+Tx\+Is\+Completed\+Func\+Type@{Wait\+Until\+Tx\+Is\+Completed\+Func\+Type}}
+\index{Wait\+Until\+Tx\+Is\+Completed\+Func\+Type@{Wait\+Until\+Tx\+Is\+Completed\+Func\+Type}!api.\+h@{api.\+h}}
+\subsubsection[{\texorpdfstring{Wait\+Until\+Tx\+Is\+Completed\+Func\+Type}{WaitUntilTxIsCompletedFuncType}}]{\setlength{\rightskip}{0pt plus 5cm}typedef void($\ast$ Wait\+Until\+Tx\+Is\+Completed\+Func\+Type) (void $\ast$const handle, const char $\ast$const ip, const char $\ast$const port)}\hypertarget{api_8h_a32ba1a737628b6790b12b9445cd60ab1}{}\label{api_8h_a32ba1a737628b6790b12b9445cd60ab1}
+
+
+\subsection{Function Documentation}
+\index{api.\+h@{api.\+h}!Connect@{Connect}}
+\index{Connect@{Connect}!api.\+h@{api.\+h}}
+\subsubsection[{\texorpdfstring{Connect(void $\ast$const handle, const char $\ast$const ip, const char $\ast$const port, const uint32\+\_\+t timeout, const uint8\+\_\+t Transmission\+Mode, const uint8\+\_\+t Block\+Size, const uint16\+\_\+t Retransmission\+Redundancy)}{Connect(void *const handle, const char *const ip, const char *const port, const uint32_t timeout, const uint8_t TransmissionMode, const uint8_t BlockSize, const uint16_t RetransmissionRedundancy)}}]{\setlength{\rightskip}{0pt plus 5cm}bool Connect (
+\begin{DoxyParamCaption}
+\item[{void $\ast$const}]{handle, }
+\item[{const char $\ast$const}]{ip, }
+\item[{const char $\ast$const}]{port, }
+\item[{const uint32\+\_\+t}]{timeout, }
+\item[{const uint8\+\_\+t}]{Transmission\+Mode, }
+\item[{const uint8\+\_\+t}]{Block\+Size, }
+\item[{const uint16\+\_\+t}]{Retransmission\+Redundancy}
+\end{DoxyParamCaption}
+)}\hypertarget{api_8h_a9667591a4992743a2fdc23c522b1a95f}{}\label{api_8h_a9667591a4992743a2fdc23c522b1a95f}
+\index{api.\+h@{api.\+h}!Disconnect@{Disconnect}}
+\index{Disconnect@{Disconnect}!api.\+h@{api.\+h}}
+\subsubsection[{\texorpdfstring{Disconnect(void $\ast$const handle, const char $\ast$const ip, const char $\ast$const port)}{Disconnect(void *const handle, const char *const ip, const char *const port)}}]{\setlength{\rightskip}{0pt plus 5cm}void Disconnect (
+\begin{DoxyParamCaption}
+\item[{void $\ast$const}]{handle, }
+\item[{const char $\ast$const}]{ip, }
+\item[{const char $\ast$const}]{port}
+\end{DoxyParamCaption}
+)}\hypertarget{api_8h_ad588a8206955cddf85e2fd04c9254bf7}{}\label{api_8h_ad588a8206955cddf85e2fd04c9254bf7}
+\index{api.\+h@{api.\+h}!Flush@{Flush}}
+\index{Flush@{Flush}!api.\+h@{api.\+h}}
+\subsubsection[{\texorpdfstring{Flush(void $\ast$const handle, const char $\ast$const ip, const char $\ast$const port)}{Flush(void *const handle, const char *const ip, const char *const port)}}]{\setlength{\rightskip}{0pt plus 5cm}bool Flush (
+\begin{DoxyParamCaption}
+\item[{void $\ast$const}]{handle, }
+\item[{const char $\ast$const}]{ip, }
+\item[{const char $\ast$const}]{port}
+\end{DoxyParamCaption}
+)}\hypertarget{api_8h_a3ff240b3bf98c3d8f768ef66b1c51082}{}\label{api_8h_a3ff240b3bf98c3d8f768ef66b1c51082}
+\index{api.\+h@{api.\+h}!Free\+Socket@{Free\+Socket}}
+\index{Free\+Socket@{Free\+Socket}!api.\+h@{api.\+h}}
+\subsubsection[{\texorpdfstring{Free\+Socket(void $\ast$const handle)}{FreeSocket(void *const handle)}}]{\setlength{\rightskip}{0pt plus 5cm}void Free\+Socket (
+\begin{DoxyParamCaption}
+\item[{void $\ast$const}]{handle}
+\end{DoxyParamCaption}
+)}\hypertarget{api_8h_a9adbc53d26f81471df33904cf35644d4}{}\label{api_8h_a9adbc53d26f81471df33904cf35644d4}
+\index{api.\+h@{api.\+h}!Init\+Socket@{Init\+Socket}}
+\index{Init\+Socket@{Init\+Socket}!api.\+h@{api.\+h}}
+\subsubsection[{\texorpdfstring{Init\+Socket(const char $\ast$const local\+\_\+port, const uint32\+\_\+t Rx\+Timeout, const uint32\+\_\+t Tx\+Timeout, const std\+::function$<$ void(uint8\+\_\+t $\ast$const buffer, const uint16\+\_\+t length, const void $\ast$const sender\+\_\+addr, const uint32\+\_\+t sender\+\_\+addr\+\_\+len)$>$ cb)}{InitSocket(const char *const local_port, const uint32_t RxTimeout, const uint32_t TxTimeout, const std::function< void(uint8_t *const buffer, const uint16_t length, const void *const sender_addr, const uint32_t sender_addr_len)> cb)}}]{\setlength{\rightskip}{0pt plus 5cm}void$\ast$ Init\+Socket (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$const}]{local\+\_\+port, }
+\item[{const uint32\+\_\+t}]{Rx\+Timeout, }
+\item[{const uint32\+\_\+t}]{Tx\+Timeout, }
+\item[{const std\+::function$<$ void(uint8\+\_\+t $\ast$const buffer, const uint16\+\_\+t length, const void $\ast$const sender\+\_\+addr, const uint32\+\_\+t sender\+\_\+addr\+\_\+len)$>$}]{cb}
+\end{DoxyParamCaption}
+)}\hypertarget{api_8h_a54f4d0e3c3e776574ae33de8fc7e0532}{}\label{api_8h_a54f4d0e3c3e776574ae33de8fc7e0532}
+\index{api.\+h@{api.\+h}!Receive@{Receive}}
+\index{Receive@{Receive}!api.\+h@{api.\+h}}
+\subsubsection[{\texorpdfstring{Receive(void $\ast$const handle, uint8\+\_\+t $\ast$const buffer, uint16\+\_\+t $\ast$const length, void $\ast$const address, uint32\+\_\+t $\ast$const sender\+\_\+addr\+\_\+len, uint32\+\_\+t timeout)}{Receive(void *const handle, uint8_t *const buffer, uint16_t *const length, void *const address, uint32_t *const sender_addr_len, uint32_t timeout)}}]{\setlength{\rightskip}{0pt plus 5cm}bool Receive (
+\begin{DoxyParamCaption}
+\item[{void $\ast$const}]{handle, }
+\item[{uint8\+\_\+t $\ast$const}]{buffer, }
+\item[{uint16\+\_\+t $\ast$const}]{length, }
+\item[{void $\ast$const}]{address, }
+\item[{uint32\+\_\+t $\ast$const}]{sender\+\_\+addr\+\_\+len, }
+\item[{uint32\+\_\+t}]{timeout}
+\end{DoxyParamCaption}
+)}\hypertarget{api_8h_ad8547f292eb9a8b94cbc9a9995bcaa5a}{}\label{api_8h_ad8547f292eb9a8b94cbc9a9995bcaa5a}
+\index{api.\+h@{api.\+h}!Send@{Send}}
+\index{Send@{Send}!api.\+h@{api.\+h}}
+\subsubsection[{\texorpdfstring{Send(void $\ast$const handle, const char $\ast$const ip, const char $\ast$const port, uint8\+\_\+t $\ast$const buff, const uint16\+\_\+t size)}{Send(void *const handle, const char *const ip, const char *const port, uint8_t *const buff, const uint16_t size)}}]{\setlength{\rightskip}{0pt plus 5cm}bool Send (
+\begin{DoxyParamCaption}
+\item[{void $\ast$const}]{handle, }
+\item[{const char $\ast$const}]{ip, }
+\item[{const char $\ast$const}]{port, }
+\item[{uint8\+\_\+t $\ast$const}]{buff, }
+\item[{const uint16\+\_\+t}]{size}
+\end{DoxyParamCaption}
+)}\hypertarget{api_8h_a29363b43f2198ee45a2748b9ae6b0757}{}\label{api_8h_a29363b43f2198ee45a2748b9ae6b0757}
+\index{api.\+h@{api.\+h}!Wait\+Until\+Tx\+Is\+Completed@{Wait\+Until\+Tx\+Is\+Completed}}
+\index{Wait\+Until\+Tx\+Is\+Completed@{Wait\+Until\+Tx\+Is\+Completed}!api.\+h@{api.\+h}}
+\subsubsection[{\texorpdfstring{Wait\+Until\+Tx\+Is\+Completed(void $\ast$const handle, const char $\ast$const ip, const char $\ast$const port)}{WaitUntilTxIsCompleted(void *const handle, const char *const ip, const char *const port)}}]{\setlength{\rightskip}{0pt plus 5cm}void Wait\+Until\+Tx\+Is\+Completed (
+\begin{DoxyParamCaption}
+\item[{void $\ast$const}]{handle, }
+\item[{const char $\ast$const}]{ip, }
+\item[{const char $\ast$const}]{port}
+\end{DoxyParamCaption}
+)}\hypertarget{api_8h_afeb903740106a90a82fae5f37d10690e}{}\label{api_8h_afeb903740106a90a82fae5f37d10690e}

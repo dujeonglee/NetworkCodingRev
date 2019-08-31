@@ -1,0 +1,7 @@
+<map id="NetworkCoding::Header::Common" name="NetworkCoding::Header::Common">
+<area shape="rect" id="node2" href="$struct_network_coding_1_1_header_1_1_data.html" title="NetworkCoding::Header\l::Data" alt="" coords="216,5,379,47"/>
+<area shape="rect" id="node3" href="$struct_network_coding_1_1_header_1_1_data_ack.html" title="NetworkCoding::Header\l::DataAck" alt="" coords="216,71,379,112"/>
+<area shape="rect" id="node4" href="$struct_network_coding_1_1_header_1_1_ping.html" title="NetworkCoding::Header\l::Ping" alt="" coords="216,136,379,177"/>
+<area shape="rect" id="node5" href="$struct_network_coding_1_1_header_1_1_pong.html" title="NetworkCoding::Header\l::Pong" alt="" coords="216,201,379,243"/>
+<area shape="rect" id="node6" href="$struct_network_coding_1_1_header_1_1_sync.html" title="NetworkCoding::Header\l::Sync" alt="" coords="216,267,379,308"/>
+</map>

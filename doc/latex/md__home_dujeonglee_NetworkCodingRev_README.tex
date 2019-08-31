@@ -1,0 +1,203 @@
+\subsection*{Implementatioin of intra-\/session network coding. (This project deprecates Network\+Coding repo.)}
+
+
+\begin{DoxyEnumerate}
+\item It supports both of reliable transmission and best-\/effort transmission.
+\item Packet order is preserved.
+\item Unlike tcp, data is not stream. Sender sends X bytes packet then receiver receives X bytes packet.
+\item It is easy to use. Please refer to main.\+cpp.
+\item It supports I\+Pv4 and I\+Pv6.
+\item Java native interface is supported. \subsection*{Example code}
+\end{DoxyEnumerate}
+
+
+\begin{DoxyCode}
+1 #include <stdio.h>
+2 #include <string.h>
+3 #include <sys/socket.h>
+4 #include <netinet/in.h>
+5 #include <iostream>
+6 #include <thread>
+7 #include "api.h"
+8 
+9 using namespace std;
+10 
+11 #define USE\_RX\_CALLBACK (0)
+12 
+13 void SyncReceive(const char *port)
+14 \{
+15     std::cout << \_\_FUNCTION\_\_ << std::endl;
+16     FILE *p\_File = nullptr;
+17     float mbyte\_received = 0;
+18     float total\_mbyte\_received = 0;
+19     uint32\_t samples = 0;
+20 
+21     uint8\_t buffer[1500];
+22     uint16\_t buffer\_length = sizeof(buffer);
+23     union \{
+24         sockaddr\_in ip4;
+25         sockaddr\_in6 ip6;
+26     \} addr;
+27     uint32\_t addr\_length = sizeof(addr);
+28 
+29     void *handle = InitSocket(port, 500, 500, nullptr);
+30     const bool ret = Receive(handle, buffer, &buffer\_length, &addr, &addr\_length, 0);
+31     if (ret)
+32     \{
+33         buffer[buffer\_length] = 0;
+34         p\_File = fopen((char *)buffer, "w");
+35         if (p\_File)
+36         \{
+37             std::cout << "Create File " << (char *)buffer << std::endl;
+38         \}
+39         else
+40         \{
+41             std::cout << "Cannot create file " << (char *)buffer << std::endl;
+42             exit(-1);
+43         \}
+44     \}
+45     std::thread bwchk = std::thread([&p\_File, &total\_mbyte\_received, &mbyte\_received, &samples]() \{
+46         while (p\_File)
+47         \{
+48             std::this\_thread::sleep\_for(std::chrono::seconds(1));
+49             total\_mbyte\_received += mbyte\_received;
+50             mbyte\_received = 0;
+51             samples++;
+52             printf("[AVG %5.5f MB/s][%u seconds]\(\backslash\)n", total\_mbyte\_received / samples, samples);
+53             fflush(stdout);
+54         \}
+55     \});
+56     bwchk.detach();
+57     do
+58     \{
+59         buffer\_length = sizeof(buffer);
+60         addr\_length = sizeof(addr);
+61         if (Receive(handle, buffer, &buffer\_length, &addr, &addr\_length, 0))
+62         \{
+63             if (!(buffer\_length == 1 && buffer[0] == 0xff))
+64             \{
+65                 fwrite(buffer, 1, buffer\_length, p\_File);
+66                 mbyte\_received += ((float)buffer\_length / (1000000.));
+67             \}
+68         \}
+69 
+70     \} while (!(buffer\_length == 1 && buffer[0] == 0xff));
+71     fclose(p\_File);
+72     p\_File = nullptr;
+73     FreeSocket(handle);
+74     handle = nullptr;
+75 \}
+76 
+77 void AsyncReceive(const char *port)
+78 \{
+79     std::cout << \_\_FUNCTION\_\_ << std::endl;
+80     FILE *p\_File = nullptr;
+81     float mbyte\_received = 0;
+82     float total\_mbyte\_received = 0;
+83     uint32\_t samples = 0;
+84 
+85     bool done = false;
+86     void *handle = InitSocket(
+87         port,
+88         500,
+89         500,
+90         [&p\_File, &total\_mbyte\_received, &mbyte\_received, &samples, &done](uint8\_t *const buffer, const
+       uint16\_t length, const void *const address, const uint32\_t sender\_addr\_len) \{
+91             if (p\_File == nullptr)
+92             \{
+93                 buffer[length] = 0;
+94                 p\_File = fopen((char *)buffer, "w");
+95                 std::thread bwchk = std::thread([&total\_mbyte\_received, &mbyte\_received, &samples, &done]()
+       \{
+96                     while (!done)
+97                     \{
+98                         std::this\_thread::sleep\_for(std::chrono::seconds(1));
+99                         total\_mbyte\_received += mbyte\_received;
+100                         mbyte\_received = 0;
+101                         samples++;
+102                         printf("[AVG %5.5f MB/s][%u seconds]\(\backslash\)n", total\_mbyte\_received / samples, samples);
+103                         fflush(stdout);
+104                     \}
+105                 \});
+106                 bwchk.detach();
+107             \}
+108             else
+109             \{
+110                 if (!(length == 1 && buffer[0] == 0xff))
+111                 \{
+112                     fwrite(buffer, 1, length, p\_File);
+113                     mbyte\_received += ((float)length / (1000000.));
+114                 \}
+115                 else
+116                 \{
+117                     done = true;
+118                 \}
+119             \}
+120         \});
+121     while (!done)
+122     \{
+123         std::this\_thread::sleep\_for(std::chrono::milliseconds(500));
+124     \}
+125     fclose(p\_File);
+126     p\_File = nullptr;
+127     FreeSocket(handle);
+128     handle = nullptr;
+129 \}
+130 
+131 int main(int argc, char *argv[])
+132 \{
+133     if (argc == 3)
+134     \{
+135         std::cout << "Receive Mode" << std::endl;
+136         if (std::string(argv[1]).compare("Sync") == 0)
+137         \{
+138             SyncReceive(argv[2]);
+139         \}
+140         else if (std::string(argv[1]).compare("Async") == 0)
+141         \{
+142             AsyncReceive(argv[2]);
+143         \}
+144         else
+145         \{
+146             std::cout << "Invalid receive mode " << argv[1] << std::endl;
+147         \}
+148     \}
+149     else if (argc == 5)
+150     \{
+151         std::cout << "Send Mode" << std::endl;
+152         void *handle = InitSocket(argv[1], 500, 500, nullptr);
+153         do
+154         \{
+155             std::cout << "Connect to " << argv[2] << ":" << argv[3] << "." << std::endl;
+156         \} while (false == Connect(handle, argv[2], argv[3], 1000, 0, 32, 0));
+157 
+158         FILE *p\_File = nullptr;
+159         p\_File = fopen(argv[4], "r");
+160         if (p\_File == nullptr)
+161         \{
+162             std::cout << "Cannot open file " << argv[4] << std::endl;
+163             exit(-1);
+164         \}
+165 
+166         unsigned char buffer[1424];
+167         size\_t readbytes;
+168         Send(handle, argv[2], argv[3], (unsigned char *)argv[4], strlen(argv[4]));
+169         while ((readbytes = fread(buffer, 1, sizeof(buffer), p\_File)) > 0)
+170         \{
+171             Send(handle, argv[2], argv[3], buffer, readbytes);
+172         \}
+173         buffer[0] = 0xff;
+174         Send(handle, argv[2], argv[3], buffer, 1);
+175         WaitUntilTxIsCompleted(handle, argv[2], argv[3]);
+176         fclose(p\_File);
+177         FreeSocket(handle);
+178     \}
+179     else
+180     \{
+181         std::cout << "Send Mode: run localport remoteIP remoteport filename" << std::endl;
+182         std::cout << "Receive Mode: run \{Sync, Async\} localport" << std::endl;
+183     \}
+184     return 0;
+185 \}
+\end{DoxyCode}
+ 

@@ -4,20 +4,22 @@
 
 using namespace NetworkCoding;
 
-////////////////////////////////////////////////////////////
-/////////////// TransmissionBlock
-/*
- * Create TransmissionBlock.
- */
 TransmissionBlock::TransmissionBlock(TransmissionSession *const p_session) : p_Session(p_session),
                                                                              m_BlockSize(p_session->m_BlockSize),
                                                                              m_TransmissionMode(p_session->m_TransmissionMode),
                                                                              m_BlockSequenceNumber(p_session->m_MaxBlockSequenceNumber.fetch_add(1, std::memory_order_relaxed)),
                                                                              m_RetransmissionRedundancy(p_session->m_RetransmissionRedundancy)
 {
+    /**
+     * @brief 1. Initialize the member variables.
+     */
     m_LargestOriginalPacketSize = 0;
     m_TransmissionCount = 0;
     m_AckedRank = 0;
+    /**
+     * @brief 2. Register the block sequence number to NetworkCoding::TransmissionSession::m_AckList.
+     * @see NetworkCoding::TransmissionSession::m_AckList.
+     */
     {
         std::unique_lock<std::mutex> acklock(p_Session->m_AckListLock);
         p_Session->m_AckList[(int32_t)m_BlockSequenceNumber] = 0;
@@ -26,6 +28,10 @@ TransmissionBlock::TransmissionBlock(TransmissionSession *const p_session) : p_S
 
 TransmissionBlock::~TransmissionBlock()
 {
+    /**
+     * @brief 1. Update NetworkCoding::TransmissionSession::m_BytesUnacked.
+     * @see NetworkCoding::TransmissionSession::m_BytesUnacked.
+     */
     for (uint32_t i = 0; i < m_OriginalPacketBuffer.size(); i++)
     {
         Header::Data *const DataHeader = reinterpret_cast<Header::Data *>(m_OriginalPacketBuffer[i].get());
@@ -39,17 +45,28 @@ TransmissionBlock::~TransmissionBlock()
             p_Session->m_BytesUnacked = 0;
         }
     }
+    /**
+     * @brief 2. Clear NetworkCoding::TransmissionBlock::m_OriginalPacketBuffer.
+     * @see NetworkCoding::TransmissionBlock::m_OriginalPacketBuffer.
+     */
     m_OriginalPacketBuffer.clear();
 }
 
 bool TransmissionBlock::Send(uint8_t *const buffer, const uint16_t buffersize)
 {
+    /**
+     * @brief 1. Check if session is in connected state.
+     * @see NetworkCoding::TransmissionSession::m_IsConnected.
+     */
     if (p_Session->m_IsConnected == false)
     {
         delete this;
         return false;
     }
-    // 2. Allocate memory for packet buffer.
+    /**
+     * @brief 2. Put buffer into the m_OriginalPacketBuffer.
+     * @see NetworkCoding::TransmissionBlock::m_OriginalPacketBuffer.
+     */
     try
     {
 #if ENABLE_CRITICAL_EXCEPTIONS
@@ -63,7 +80,10 @@ bool TransmissionBlock::Send(uint8_t *const buffer, const uint16_t buffersize)
         return false;
     }
 
-    // Fill up the fields
+    /**
+     * @brief 3. Prepare header.
+     * @see NetworkCoding::Header::Data.
+     */
     Header::Data *const DataHeader = reinterpret_cast<Header::Data *>(m_OriginalPacketBuffer[m_TransmissionCount].get());
     DataHeader->m_Type = Header::Common::HeaderType::DATA;
     DataHeader->m_CheckSum = 0;
@@ -77,7 +97,6 @@ bool TransmissionBlock::Send(uint8_t *const buffer, const uint16_t buffersize)
     DataHeader->m_TxCount = m_TransmissionCount + 1;
     if (DataHeader->m_ExpectedRank == m_BlockSize)
     {
-        //Note: Header::Data::FLAGS_END_OF_BLK asks ack from the client
         DataHeader->m_Flags |= Header::Data::FLAGS_END_OF_BLK;
     }
     DataHeader->m_PayloadSize = htons(buffersize);
@@ -85,7 +104,7 @@ bool TransmissionBlock::Send(uint8_t *const buffer, const uint16_t buffersize)
     {
         m_LargestOriginalPacketSize = buffersize;
     }
-    DataHeader->m_LastIndicator = 1; /* This field is reserved to support fragmentation */
+    DataHeader->m_LastIndicator = 1;
     for (uint8_t i = 0; i < m_BlockSize; i++)
     {
         if (i != m_TransmissionCount)
@@ -99,7 +118,15 @@ bool TransmissionBlock::Send(uint8_t *const buffer, const uint16_t buffersize)
     }
     memcpy(DataHeader->m_Codes + m_BlockSize, buffer, buffersize);
     DataHeader->m_CheckSum = Checksum::get(m_OriginalPacketBuffer[m_TransmissionCount].get(), ntohs(DataHeader->m_TotalSize));
+    /**
+     * @brief 4. Enqueue the packet.
+     * @see NetworkCoding::TransmissionSession::PushDataPacket.
+     */
     p_Session->PushDataPacket(m_OriginalPacketBuffer[m_TransmissionCount++].get(), ntohs(DataHeader->m_TotalSize), true, this);
+    /**
+     * @brief 5. Clear NetworkCoding::TransmissionSession::p_TransmissionBlock so that NetworkCoding::TransmissionSession can arrange next block for transmission.
+     * @see NetworkCoding::TransmissionSession::p_TransmissionBlock.
+     */
     if (m_TransmissionCount == m_BlockSize)
     {
         p_Session->p_TransmissionBlock = nullptr;
@@ -107,9 +134,13 @@ bool TransmissionBlock::Send(uint8_t *const buffer, const uint16_t buffersize)
     return true;
 }
 
-// OK
 const bool TransmissionBlock::Retransmission()
 {
+    /**
+     * @brief 1. If NetworkCoding::TransmissionBlock::m_TransmissionMode is NetworkCoding::Parameter::BEST_EFFORT_TRANSMISSION_MODE and
+     * we already transmitted NetworkCoding::TransmissionBlock::m_RetransmissionRedundancy remedy packets then
+     * we complete this block regardless of ack from receiver.
+     */
     if (m_TransmissionMode == Parameter::BEST_EFFORT_TRANSMISSION_MODE)
     {
         if (m_TransmissionCount >= m_OriginalPacketBuffer.size() + m_RetransmissionRedundancy)
@@ -118,6 +149,12 @@ const bool TransmissionBlock::Retransmission()
             p_Session->m_AckList.erase(m_BlockSequenceNumber);
         }
     }
+    /**
+     * @brief 2. Update NetworkCoding::TransmissionSession::m_MinBlockSequenceNumber with
+     * the minimum sequence number in NetworkCoding::TransmissionSession::m_AckList.
+     * @warning ~TransmissionBlock require m_AckListLock.
+     * Therefore, we must release m_AckListLock before calling dtor.
+     */
     {
         std::unique_lock<std::mutex> acklock(p_Session->m_AckListLock);
         if (p_Session->m_AckList.find(m_BlockSequenceNumber) == p_Session->m_AckList.end())
@@ -133,26 +170,29 @@ const bool TransmissionBlock::Retransmission()
                     break;
                 }
             }
-            /**
-             * ~TransmissionBlock require m_AckListLock.
-             * Therefore, we must release the lock before calling dtor.
-             **/
             acklock.unlock();
             delete this;
             return false;
         }
     }
+    /**
+     * @brief 3. Check if session is in connected state.
+     */
     if (p_Session->m_IsConnected == false)
     {
         delete this;
         return false;
     }
     {
+        /**
+         * @brief 4. Generate random coefficients.
+         * If m_OriginalPacketBuffer.size() == 1 we do not encode the packet.
+         * Otherwise, we generates m_OriginalPacketBuffer.size() many random coefficients.
+         */
         std::vector<uint8_t> RandomCoefficients;
         Header::Data *RemedyHeader = reinterpret_cast<Header::Data *>(m_RemedyPacketBuffer);
         if (m_OriginalPacketBuffer.size() == 1)
         {
-            // No encoding if only one packet is in m_OriginalPacketBuffer.
             do
             {
                 try
@@ -191,6 +231,10 @@ const bool TransmissionBlock::Retransmission()
             }
         }
 
+        /**
+         * @brief 5. Prepare header.
+         * @see NetworkCoding::Header::Data.
+         */
         memset(m_RemedyPacketBuffer, 0x0, sizeof(m_RemedyPacketBuffer));
         RemedyHeader->m_Type = Header::Common::HeaderType::DATA;
         RemedyHeader->m_CheckSum = 0;
@@ -203,6 +247,9 @@ const bool TransmissionBlock::Retransmission()
         RemedyHeader->m_Flags = Header::Data::FLAGS_END_OF_BLK;
         RemedyHeader->m_TxCount = ++m_TransmissionCount;
         RemedyHeader->m_CheckSum = 0;
+        /**
+         * @brief 6. Encoding a remedy packet.
+         */
         for (uint8_t PacketIndex = 0; PacketIndex < m_OriginalPacketBuffer.size(); PacketIndex++)
         {
             uint8_t *OriginalBuffer = reinterpret_cast<uint8_t *>(m_OriginalPacketBuffer[PacketIndex].get());
@@ -257,16 +304,20 @@ const bool TransmissionBlock::Retransmission()
             }
         }
         RemedyHeader->m_CheckSum = Checksum::get(m_RemedyPacketBuffer, ntohs(RemedyHeader->m_TotalSize));
+        /**
+         * @brief 7. Enqueue the remedy packet.
+         * @see  NetworkCoding::TransmissionSession::PushDataPacket.
+         */
         p_Session->PushDataPacket(m_RemedyPacketBuffer, ntohs(RemedyHeader->m_TotalSize), false, this);
     }
     return true;
 }
 
-////////////////////////////////////////////////////////////
-/////////////// TransmissionSession
-/*OK*/
 TransmissionSession::TransmissionSession(Transmission *const transmission, const int32_t Socket, const DataTypes::Address Addr, const Parameter::TRANSMISSION_MODE TransmissionMode, const Parameter::BLOCK_SIZE BlockSize, const uint16_t RetransmissionRedundancy) : c_Transmission(transmission), c_Socket(Socket), c_Addr(Addr)
 {
+    /**
+     * @brief Initialize all member variables.
+     */
     m_TransmissionMode = TransmissionMode;
     m_BlockSize = BlockSize;
     m_RoundTripTime = Parameter::MINIMUM_RETRANSMISSION_INTERVAL;
@@ -280,11 +331,19 @@ TransmissionSession::TransmissionSession(Transmission *const transmission, const
     m_IsConnected = false;
 }
 
-/*OK*/
 TransmissionSession::~TransmissionSession()
 {
+    /**
+     * @brief 1. Set m_IsConnected as disconnected, i.e. false.
+     */
     m_IsConnected = false;
+    /**
+     * @brief 2. Stop m_Timer.
+     */
     m_Timer.Stop();
+    /**
+     * @brief 3. Clear m_TxQueue.
+     */
     while (m_TxQueue.size())
     {
         if (std::get<2>(m_TxQueue.front()) == false)
@@ -295,9 +354,11 @@ TransmissionSession::~TransmissionSession()
     }
 }
 
-/*OK*/
 void TransmissionSession::ChangeTransmissionMode(const Parameter::TRANSMISSION_MODE TransmissionMode)
 {
+    /**
+     * @brief Session parameter updates are serialized using m_Timer.
+     */
     m_Timer.ImmediateTask(
         [this, TransmissionMode]() -> void {
             m_TransmissionMode = TransmissionMode;
@@ -305,9 +366,11 @@ void TransmissionSession::ChangeTransmissionMode(const Parameter::TRANSMISSION_M
         TransmissionSession::HIGH_PRIORITY);
 }
 
-/*OK*/
 void TransmissionSession::ChangeBlockSize(const Parameter::BLOCK_SIZE BlockSize)
 {
+    /**
+     * @brief Session parameter updates are serialized using m_Timer.
+     */
     m_Timer.ImmediateTask(
         [this, BlockSize]() -> void {
             m_BlockSize = BlockSize;
@@ -315,9 +378,11 @@ void TransmissionSession::ChangeBlockSize(const Parameter::BLOCK_SIZE BlockSize)
         TransmissionSession::HIGH_PRIORITY);
 }
 
-/*OK*/
 void TransmissionSession::ChangeRetransmissionRedundancy(const uint16_t RetransmissionRedundancy)
 {
+    /**
+     * @brief Session parameter updates are serialized using m_Timer.
+     */
     m_Timer.ImmediateTask(
         [this, RetransmissionRedundancy]() -> void {
             m_RetransmissionRedundancy = RetransmissionRedundancy;
@@ -325,9 +390,11 @@ void TransmissionSession::ChangeRetransmissionRedundancy(const uint16_t Retransm
         TransmissionSession::HIGH_PRIORITY);
 }
 
-/*OK*/
 void TransmissionSession::ChangeSessionParameter(const Parameter::TRANSMISSION_MODE TransmissionMode, const Parameter::BLOCK_SIZE BlockSize, const uint16_t RetransmissionRedundancy)
 {
+    /**
+     * @brief Session parameter updates are serialized using m_Timer.
+     */
     m_Timer.ImmediateTask(
         [this, TransmissionMode, BlockSize, RetransmissionRedundancy]() -> void {
             m_TransmissionMode = TransmissionMode;
@@ -344,6 +411,9 @@ const bool TransmissionSession::SendPing()
     ping.m_CheckSum = 0;
     ping.m_PingTime = CLOCK::now().time_since_epoch().count();
 
+    /**
+     * @brief 1. Check last pong time. If we have not received pong from remote host more than CONNECTION_TIMEOUT then we trigger disconnection for this session and stop sending ping.
+     */
     CLOCK::time_point const CurrentTime(CLOCK::duration(ping.m_PingTime));
     CLOCK::time_point const LastPongRecvTime(CLOCK::duration(m_LastPongTime.load()));
     std::chrono::duration<double> TimeSinceLastPongTime = std::chrono::duration_cast<std::chrono::duration<double>>(CurrentTime - LastPongRecvTime);
@@ -353,13 +423,23 @@ const bool TransmissionSession::SendPing()
         c_Transmission->Disconnect(c_Addr);
         return false;
     }
+    /**
+     * @brief 2. Send ping packet to remote host.
+     */
     ping.m_CheckSum = Checksum::get(reinterpret_cast<uint8_t *>(&ping), sizeof(Header::Ping));
     sendto(c_Socket, reinterpret_cast<uint8_t *>(&ping), sizeof(Header::Ping), 0, (sockaddr *)&c_Addr.Addr, c_Addr.AddrLength);
+    /**
+     * @brief 3. Schedule next ping transmission.
+     */
     return true;
 }
 
 void TransmissionSession::ProcessPong(const uint16_t Rtt)
 {
+    /**
+     * @brief Update m_RoundTripTime, which is used for retransmission interval.
+     *        It is serialized using m_Timer.
+     */
     m_Timer.ImmediateTask(
         [this, Rtt]() -> void {
             if (Rtt < Parameter::MINIMUM_RETRANSMISSION_INTERVAL)
@@ -376,7 +456,11 @@ void TransmissionSession::ProcessPong(const uint16_t Rtt)
 
 void TransmissionSession::ProcessDataAck(const uint8_t Rank, const uint8_t MaxRank, const uint8_t Loss, const uint16_t Sequence)
 {
-    // the iterator constructor can also be used to construct from arrays:
+    /**
+     * @brief Proccess ack. It is serialized by m_Timer.
+     * @todo Retransmission can be further optimized by using loss rate.
+     *       E.g., we can immediately transmit encoded packets corersponding to loss ratio, i.e. (Block size * loss possibility) without waiting the ack.
+     */
     m_Timer.ImmediateTask(
         [this, Rank, MaxRank, Loss, Sequence]() -> void {
             {
@@ -392,14 +476,15 @@ void TransmissionSession::ProcessDataAck(const uint8_t Rank, const uint8_t MaxRa
                     m_AckList.erase(it);
                 }
             }
-            /* To-Do */
-            // Update the Avg. loss rate.
         },
         TransmissionSession::HIGH_PRIORITY);
 }
 
 void TransmissionSession::ProcessSyncAck(const uint16_t sequence)
 {
+    /**
+     * @brief Process sync ack. Both end hosts synchronize their starting TransmissionBlock's sequence number.
+     */
     m_Timer.ImmediateTask(
         [this, sequence]() -> void {
             if (sequence == m_MaxBlockSequenceNumber)
@@ -420,13 +505,15 @@ void TransmissionSession::ProcessSyncAck(const uint16_t sequence)
 void TransmissionSession::PushDataPacket(uint8_t *const buffer, const uint16_t size, bool orig, TransmissionBlock *const block)
 {
     /**
-     * We do not count retransmission packets as unacked packet.
-     * Retransmission is transmitted regardless of m_BytesUnacked.
+     * @brief 1. Increament m_BytesUnacked by packet size.
      */
     if (orig)
     {
         m_BytesUnacked.fetch_add(size);
     }
+    /**
+     * @brief 2. Enqueue the packet on m_TxQueue.
+     */
     m_Timer.ImmediateTask(
         [this, buffer, size, orig, block]() -> void {
             if (orig)
@@ -445,6 +532,9 @@ void TransmissionSession::PushDataPacket(uint8_t *const buffer, const uint16_t s
 
 uint16_t TransmissionSession::PopDataPacket()
 {
+    /**
+     * @brief 1. Dequeue a packet from m_TxQueue.
+     */
     if (m_TxQueue.size() == 0)
     {
         return 0;
@@ -452,6 +542,9 @@ uint16_t TransmissionSession::PopDataPacket()
     Header::Data *const DataHeader = reinterpret_cast<Header::Data *>(std::get<0>(m_TxQueue.front()));
     const uint16_t sequence = ntohs(DataHeader->m_CurrentBlockSequenceNumber);
     const uint8_t expected_rank = DataHeader->m_ExpectedRank;
+    /**
+     * @brief 2. Transmit the packet.
+     */
     const int ret = sendto(c_Socket, std::get<0>(m_TxQueue.front()), std::get<1>(m_TxQueue.front()), 0, (sockaddr *)&c_Addr.Addr, c_Addr.AddrLength);
     if (ret < 0)
     {
@@ -460,7 +553,7 @@ uint16_t TransmissionSession::PopDataPacket()
     else
     {
         /**
-         * Start retransmission timeout if the packet is FLAGS_END_OF_BLK.
+         * @brief 3. Schedule next retransmission if the packet is the last original packet or network coding packet.
          */
         if (DataHeader->m_Flags & Header::Data::FLAGS_END_OF_BLK)
         {
@@ -471,13 +564,16 @@ uint16_t TransmissionSession::PopDataPacket()
                                          },
                                          (m_MinBlockSequenceNumber == block->m_BlockSequenceNumber ? TransmissionSession::MIDDLE_PRIORITY : TransmissionSession::LOW_PRIORITY));
         }
+        /**
+         * @brief 4. Free the packet.
+         */
         if (std::get<2>(m_TxQueue.front()) == false)
         {
             delete[] std::get<0>(m_TxQueue.front());
         }
         m_TxQueue.pop();
         /**
-         * Schedule ack timeout for both original and network coding packets.
+         * @brief 5. Schedule ack timeout.
          */
         m_Timer.ScheduleTaskNoExcept(m_RoundTripTime,
                                      [this, sequence, expected_rank]() -> void {

@@ -1,0 +1,298 @@
+\hypertarget{common_8h}{}\section{/home/dujeonglee/\+Network\+Coding\+Rev/c\+\_\+cpp/common.h File Reference}
+\label{common_8h}\index{/home/dujeonglee/\+Network\+Coding\+Rev/c\+\_\+cpp/common.\+h@{/home/dujeonglee/\+Network\+Coding\+Rev/c\+\_\+cpp/common.\+h}}
+{\ttfamily \#include $<$netinet/in.\+h$>$}\\*
+{\ttfamily \#include $<$sys/socket.\+h$>$}\\*
+{\ttfamily \#include $<$unistd.\+h$>$}\\*
+{\ttfamily \#include $<$time.\+h$>$}\\*
+{\ttfamily \#include $<$stddef.\+h$>$}\\*
+{\ttfamily \#include $<$arpa/inet.\+h$>$}\\*
+{\ttfamily \#include $<$netdb.\+h$>$}\\*
+{\ttfamily \#include $<$iostream$>$}\\*
+{\ttfamily \#include $<$map$>$}\\*
+{\ttfamily \#include $<$vector$>$}\\*
+{\ttfamily \#include $<$queue$>$}\\*
+{\ttfamily \#include $<$atomic$>$}\\*
+{\ttfamily \#include $<$mutex$>$}\\*
+{\ttfamily \#include $<$condition\+\_\+variable$>$}\\*
+{\ttfamily \#include $<$functional$>$}\\*
+{\ttfamily \#include $<$exception$>$}\\*
+{\ttfamily \#include $<$new$>$}\\*
+{\ttfamily \#include $<$stdexcept$>$}\\*
+{\ttfamily \#include $<$cstdint$>$}\\*
+{\ttfamily \#include \char`\"{}Thread\+Pool.\+h\char`\"{}}\\*
+{\ttfamily \#include \char`\"{}A\+V\+L\+Tree.\+h\char`\"{}}\\*
+{\ttfamily \#include \char`\"{}Single\+Shot\+Timer.\+h\char`\"{}}\\*
+{\ttfamily \#include \char`\"{}finite\+\_\+field.\+h\char`\"{}}\\*
+{\ttfamily \#include \char`\"{}debug.\+h\char`\"{}}\\*
+Include dependency graph for common.\+h\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{common_8h__incl}
+\end{center}
+\end{figure}
+This graph shows which files directly or indirectly include this file\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{common_8h__dep__incl}
+\end{center}
+\end{figure}
+\subsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+struct \hyperlink{struct_network_coding_1_1_header_1_1_common}{Network\+Coding\+::\+Header\+::\+Common}
+\item 
+struct \hyperlink{struct_network_coding_1_1_header_1_1_data}{Network\+Coding\+::\+Header\+::\+Data}
+\item 
+struct \hyperlink{struct_network_coding_1_1_header_1_1_data_ack}{Network\+Coding\+::\+Header\+::\+Data\+Ack}
+\item 
+struct \hyperlink{struct_network_coding_1_1_header_1_1_sync}{Network\+Coding\+::\+Header\+::\+Sync}
+\item 
+struct \hyperlink{struct_network_coding_1_1_header_1_1_ping}{Network\+Coding\+::\+Header\+::\+Ping}
+\item 
+struct \hyperlink{struct_network_coding_1_1_header_1_1_pong}{Network\+Coding\+::\+Header\+::\+Pong}
+\item 
+class \hyperlink{class_network_coding_1_1_data_types_1_1_session_key}{Network\+Coding\+::\+Data\+Types\+::\+Session\+Key}
+\item 
+class \hyperlink{class_network_coding_1_1_data_types_1_1_address}{Network\+Coding\+::\+Data\+Types\+::\+Address}
+\end{DoxyCompactItemize}
+\subsection*{Namespaces}
+\begin{DoxyCompactItemize}
+\item 
+ \hyperlink{namespace_network_coding}{Network\+Coding}
+\item 
+ \hyperlink{namespace_network_coding_1_1_header}{Network\+Coding\+::\+Header}
+\item 
+ \hyperlink{namespace_network_coding_1_1_parameter}{Network\+Coding\+::\+Parameter}
+\item 
+ \hyperlink{namespace_network_coding_1_1_data_types}{Network\+Coding\+::\+Data\+Types}
+\end{DoxyCompactItemize}
+\subsection*{Enumerations}
+\begin{DoxyCompactItemize}
+\item 
+enum \hyperlink{common_8h_a3415480a57b3d5d8c573fa3b8c68213c}{Header\+Type} \+: uint8\+\_\+t \{ \\*
+\hyperlink{common_8h_a3415480a57b3d5d8c573fa3b8c68213ca9d7d6f31868d66330397c967c4afd2d2}{D\+A\+TA} = 1, 
+\hyperlink{common_8h_a3415480a57b3d5d8c573fa3b8c68213ca447bfe7992c2fe70bfe561225f74d379}{S\+Y\+NC}, 
+\hyperlink{common_8h_a3415480a57b3d5d8c573fa3b8c68213ca3a95ef902bc659901cceef98e0bc8041}{P\+I\+NG}, 
+\hyperlink{common_8h_a3415480a57b3d5d8c573fa3b8c68213caa7bc234cc9ed1c7531797d6c9779186f}{D\+A\+T\+A\+\_\+\+A\+CK}, 
+\\*
+\hyperlink{common_8h_a3415480a57b3d5d8c573fa3b8c68213cac7d1951b747cf9ed3d6364da64d843be}{S\+Y\+N\+C\+\_\+\+A\+CK}, 
+\hyperlink{common_8h_a3415480a57b3d5d8c573fa3b8c68213cae911a27de4bca30604be3515f31b2057}{P\+O\+NG}
+ \}
+\item 
+enum \hyperlink{common_8h_a37dde2ef07300746b58fcfc60c9218bf}{Data\+Header\+Flag} \+: uint8\+\_\+t \{ \hyperlink{common_8h_a37dde2ef07300746b58fcfc60c9218bfa85e04d3bb142cbd1d00326bea50e6947}{F\+L\+A\+G\+S\+\_\+\+O\+R\+I\+G\+I\+N\+AL} = 0x1, 
+\hyperlink{common_8h_a37dde2ef07300746b58fcfc60c9218bfa029aff3b9bd0cf9939fee99d6fbe452d}{F\+L\+A\+G\+S\+\_\+\+E\+N\+D\+\_\+\+O\+F\+\_\+\+B\+LK} = 0x2, 
+\hyperlink{common_8h_a37dde2ef07300746b58fcfc60c9218bfabfad6f036b39edd696bcc2dc23c7fab9}{F\+L\+A\+G\+S\+\_\+\+C\+O\+N\+S\+U\+M\+ED} = 0x4
+ \}
+\item 
+enum \hyperlink{common_8h_a293bb98b343f9fa91edcc615fc71292d}{Off\+Sets} \+: uint8\+\_\+t \{ \hyperlink{common_8h_a293bb98b343f9fa91edcc615fc71292da07ef346f176779dd5385f34ffe3e0630}{Coding\+Offset} = (1 + 1 + 2 + 2 + 2 + 2 + 1 + 1 + 1 + 1)
+ \}
+\item 
+enum \hyperlink{namespace_network_coding_1_1_parameter_abacf67c35e36279a0efd7803530731b1}{Network\+Coding\+::\+Parameter\+::\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+DE} \+: uint8\+\_\+t \{ \hyperlink{namespace_network_coding_1_1_parameter_abacf67c35e36279a0efd7803530731b1a78d0d5e498668b5d6e88cdd199e33975}{Network\+Coding\+::\+Parameter\+::\+R\+E\+L\+I\+A\+B\+L\+E\+\_\+\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+DE} = 0, 
+\hyperlink{namespace_network_coding_1_1_parameter_abacf67c35e36279a0efd7803530731b1a388c47889c687f4be03655d10c877690}{Network\+Coding\+::\+Parameter\+::\+B\+E\+S\+T\+\_\+\+E\+F\+F\+O\+R\+T\+\_\+\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+DE}
+ \}
+\item 
+enum \hyperlink{namespace_network_coding_1_1_parameter_a28b92ccd4fb04190653869f4438eee1f}{Network\+Coding\+::\+Parameter\+::\+B\+L\+O\+C\+K\+\_\+\+S\+I\+ZE} \+: uint8\+\_\+t \{ \\*
+\hyperlink{namespace_network_coding_1_1_parameter_a28b92ccd4fb04190653869f4438eee1fa9d51666327fe6a7c6c9b2d47a30c6b70}{Network\+Coding\+::\+Parameter\+::\+I\+N\+V\+A\+L\+I\+D\+\_\+\+B\+L\+O\+C\+K\+\_\+\+S\+I\+ZE} = 0, 
+\hyperlink{namespace_network_coding_1_1_parameter_a28b92ccd4fb04190653869f4438eee1fa21f23f14ceaca162b4c03992d60416af}{Network\+Coding\+::\+Parameter\+::\+B\+L\+O\+C\+K\+\_\+\+S\+I\+Z\+E\+\_\+04} = 4, 
+\hyperlink{namespace_network_coding_1_1_parameter_a28b92ccd4fb04190653869f4438eee1fad87e5103776899ab85c2d35426e0fb46}{Network\+Coding\+::\+Parameter\+::\+B\+L\+O\+C\+K\+\_\+\+S\+I\+Z\+E\+\_\+08} = 8, 
+\hyperlink{namespace_network_coding_1_1_parameter_a28b92ccd4fb04190653869f4438eee1fab9a4570a3b7e6a23dd909cc6359c1809}{Network\+Coding\+::\+Parameter\+::\+B\+L\+O\+C\+K\+\_\+\+S\+I\+Z\+E\+\_\+12} = 12, 
+\\*
+\hyperlink{namespace_network_coding_1_1_parameter_a28b92ccd4fb04190653869f4438eee1fa23e3a5585851e3ac5afec6cacc6d5bc0}{Network\+Coding\+::\+Parameter\+::\+B\+L\+O\+C\+K\+\_\+\+S\+I\+Z\+E\+\_\+16} = 16, 
+\hyperlink{namespace_network_coding_1_1_parameter_a28b92ccd4fb04190653869f4438eee1fa93854ef6994e32f77f6e843373e81527}{Network\+Coding\+::\+Parameter\+::\+B\+L\+O\+C\+K\+\_\+\+S\+I\+Z\+E\+\_\+20} = 20, 
+\hyperlink{namespace_network_coding_1_1_parameter_a28b92ccd4fb04190653869f4438eee1fa79405f7d88e2d6326433ad776a467eb1}{Network\+Coding\+::\+Parameter\+::\+B\+L\+O\+C\+K\+\_\+\+S\+I\+Z\+E\+\_\+24} = 24, 
+\hyperlink{namespace_network_coding_1_1_parameter_a28b92ccd4fb04190653869f4438eee1faa9bbe7b34848168d6462e8e9ddb3cf5c}{Network\+Coding\+::\+Parameter\+::\+B\+L\+O\+C\+K\+\_\+\+S\+I\+Z\+E\+\_\+28} = 28, 
+\\*
+\hyperlink{namespace_network_coding_1_1_parameter_a28b92ccd4fb04190653869f4438eee1fa0c3c394af5678bb425d4e256ce7bd1e2}{Network\+Coding\+::\+Parameter\+::\+B\+L\+O\+C\+K\+\_\+\+S\+I\+Z\+E\+\_\+32} = 32, 
+\hyperlink{namespace_network_coding_1_1_parameter_a28b92ccd4fb04190653869f4438eee1fabf4a9bef39a8d7af7b6ad595987bce95}{Network\+Coding\+::\+Parameter\+::\+B\+L\+O\+C\+K\+\_\+\+S\+I\+Z\+E\+\_\+64} = 64, 
+\hyperlink{namespace_network_coding_1_1_parameter_a28b92ccd4fb04190653869f4438eee1fa5305ad9c323e0c393aa49b9f6000bde9}{Network\+Coding\+::\+Parameter\+::\+B\+L\+O\+C\+K\+\_\+\+S\+I\+Z\+E\+\_\+128} = 128
+ \}
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+struct \hyperlink{struct_network_coding_1_1_header_1_1_common}{Network\+Coding\+::\+Header\+::\+Common} \hyperlink{namespace_network_coding_1_1_header_ac97898fafab0b09c70a848e641890b09}{Network\+Coding\+::\+Header\+::\+\_\+\+\_\+attribute\+\_\+\+\_\+} ((packed, may\+\_\+alias))
+\item 
+class \hyperlink{class_network_coding_1_1_data_types_1_1_session_key}{Network\+Coding\+::\+Data\+Types\+::\+Session\+Key} \hyperlink{namespace_network_coding_1_1_data_types_a25cc3e477976cfec87b561ec17caf12b}{Network\+Coding\+::\+Data\+Types\+::\+\_\+\+\_\+attribute\+\_\+\+\_\+} ((packed))
+\item 
+const Session\+Key \hyperlink{namespace_network_coding_1_1_data_types_a712da07467eaf2a7eddf77343953e6d6}{Network\+Coding\+::\+Data\+Types\+::\+Get\+Session\+Key} (const sockaddr $\ast$addr, int size)
+\item 
+const Address \hyperlink{namespace_network_coding_1_1_data_types_a2824c02e4a872dac64a9b10530702034}{Network\+Coding\+::\+Data\+Types\+::\+Get\+Address} (std\+::string IP, std\+::string Port)
+\end{DoxyCompactItemize}
+\subsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+uint8\+\_\+t \hyperlink{common_8h_a1bdae9771654837c8ea20f3bfff5e182}{m\+\_\+\+Type}
+\item 
+uint8\+\_\+t \hyperlink{common_8h_ab4e46eee187acb1642ae12d501b2f187}{m\+\_\+\+Check\+Sum}
+\item 
+uint16\+\_\+t \hyperlink{common_8h_a5c410ad3d26db0ef0d6e6befec3c0a6a}{m\+\_\+\+Total\+Size}
+\item 
+uint16\+\_\+t \hyperlink{common_8h_a61cb4ba08bf600af977eeb560bf5269e}{m\+\_\+\+Min\+Block\+Sequence\+Number}
+\item 
+uint16\+\_\+t \hyperlink{common_8h_a6e546b7c2a2da183fce17563e3170dc2}{m\+\_\+\+Current\+Block\+Sequence\+Number}
+\item 
+uint16\+\_\+t \hyperlink{common_8h_acabfb8a9fa3ad7d3d3ebad62646653a8}{m\+\_\+\+Max\+Block\+Sequence\+Number}
+\item 
+uint8\+\_\+t \hyperlink{common_8h_a11f82ca965f492f7cee7f4465d94f1d2}{m\+\_\+\+Expected\+Rank}
+\item 
+uint8\+\_\+t \hyperlink{common_8h_a4f341f004dde0a0f8f37285ae9917bed}{m\+\_\+\+Maximum\+Rank}
+\item 
+uint8\+\_\+t \hyperlink{common_8h_a5f9c725ba2f9138a53902d262f9e83b5}{m\+\_\+\+Flags}
+\item 
+uint8\+\_\+t \hyperlink{common_8h_a6670ae012a5e3c6ddd6185faee5a3fd4}{m\+\_\+\+Tx\+Count}
+\item 
+uint16\+\_\+t \hyperlink{common_8h_ac4aa5888f4d91d1f6e513a12c3068ca5}{m\+\_\+\+Payload\+Size}
+\item 
+uint8\+\_\+t \hyperlink{common_8h_ad2fac3dd2039cf25f0006b15f8eac578}{m\+\_\+\+Last\+Indicator}
+\item 
+uint8\+\_\+t \hyperlink{common_8h_a5313b0267abf5df90d68863ba1e05ed9}{m\+\_\+\+Codes} \mbox{[}1\mbox{]}
+\item 
+uint8\+\_\+t \hyperlink{common_8h_a518b342b7167021a15df58464bafae72}{m\+\_\+\+Rank}
+\item 
+uint8\+\_\+t \hyperlink{common_8h_a83d22c4dc9aac691a3ac6241abee55c9}{m\+\_\+\+Max\+Rank}
+\item 
+uint8\+\_\+t \hyperlink{common_8h_afd5fd334f4542579e9372ec255d325f2}{m\+\_\+\+Losses}
+\item 
+uint16\+\_\+t \hyperlink{common_8h_ad875a55ee309368642dc6696531c4cbf}{m\+\_\+\+Block\+Sequence\+Number}
+\item 
+uint16\+\_\+t \hyperlink{common_8h_a041587f4c98ed68a69452e2c439ab1cb}{m\+\_\+\+Sequence}
+\item 
+C\+L\+O\+C\+K\+::time\+\_\+point\+::duration\+::rep \hyperlink{common_8h_a2eae988bd4fa880e267c267cf6490a01}{m\+\_\+\+Ping\+Time}
+\item 
+const uint8\+\_\+t \hyperlink{namespace_network_coding_1_1_parameter_a9a7439b44c4178484ade74a3eff863e1}{Network\+Coding\+::\+Parameter\+::\+M\+A\+X\+I\+M\+U\+M\+\_\+\+N\+U\+M\+B\+E\+R\+\_\+\+O\+F\+\_\+\+C\+O\+N\+C\+U\+R\+R\+E\+N\+T\+\_\+\+R\+E\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+ON} = 5
+\item 
+const uint16\+\_\+t \hyperlink{namespace_network_coding_1_1_parameter_a459e2143b7087feb87c81650c4418fb5}{Network\+Coding\+::\+Parameter\+::\+M\+A\+X\+I\+M\+U\+M\+\_\+\+B\+U\+F\+F\+E\+R\+\_\+\+S\+I\+ZE} = 1500
+\item 
+const uint16\+\_\+t \hyperlink{namespace_network_coding_1_1_parameter_aac717e068a7f4c5516073e94ef454b0b}{Network\+Coding\+::\+Parameter\+::\+P\+I\+N\+G\+\_\+\+I\+N\+T\+E\+R\+V\+AL} = 100
+\item 
+const double \hyperlink{namespace_network_coding_1_1_parameter_a89affbeeb79142af6d45a47083a868e7}{Network\+Coding\+::\+Parameter\+::\+C\+O\+N\+N\+E\+C\+T\+I\+O\+N\+\_\+\+T\+I\+M\+E\+O\+UT} = 10.\+0
+\item 
+const uint16\+\_\+t \hyperlink{namespace_network_coding_1_1_parameter_ad8178c8021f7e03275b8c769037b705c}{Network\+Coding\+::\+Parameter\+::\+M\+I\+N\+I\+M\+U\+M\+\_\+\+R\+E\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+I\+N\+T\+E\+R\+V\+AL} = 10
+\item 
+const uint32\+\_\+t \hyperlink{namespace_network_coding_1_1_parameter_a6f14145da096c85769462193db39b2ad}{Network\+Coding\+::\+Parameter\+::\+M\+A\+X\+I\+M\+U\+M\+\_\+\+C\+O\+N\+G\+E\+S\+T\+I\+O\+N\+\_\+\+W\+I\+N\+D\+O\+W\+\_\+\+S\+I\+ZE} = 2$\ast$1000$\ast$1000
+\item 
+const uint32\+\_\+t \hyperlink{namespace_network_coding_1_1_parameter_aa000b3a38c10ed4049bc919cc11bc26a}{Network\+Coding\+::\+Parameter\+::\+M\+I\+N\+I\+M\+U\+M\+\_\+\+C\+O\+N\+G\+E\+S\+T\+I\+O\+N\+\_\+\+W\+I\+N\+D\+O\+W\+\_\+\+S\+I\+ZE} = 1000$\ast$64
+\item 
+const uint8\+\_\+t \hyperlink{namespace_network_coding_1_1_parameter_af1113bda7e0db18d36f7ac968d8a7e51}{Network\+Coding\+::\+Parameter\+::\+M\+A\+X\+\_\+\+B\+L\+O\+C\+K\+\_\+\+S\+I\+ZE} = B\+L\+O\+C\+K\+\_\+\+S\+I\+Z\+E\+\_\+128
+\item 
+uint64\+\_\+t \hyperlink{common_8h_ae3287becc422e7c3dfb9a4578800a1fc}{m\+\_\+\+E\+UI}
+\item 
+uint16\+\_\+t \hyperlink{common_8h_a6db1fb604775a4071b243ee808598ec3}{m\+\_\+\+Port}
+\item 
+class \hyperlink{class_network_coding_1_1_data_types_1_1_address}{Network\+Coding\+::\+Data\+Types\+::\+Address} \hyperlink{namespace_network_coding_1_1_data_types_a6987aee7d05b7ec7eb348e80d37b9c3a}{Network\+Coding\+::\+Data\+Types\+::\+\_\+\+\_\+attribute\+\_\+\+\_\+}
+\end{DoxyCompactItemize}
+
+
+\subsection{Enumeration Type Documentation}
+\index{common.\+h@{common.\+h}!Data\+Header\+Flag@{Data\+Header\+Flag}}
+\index{Data\+Header\+Flag@{Data\+Header\+Flag}!common.\+h@{common.\+h}}
+\subsubsection[{\texorpdfstring{Data\+Header\+Flag}{DataHeaderFlag}}]{\setlength{\rightskip}{0pt plus 5cm}enum {\bf Data\+Header\+Flag} \+: uint8\+\_\+t}\hypertarget{common_8h_a37dde2ef07300746b58fcfc60c9218bf}{}\label{common_8h_a37dde2ef07300746b58fcfc60c9218bf}
+\begin{Desc}
+\item[Enumerator]\par
+\begin{description}
+\index{F\+L\+A\+G\+S\+\_\+\+O\+R\+I\+G\+I\+N\+AL@{F\+L\+A\+G\+S\+\_\+\+O\+R\+I\+G\+I\+N\+AL}!common.\+h@{common.\+h}}\index{common.\+h@{common.\+h}!F\+L\+A\+G\+S\+\_\+\+O\+R\+I\+G\+I\+N\+AL@{F\+L\+A\+G\+S\+\_\+\+O\+R\+I\+G\+I\+N\+AL}}\item[{\em 
+F\+L\+A\+G\+S\+\_\+\+O\+R\+I\+G\+I\+N\+AL\hypertarget{common_8h_a37dde2ef07300746b58fcfc60c9218bfa85e04d3bb142cbd1d00326bea50e6947}{}\label{common_8h_a37dde2ef07300746b58fcfc60c9218bfa85e04d3bb142cbd1d00326bea50e6947}
+}]\index{F\+L\+A\+G\+S\+\_\+\+E\+N\+D\+\_\+\+O\+F\+\_\+\+B\+LK@{F\+L\+A\+G\+S\+\_\+\+E\+N\+D\+\_\+\+O\+F\+\_\+\+B\+LK}!common.\+h@{common.\+h}}\index{common.\+h@{common.\+h}!F\+L\+A\+G\+S\+\_\+\+E\+N\+D\+\_\+\+O\+F\+\_\+\+B\+LK@{F\+L\+A\+G\+S\+\_\+\+E\+N\+D\+\_\+\+O\+F\+\_\+\+B\+LK}}\item[{\em 
+F\+L\+A\+G\+S\+\_\+\+E\+N\+D\+\_\+\+O\+F\+\_\+\+B\+LK\hypertarget{common_8h_a37dde2ef07300746b58fcfc60c9218bfa029aff3b9bd0cf9939fee99d6fbe452d}{}\label{common_8h_a37dde2ef07300746b58fcfc60c9218bfa029aff3b9bd0cf9939fee99d6fbe452d}
+}]\index{F\+L\+A\+G\+S\+\_\+\+C\+O\+N\+S\+U\+M\+ED@{F\+L\+A\+G\+S\+\_\+\+C\+O\+N\+S\+U\+M\+ED}!common.\+h@{common.\+h}}\index{common.\+h@{common.\+h}!F\+L\+A\+G\+S\+\_\+\+C\+O\+N\+S\+U\+M\+ED@{F\+L\+A\+G\+S\+\_\+\+C\+O\+N\+S\+U\+M\+ED}}\item[{\em 
+F\+L\+A\+G\+S\+\_\+\+C\+O\+N\+S\+U\+M\+ED\hypertarget{common_8h_a37dde2ef07300746b58fcfc60c9218bfabfad6f036b39edd696bcc2dc23c7fab9}{}\label{common_8h_a37dde2ef07300746b58fcfc60c9218bfabfad6f036b39edd696bcc2dc23c7fab9}
+}]\end{description}
+\end{Desc}
+\index{common.\+h@{common.\+h}!Header\+Type@{Header\+Type}}
+\index{Header\+Type@{Header\+Type}!common.\+h@{common.\+h}}
+\subsubsection[{\texorpdfstring{Header\+Type}{HeaderType}}]{\setlength{\rightskip}{0pt plus 5cm}enum {\bf Header\+Type} \+: uint8\+\_\+t}\hypertarget{common_8h_a3415480a57b3d5d8c573fa3b8c68213c}{}\label{common_8h_a3415480a57b3d5d8c573fa3b8c68213c}
+\begin{Desc}
+\item[Enumerator]\par
+\begin{description}
+\index{D\+A\+TA@{D\+A\+TA}!common.\+h@{common.\+h}}\index{common.\+h@{common.\+h}!D\+A\+TA@{D\+A\+TA}}\item[{\em 
+D\+A\+TA\hypertarget{common_8h_a3415480a57b3d5d8c573fa3b8c68213ca9d7d6f31868d66330397c967c4afd2d2}{}\label{common_8h_a3415480a57b3d5d8c573fa3b8c68213ca9d7d6f31868d66330397c967c4afd2d2}
+}]\index{S\+Y\+NC@{S\+Y\+NC}!common.\+h@{common.\+h}}\index{common.\+h@{common.\+h}!S\+Y\+NC@{S\+Y\+NC}}\item[{\em 
+S\+Y\+NC\hypertarget{common_8h_a3415480a57b3d5d8c573fa3b8c68213ca447bfe7992c2fe70bfe561225f74d379}{}\label{common_8h_a3415480a57b3d5d8c573fa3b8c68213ca447bfe7992c2fe70bfe561225f74d379}
+}]\index{P\+I\+NG@{P\+I\+NG}!common.\+h@{common.\+h}}\index{common.\+h@{common.\+h}!P\+I\+NG@{P\+I\+NG}}\item[{\em 
+P\+I\+NG\hypertarget{common_8h_a3415480a57b3d5d8c573fa3b8c68213ca3a95ef902bc659901cceef98e0bc8041}{}\label{common_8h_a3415480a57b3d5d8c573fa3b8c68213ca3a95ef902bc659901cceef98e0bc8041}
+}]\index{D\+A\+T\+A\+\_\+\+A\+CK@{D\+A\+T\+A\+\_\+\+A\+CK}!common.\+h@{common.\+h}}\index{common.\+h@{common.\+h}!D\+A\+T\+A\+\_\+\+A\+CK@{D\+A\+T\+A\+\_\+\+A\+CK}}\item[{\em 
+D\+A\+T\+A\+\_\+\+A\+CK\hypertarget{common_8h_a3415480a57b3d5d8c573fa3b8c68213caa7bc234cc9ed1c7531797d6c9779186f}{}\label{common_8h_a3415480a57b3d5d8c573fa3b8c68213caa7bc234cc9ed1c7531797d6c9779186f}
+}]\index{S\+Y\+N\+C\+\_\+\+A\+CK@{S\+Y\+N\+C\+\_\+\+A\+CK}!common.\+h@{common.\+h}}\index{common.\+h@{common.\+h}!S\+Y\+N\+C\+\_\+\+A\+CK@{S\+Y\+N\+C\+\_\+\+A\+CK}}\item[{\em 
+S\+Y\+N\+C\+\_\+\+A\+CK\hypertarget{common_8h_a3415480a57b3d5d8c573fa3b8c68213cac7d1951b747cf9ed3d6364da64d843be}{}\label{common_8h_a3415480a57b3d5d8c573fa3b8c68213cac7d1951b747cf9ed3d6364da64d843be}
+}]\index{P\+O\+NG@{P\+O\+NG}!common.\+h@{common.\+h}}\index{common.\+h@{common.\+h}!P\+O\+NG@{P\+O\+NG}}\item[{\em 
+P\+O\+NG\hypertarget{common_8h_a3415480a57b3d5d8c573fa3b8c68213cae911a27de4bca30604be3515f31b2057}{}\label{common_8h_a3415480a57b3d5d8c573fa3b8c68213cae911a27de4bca30604be3515f31b2057}
+}]\end{description}
+\end{Desc}
+\index{common.\+h@{common.\+h}!Off\+Sets@{Off\+Sets}}
+\index{Off\+Sets@{Off\+Sets}!common.\+h@{common.\+h}}
+\subsubsection[{\texorpdfstring{Off\+Sets}{OffSets}}]{\setlength{\rightskip}{0pt plus 5cm}enum {\bf Off\+Sets} \+: uint8\+\_\+t}\hypertarget{common_8h_a293bb98b343f9fa91edcc615fc71292d}{}\label{common_8h_a293bb98b343f9fa91edcc615fc71292d}
+\begin{Desc}
+\item[Enumerator]\par
+\begin{description}
+\index{Coding\+Offset@{Coding\+Offset}!common.\+h@{common.\+h}}\index{common.\+h@{common.\+h}!Coding\+Offset@{Coding\+Offset}}\item[{\em 
+Coding\+Offset\hypertarget{common_8h_a293bb98b343f9fa91edcc615fc71292da07ef346f176779dd5385f34ffe3e0630}{}\label{common_8h_a293bb98b343f9fa91edcc615fc71292da07ef346f176779dd5385f34ffe3e0630}
+}]\end{description}
+\end{Desc}
+
+
+\subsection{Variable Documentation}
+\index{common.\+h@{common.\+h}!m\+\_\+\+Block\+Sequence\+Number@{m\+\_\+\+Block\+Sequence\+Number}}
+\index{m\+\_\+\+Block\+Sequence\+Number@{m\+\_\+\+Block\+Sequence\+Number}!common.\+h@{common.\+h}}
+\subsubsection[{\texorpdfstring{m\+\_\+\+Block\+Sequence\+Number}{m_BlockSequenceNumber}}]{\setlength{\rightskip}{0pt plus 5cm}uint16\+\_\+t m\+\_\+\+Block\+Sequence\+Number}\hypertarget{common_8h_ad875a55ee309368642dc6696531c4cbf}{}\label{common_8h_ad875a55ee309368642dc6696531c4cbf}
+\index{common.\+h@{common.\+h}!m\+\_\+\+Check\+Sum@{m\+\_\+\+Check\+Sum}}
+\index{m\+\_\+\+Check\+Sum@{m\+\_\+\+Check\+Sum}!common.\+h@{common.\+h}}
+\subsubsection[{\texorpdfstring{m\+\_\+\+Check\+Sum}{m_CheckSum}}]{\setlength{\rightskip}{0pt plus 5cm}uint8\+\_\+t m\+\_\+\+Check\+Sum}\hypertarget{common_8h_ab4e46eee187acb1642ae12d501b2f187}{}\label{common_8h_ab4e46eee187acb1642ae12d501b2f187}
+\index{common.\+h@{common.\+h}!m\+\_\+\+Codes@{m\+\_\+\+Codes}}
+\index{m\+\_\+\+Codes@{m\+\_\+\+Codes}!common.\+h@{common.\+h}}
+\subsubsection[{\texorpdfstring{m\+\_\+\+Codes}{m_Codes}}]{\setlength{\rightskip}{0pt plus 5cm}uint8\+\_\+t m\+\_\+\+Codes\mbox{[}1\mbox{]}}\hypertarget{common_8h_a5313b0267abf5df90d68863ba1e05ed9}{}\label{common_8h_a5313b0267abf5df90d68863ba1e05ed9}
+\index{common.\+h@{common.\+h}!m\+\_\+\+Current\+Block\+Sequence\+Number@{m\+\_\+\+Current\+Block\+Sequence\+Number}}
+\index{m\+\_\+\+Current\+Block\+Sequence\+Number@{m\+\_\+\+Current\+Block\+Sequence\+Number}!common.\+h@{common.\+h}}
+\subsubsection[{\texorpdfstring{m\+\_\+\+Current\+Block\+Sequence\+Number}{m_CurrentBlockSequenceNumber}}]{\setlength{\rightskip}{0pt plus 5cm}uint16\+\_\+t m\+\_\+\+Current\+Block\+Sequence\+Number}\hypertarget{common_8h_a6e546b7c2a2da183fce17563e3170dc2}{}\label{common_8h_a6e546b7c2a2da183fce17563e3170dc2}
+\index{common.\+h@{common.\+h}!m\+\_\+\+E\+UI@{m\+\_\+\+E\+UI}}
+\index{m\+\_\+\+E\+UI@{m\+\_\+\+E\+UI}!common.\+h@{common.\+h}}
+\subsubsection[{\texorpdfstring{m\+\_\+\+E\+UI}{m_EUI}}]{\setlength{\rightskip}{0pt plus 5cm}uint64\+\_\+t m\+\_\+\+E\+UI}\hypertarget{common_8h_ae3287becc422e7c3dfb9a4578800a1fc}{}\label{common_8h_ae3287becc422e7c3dfb9a4578800a1fc}
+\index{common.\+h@{common.\+h}!m\+\_\+\+Expected\+Rank@{m\+\_\+\+Expected\+Rank}}
+\index{m\+\_\+\+Expected\+Rank@{m\+\_\+\+Expected\+Rank}!common.\+h@{common.\+h}}
+\subsubsection[{\texorpdfstring{m\+\_\+\+Expected\+Rank}{m_ExpectedRank}}]{\setlength{\rightskip}{0pt plus 5cm}uint8\+\_\+t m\+\_\+\+Expected\+Rank}\hypertarget{common_8h_a11f82ca965f492f7cee7f4465d94f1d2}{}\label{common_8h_a11f82ca965f492f7cee7f4465d94f1d2}
+\index{common.\+h@{common.\+h}!m\+\_\+\+Flags@{m\+\_\+\+Flags}}
+\index{m\+\_\+\+Flags@{m\+\_\+\+Flags}!common.\+h@{common.\+h}}
+\subsubsection[{\texorpdfstring{m\+\_\+\+Flags}{m_Flags}}]{\setlength{\rightskip}{0pt plus 5cm}uint8\+\_\+t m\+\_\+\+Flags}\hypertarget{common_8h_a5f9c725ba2f9138a53902d262f9e83b5}{}\label{common_8h_a5f9c725ba2f9138a53902d262f9e83b5}
+\index{common.\+h@{common.\+h}!m\+\_\+\+Last\+Indicator@{m\+\_\+\+Last\+Indicator}}
+\index{m\+\_\+\+Last\+Indicator@{m\+\_\+\+Last\+Indicator}!common.\+h@{common.\+h}}
+\subsubsection[{\texorpdfstring{m\+\_\+\+Last\+Indicator}{m_LastIndicator}}]{\setlength{\rightskip}{0pt plus 5cm}uint8\+\_\+t m\+\_\+\+Last\+Indicator}\hypertarget{common_8h_ad2fac3dd2039cf25f0006b15f8eac578}{}\label{common_8h_ad2fac3dd2039cf25f0006b15f8eac578}
+\index{common.\+h@{common.\+h}!m\+\_\+\+Losses@{m\+\_\+\+Losses}}
+\index{m\+\_\+\+Losses@{m\+\_\+\+Losses}!common.\+h@{common.\+h}}
+\subsubsection[{\texorpdfstring{m\+\_\+\+Losses}{m_Losses}}]{\setlength{\rightskip}{0pt plus 5cm}uint8\+\_\+t m\+\_\+\+Losses}\hypertarget{common_8h_afd5fd334f4542579e9372ec255d325f2}{}\label{common_8h_afd5fd334f4542579e9372ec255d325f2}
+\index{common.\+h@{common.\+h}!m\+\_\+\+Max\+Block\+Sequence\+Number@{m\+\_\+\+Max\+Block\+Sequence\+Number}}
+\index{m\+\_\+\+Max\+Block\+Sequence\+Number@{m\+\_\+\+Max\+Block\+Sequence\+Number}!common.\+h@{common.\+h}}
+\subsubsection[{\texorpdfstring{m\+\_\+\+Max\+Block\+Sequence\+Number}{m_MaxBlockSequenceNumber}}]{\setlength{\rightskip}{0pt plus 5cm}uint16\+\_\+t m\+\_\+\+Max\+Block\+Sequence\+Number}\hypertarget{common_8h_acabfb8a9fa3ad7d3d3ebad62646653a8}{}\label{common_8h_acabfb8a9fa3ad7d3d3ebad62646653a8}
+\index{common.\+h@{common.\+h}!m\+\_\+\+Maximum\+Rank@{m\+\_\+\+Maximum\+Rank}}
+\index{m\+\_\+\+Maximum\+Rank@{m\+\_\+\+Maximum\+Rank}!common.\+h@{common.\+h}}
+\subsubsection[{\texorpdfstring{m\+\_\+\+Maximum\+Rank}{m_MaximumRank}}]{\setlength{\rightskip}{0pt plus 5cm}uint8\+\_\+t m\+\_\+\+Maximum\+Rank}\hypertarget{common_8h_a4f341f004dde0a0f8f37285ae9917bed}{}\label{common_8h_a4f341f004dde0a0f8f37285ae9917bed}
+\index{common.\+h@{common.\+h}!m\+\_\+\+Max\+Rank@{m\+\_\+\+Max\+Rank}}
+\index{m\+\_\+\+Max\+Rank@{m\+\_\+\+Max\+Rank}!common.\+h@{common.\+h}}
+\subsubsection[{\texorpdfstring{m\+\_\+\+Max\+Rank}{m_MaxRank}}]{\setlength{\rightskip}{0pt plus 5cm}uint8\+\_\+t m\+\_\+\+Max\+Rank}\hypertarget{common_8h_a83d22c4dc9aac691a3ac6241abee55c9}{}\label{common_8h_a83d22c4dc9aac691a3ac6241abee55c9}
+\index{common.\+h@{common.\+h}!m\+\_\+\+Min\+Block\+Sequence\+Number@{m\+\_\+\+Min\+Block\+Sequence\+Number}}
+\index{m\+\_\+\+Min\+Block\+Sequence\+Number@{m\+\_\+\+Min\+Block\+Sequence\+Number}!common.\+h@{common.\+h}}
+\subsubsection[{\texorpdfstring{m\+\_\+\+Min\+Block\+Sequence\+Number}{m_MinBlockSequenceNumber}}]{\setlength{\rightskip}{0pt plus 5cm}uint16\+\_\+t m\+\_\+\+Min\+Block\+Sequence\+Number}\hypertarget{common_8h_a61cb4ba08bf600af977eeb560bf5269e}{}\label{common_8h_a61cb4ba08bf600af977eeb560bf5269e}
+\index{common.\+h@{common.\+h}!m\+\_\+\+Payload\+Size@{m\+\_\+\+Payload\+Size}}
+\index{m\+\_\+\+Payload\+Size@{m\+\_\+\+Payload\+Size}!common.\+h@{common.\+h}}
+\subsubsection[{\texorpdfstring{m\+\_\+\+Payload\+Size}{m_PayloadSize}}]{\setlength{\rightskip}{0pt plus 5cm}uint16\+\_\+t m\+\_\+\+Payload\+Size}\hypertarget{common_8h_ac4aa5888f4d91d1f6e513a12c3068ca5}{}\label{common_8h_ac4aa5888f4d91d1f6e513a12c3068ca5}
+\index{common.\+h@{common.\+h}!m\+\_\+\+Ping\+Time@{m\+\_\+\+Ping\+Time}}
+\index{m\+\_\+\+Ping\+Time@{m\+\_\+\+Ping\+Time}!common.\+h@{common.\+h}}
+\subsubsection[{\texorpdfstring{m\+\_\+\+Ping\+Time}{m_PingTime}}]{\setlength{\rightskip}{0pt plus 5cm}C\+L\+O\+C\+K\+::time\+\_\+point\+::duration\+::rep m\+\_\+\+Ping\+Time}\hypertarget{common_8h_a2eae988bd4fa880e267c267cf6490a01}{}\label{common_8h_a2eae988bd4fa880e267c267cf6490a01}
+\index{common.\+h@{common.\+h}!m\+\_\+\+Port@{m\+\_\+\+Port}}
+\index{m\+\_\+\+Port@{m\+\_\+\+Port}!common.\+h@{common.\+h}}
+\subsubsection[{\texorpdfstring{m\+\_\+\+Port}{m_Port}}]{\setlength{\rightskip}{0pt plus 5cm}uint16\+\_\+t m\+\_\+\+Port}\hypertarget{common_8h_a6db1fb604775a4071b243ee808598ec3}{}\label{common_8h_a6db1fb604775a4071b243ee808598ec3}
+\index{common.\+h@{common.\+h}!m\+\_\+\+Rank@{m\+\_\+\+Rank}}
+\index{m\+\_\+\+Rank@{m\+\_\+\+Rank}!common.\+h@{common.\+h}}
+\subsubsection[{\texorpdfstring{m\+\_\+\+Rank}{m_Rank}}]{\setlength{\rightskip}{0pt plus 5cm}uint8\+\_\+t m\+\_\+\+Rank}\hypertarget{common_8h_a518b342b7167021a15df58464bafae72}{}\label{common_8h_a518b342b7167021a15df58464bafae72}
+\index{common.\+h@{common.\+h}!m\+\_\+\+Sequence@{m\+\_\+\+Sequence}}
+\index{m\+\_\+\+Sequence@{m\+\_\+\+Sequence}!common.\+h@{common.\+h}}
+\subsubsection[{\texorpdfstring{m\+\_\+\+Sequence}{m_Sequence}}]{\setlength{\rightskip}{0pt plus 5cm}uint16\+\_\+t m\+\_\+\+Sequence}\hypertarget{common_8h_a041587f4c98ed68a69452e2c439ab1cb}{}\label{common_8h_a041587f4c98ed68a69452e2c439ab1cb}
+\index{common.\+h@{common.\+h}!m\+\_\+\+Total\+Size@{m\+\_\+\+Total\+Size}}
+\index{m\+\_\+\+Total\+Size@{m\+\_\+\+Total\+Size}!common.\+h@{common.\+h}}
+\subsubsection[{\texorpdfstring{m\+\_\+\+Total\+Size}{m_TotalSize}}]{\setlength{\rightskip}{0pt plus 5cm}uint16\+\_\+t m\+\_\+\+Total\+Size}\hypertarget{common_8h_a5c410ad3d26db0ef0d6e6befec3c0a6a}{}\label{common_8h_a5c410ad3d26db0ef0d6e6befec3c0a6a}
+\index{common.\+h@{common.\+h}!m\+\_\+\+Tx\+Count@{m\+\_\+\+Tx\+Count}}
+\index{m\+\_\+\+Tx\+Count@{m\+\_\+\+Tx\+Count}!common.\+h@{common.\+h}}
+\subsubsection[{\texorpdfstring{m\+\_\+\+Tx\+Count}{m_TxCount}}]{\setlength{\rightskip}{0pt plus 5cm}uint8\+\_\+t m\+\_\+\+Tx\+Count}\hypertarget{common_8h_a6670ae012a5e3c6ddd6185faee5a3fd4}{}\label{common_8h_a6670ae012a5e3c6ddd6185faee5a3fd4}
+\index{common.\+h@{common.\+h}!m\+\_\+\+Type@{m\+\_\+\+Type}}
+\index{m\+\_\+\+Type@{m\+\_\+\+Type}!common.\+h@{common.\+h}}
+\subsubsection[{\texorpdfstring{m\+\_\+\+Type}{m_Type}}]{\setlength{\rightskip}{0pt plus 5cm}uint8\+\_\+t m\+\_\+\+Type}\hypertarget{common_8h_a1bdae9771654837c8ea20f3bfff5e182}{}\label{common_8h_a1bdae9771654837c8ea20f3bfff5e182}

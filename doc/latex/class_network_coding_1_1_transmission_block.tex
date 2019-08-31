@@ -1,0 +1,275 @@
+\hypertarget{class_network_coding_1_1_transmission_block}{}\section{Network\+Coding\+:\+:Transmission\+Block Class Reference}
+\label{class_network_coding_1_1_transmission_block}\index{Network\+Coding\+::\+Transmission\+Block@{Network\+Coding\+::\+Transmission\+Block}}
+
+
+Network coding block.  
+
+
+
+
+{\ttfamily \#include $<$tx.\+h$>$}
+
+
+
+Collaboration diagram for Network\+Coding\+:\+:Transmission\+Block\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_network_coding_1_1_transmission_block__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+{\bfseries Transmission\+Block} (const \hyperlink{class_network_coding_1_1_transmission_block}{Transmission\+Block} \&)=delete\hypertarget{class_network_coding_1_1_transmission_block_a627842c53e1c3b0be511b98e85da7b02}{}\label{class_network_coding_1_1_transmission_block_a627842c53e1c3b0be511b98e85da7b02}
+
+\item 
+{\bfseries Transmission\+Block} (\hyperlink{class_network_coding_1_1_transmission_session}{Transmission\+Session} \&\&)=delete\hypertarget{class_network_coding_1_1_transmission_block_a4863f50573d5d6f2aab3c05b8f8fa6e8}{}\label{class_network_coding_1_1_transmission_block_a4863f50573d5d6f2aab3c05b8f8fa6e8}
+
+\item 
+\hyperlink{class_network_coding_1_1_transmission_block_a77977a7fed4dbf38c23a31bacc5f5e96}{Transmission\+Block} (\hyperlink{class_network_coding_1_1_transmission_session}{Transmission\+Session} $\ast$const p\+\_\+session)
+\begin{DoxyCompactList}\small\item\em Construct a new \hyperlink{class_network_coding_1_1_transmission_block}{Transmission\+Block} object. \end{DoxyCompactList}\item 
+\hyperlink{class_network_coding_1_1_transmission_block_a7a001dfa2611c27d3cedbcdcd292c927}{$\sim$\+Transmission\+Block} ()
+\begin{DoxyCompactList}\small\item\em Destroy the \hyperlink{class_network_coding_1_1_transmission}{Transmission} Block object. \end{DoxyCompactList}\item 
+\hyperlink{class_network_coding_1_1_transmission_block}{Transmission\+Block} \& {\bfseries operator=} (const \hyperlink{class_network_coding_1_1_transmission_block}{Transmission\+Block} \&)=delete\hypertarget{class_network_coding_1_1_transmission_block_adece22af088c127c18822d42d0f0e053}{}\label{class_network_coding_1_1_transmission_block_adece22af088c127c18822d42d0f0e053}
+
+\item 
+\hyperlink{class_network_coding_1_1_transmission_block}{Transmission\+Block} \& {\bfseries operator=} (\hyperlink{class_network_coding_1_1_transmission_block}{Transmission\+Block} \&\&)=delete\hypertarget{class_network_coding_1_1_transmission_block_af0cc440e659421ce4d0c4b90a293a8fd}{}\label{class_network_coding_1_1_transmission_block_af0cc440e659421ce4d0c4b90a293a8fd}
+
+\item 
+bool \hyperlink{class_network_coding_1_1_transmission_block_a4a372836698727d1cd31e0e353198318}{Send} (uint8\+\_\+t $\ast$const buffer, const uint16\+\_\+t buffersize)
+\begin{DoxyCompactList}\small\item\em Enqueue a packet into a transmission buffer of the relavent session. \end{DoxyCompactList}\item 
+const bool \hyperlink{class_network_coding_1_1_transmission_block_ad8d4de3ed6b6dda67a09afb1c7760ac3}{Retransmission} ()
+\begin{DoxyCompactList}\small\item\em Transmit a remedy packet. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{class_network_coding_1_1_transmission_session}{Transmission\+Session} $\ast$const \hyperlink{class_network_coding_1_1_transmission_block_ae45d8369907e22b369bc8d0a0d93d378}{p\+\_\+\+Session}\hypertarget{class_network_coding_1_1_transmission_block_ae45d8369907e22b369bc8d0a0d93d378}{}\label{class_network_coding_1_1_transmission_block_ae45d8369907e22b369bc8d0a0d93d378}
+
+\begin{DoxyCompactList}\small\item\em Pointer of the \hyperlink{class_network_coding_1_1_transmission_session}{Transmission\+Session} object that this block is associated. \end{DoxyCompactList}\item 
+const uint8\+\_\+t \hyperlink{class_network_coding_1_1_transmission_block_a3fac24ea69bc7f68f297d72f0b3e0448}{m\+\_\+\+Block\+Size}
+\begin{DoxyCompactList}\small\item\em Block size. \end{DoxyCompactList}\item 
+const uint8\+\_\+t \hyperlink{class_network_coding_1_1_transmission_block_a82c18d348f0a5660240e47ee9c9880b1}{m\+\_\+\+Transmission\+Mode}
+\begin{DoxyCompactList}\small\item\em Mode. \end{DoxyCompactList}\item 
+const uint16\+\_\+t \hyperlink{class_network_coding_1_1_transmission_block_a54d1c096df401da6ca57636c91b3faca}{m\+\_\+\+Block\+Sequence\+Number}
+\begin{DoxyCompactList}\small\item\em The sequence number of this block. Each block has unique sequence number. The sequence number is incremented by one in the next block. \end{DoxyCompactList}\item 
+const uint16\+\_\+t \hyperlink{class_network_coding_1_1_transmission_block_a1dc8966af67de1e8309b62e3f87854f2}{m\+\_\+\+Retransmission\+Redundancy}
+\begin{DoxyCompactList}\small\item\em Maximum number of remedy packets. It is valid only when mode is B\+E\+S\+T\+\_\+\+E\+F\+F\+O\+R\+T\+\_\+\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+DE. \end{DoxyCompactList}\item 
+uint16\+\_\+t \hyperlink{class_network_coding_1_1_transmission_block_adcc79e6bfd7282430f95268ec86369a7}{m\+\_\+\+Largest\+Original\+Packet\+Size}
+\begin{DoxyCompactList}\small\item\em The largest packet size in this block, i.\+e., encoding packet size. \end{DoxyCompactList}\item 
+uint8\+\_\+t \hyperlink{class_network_coding_1_1_transmission_block_a84e8b076ce5fea10351626094003cd33}{m\+\_\+\+Transmission\+Count}\hypertarget{class_network_coding_1_1_transmission_block_a84e8b076ce5fea10351626094003cd33}{}\label{class_network_coding_1_1_transmission_block_a84e8b076ce5fea10351626094003cd33}
+
+\begin{DoxyCompactList}\small\item\em The nunber of transmission including retranmission. \end{DoxyCompactList}\item 
+uint8\+\_\+t \hyperlink{class_network_coding_1_1_transmission_block_a9277a19ef3f5e5d9ecf2b7e91ee1c1dd}{m\+\_\+\+Acked\+Rank}\hypertarget{class_network_coding_1_1_transmission_block_a9277a19ef3f5e5d9ecf2b7e91ee1c1dd}{}\label{class_network_coding_1_1_transmission_block_a9277a19ef3f5e5d9ecf2b7e91ee1c1dd}
+
+\begin{DoxyCompactList}\small\item\em Acknowleged rank from receiver. m\+\_\+\+Acked\+Rank == m\+\_\+\+Block\+Size means that receiver has recovered all of the packets in this block. \end{DoxyCompactList}\item 
+uint8\+\_\+t \hyperlink{class_network_coding_1_1_transmission_block_a15538df05b3b58218d43363e8b59f27c}{m\+\_\+\+Remedy\+Packet\+Buffer} \mbox{[}Parameter\+::\+M\+A\+X\+I\+M\+U\+M\+\_\+\+B\+U\+F\+F\+E\+R\+\_\+\+S\+I\+ZE\mbox{]}\hypertarget{class_network_coding_1_1_transmission_block_a15538df05b3b58218d43363e8b59f27c}{}\label{class_network_coding_1_1_transmission_block_a15538df05b3b58218d43363e8b59f27c}
+
+\begin{DoxyCompactList}\small\item\em Remedy packet buffer. \end{DoxyCompactList}\item 
+std\+::vector$<$ std\+::unique\+\_\+ptr$<$ uint8\+\_\+t\mbox{[}$\,$\mbox{]}$>$ $>$ \hyperlink{class_network_coding_1_1_transmission_block_aeefe661df0123d02bb1fc463136d2fe5}{m\+\_\+\+Original\+Packet\+Buffer}\hypertarget{class_network_coding_1_1_transmission_block_aeefe661df0123d02bb1fc463136d2fe5}{}\label{class_network_coding_1_1_transmission_block_aeefe661df0123d02bb1fc463136d2fe5}
+
+\begin{DoxyCompactList}\small\item\em An array of original packets. The size of array should be match with m\+\_\+\+Block\+Size. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Network coding block. 
+
+\subsection{Constructor \& Destructor Documentation}
+\index{Network\+Coding\+::\+Transmission\+Block@{Network\+Coding\+::\+Transmission\+Block}!Transmission\+Block@{Transmission\+Block}}
+\index{Transmission\+Block@{Transmission\+Block}!Network\+Coding\+::\+Transmission\+Block@{Network\+Coding\+::\+Transmission\+Block}}
+\subsubsection[{\texorpdfstring{Transmission\+Block(\+Transmission\+Session $\ast$const p\+\_\+session)}{TransmissionBlock(TransmissionSession *const p_session)}}]{\setlength{\rightskip}{0pt plus 5cm}Transmission\+Block\+::\+Transmission\+Block (
+\begin{DoxyParamCaption}
+\item[{{\bf Transmission\+Session} $\ast$const}]{p\+\_\+session}
+\end{DoxyParamCaption}
+)}\hypertarget{class_network_coding_1_1_transmission_block_a77977a7fed4dbf38c23a31bacc5f5e96}{}\label{class_network_coding_1_1_transmission_block_a77977a7fed4dbf38c23a31bacc5f5e96}
+
+
+Construct a new \hyperlink{class_network_coding_1_1_transmission_block}{Transmission\+Block} object. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em p\+\_\+session} & \+: Pointer of the \hyperlink{class_network_coding_1_1_transmission_session}{Transmission\+Session} object that this block is associated. \\
+\hline
+\end{DoxyParams}
+
+\begin{DoxyEnumerate}
+\item Initialize the member variables.
+\item Register the block sequence number to \hyperlink{class_network_coding_1_1_transmission_session_aa7b466f696587e66d2a961701d552a6a}{Network\+Coding\+::\+Transmission\+Session\+::m\+\_\+\+Ack\+List}. \begin{DoxySeeAlso}{See also}
+\hyperlink{class_network_coding_1_1_transmission_session_aa7b466f696587e66d2a961701d552a6a}{Network\+Coding\+::\+Transmission\+Session\+::m\+\_\+\+Ack\+List}.
+\end{DoxySeeAlso}
+
+\end{DoxyEnumerate}\index{Network\+Coding\+::\+Transmission\+Block@{Network\+Coding\+::\+Transmission\+Block}!````~Transmission\+Block@{$\sim$\+Transmission\+Block}}
+\index{````~Transmission\+Block@{$\sim$\+Transmission\+Block}!Network\+Coding\+::\+Transmission\+Block@{Network\+Coding\+::\+Transmission\+Block}}
+\subsubsection[{\texorpdfstring{$\sim$\+Transmission\+Block()}{~TransmissionBlock()}}]{\setlength{\rightskip}{0pt plus 5cm}Transmission\+Block\+::$\sim$\+Transmission\+Block (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}\hypertarget{class_network_coding_1_1_transmission_block_a7a001dfa2611c27d3cedbcdcd292c927}{}\label{class_network_coding_1_1_transmission_block_a7a001dfa2611c27d3cedbcdcd292c927}
+
+
+Destroy the \hyperlink{class_network_coding_1_1_transmission}{Transmission} Block object. 
+
+
+\begin{DoxyEnumerate}
+\item Update \hyperlink{class_network_coding_1_1_transmission_session_a27ee5813374da47482b72295b85548f4}{Network\+Coding\+::\+Transmission\+Session\+::m\+\_\+\+Bytes\+Unacked}. \begin{DoxySeeAlso}{See also}
+\hyperlink{class_network_coding_1_1_transmission_session_a27ee5813374da47482b72295b85548f4}{Network\+Coding\+::\+Transmission\+Session\+::m\+\_\+\+Bytes\+Unacked}.
+\end{DoxySeeAlso}
+
+\item Clear \hyperlink{class_network_coding_1_1_transmission_block_aeefe661df0123d02bb1fc463136d2fe5}{Network\+Coding\+::\+Transmission\+Block\+::m\+\_\+\+Original\+Packet\+Buffer}. \begin{DoxySeeAlso}{See also}
+\hyperlink{class_network_coding_1_1_transmission_block_aeefe661df0123d02bb1fc463136d2fe5}{Network\+Coding\+::\+Transmission\+Block\+::m\+\_\+\+Original\+Packet\+Buffer}.
+\end{DoxySeeAlso}
+
+\end{DoxyEnumerate}
+
+\subsection{Member Function Documentation}
+\index{Network\+Coding\+::\+Transmission\+Block@{Network\+Coding\+::\+Transmission\+Block}!Retransmission@{Retransmission}}
+\index{Retransmission@{Retransmission}!Network\+Coding\+::\+Transmission\+Block@{Network\+Coding\+::\+Transmission\+Block}}
+\subsubsection[{\texorpdfstring{Retransmission()}{Retransmission()}}]{\setlength{\rightskip}{0pt plus 5cm}const bool Transmission\+Block\+::\+Retransmission (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}\hypertarget{class_network_coding_1_1_transmission_block_ad8d4de3ed6b6dda67a09afb1c7760ac3}{}\label{class_network_coding_1_1_transmission_block_ad8d4de3ed6b6dda67a09afb1c7760ac3}
+
+
+Transmit a remedy packet. 
+
+\begin{DoxyReturn}{Returns}
+true \+: Remedy packet has been successfully transmitted. 
+
+false \+: Either receiver has received all of the packets for this block or connection is lost. 
+\end{DoxyReturn}
+
+\begin{DoxyEnumerate}
+\item If \hyperlink{class_network_coding_1_1_transmission_block_a82c18d348f0a5660240e47ee9c9880b1}{Network\+Coding\+::\+Transmission\+Block\+::m\+\_\+\+Transmission\+Mode} is Network\+Coding\+::\+Parameter\+::\+B\+E\+S\+T\+\_\+\+E\+F\+F\+O\+R\+T\+\_\+\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+DE and we already transmitted \hyperlink{class_network_coding_1_1_transmission_block_a1dc8966af67de1e8309b62e3f87854f2}{Network\+Coding\+::\+Transmission\+Block\+::m\+\_\+\+Retransmission\+Redundancy} remedy packets then we complete this block regardless of ack from receiver.
+\item Update \hyperlink{class_network_coding_1_1_transmission_session_a3c5449f03555c74ccff2e4d0b99c13d9}{Network\+Coding\+::\+Transmission\+Session\+::m\+\_\+\+Min\+Block\+Sequence\+Number} with the minimum sequence number in \hyperlink{class_network_coding_1_1_transmission_session_aa7b466f696587e66d2a961701d552a6a}{Network\+Coding\+::\+Transmission\+Session\+::m\+\_\+\+Ack\+List}. \begin{DoxyWarning}{Warning}
+$\sim$\+Transmission\+Block require m\+\_\+\+Ack\+List\+Lock. Therefore, we must release m\+\_\+\+Ack\+List\+Lock before calling dtor.
+\end{DoxyWarning}
+
+\item Check if session is in connected state.
+\item Generate random coefficients. If m\+\_\+\+Original\+Packet\+Buffer.\+size() == 1 we do not encode the packet. Otherwise, we generates m\+\_\+\+Original\+Packet\+Buffer.\+size() many random coefficients.
+\item Prepare header. \begin{DoxySeeAlso}{See also}
+\hyperlink{struct_network_coding_1_1_header_1_1_data}{Network\+Coding\+::\+Header\+::\+Data}.
+\end{DoxySeeAlso}
+
+\item Encoding a remedy packet.
+\item Enqueue the remedy packet. \begin{DoxySeeAlso}{See also}
+\hyperlink{class_network_coding_1_1_transmission_session_ae248b2c48a54243ce1e47837337231df}{Network\+Coding\+::\+Transmission\+Session\+::\+Push\+Data\+Packet}.
+\end{DoxySeeAlso}
+
+\end{DoxyEnumerate}\index{Network\+Coding\+::\+Transmission\+Block@{Network\+Coding\+::\+Transmission\+Block}!Send@{Send}}
+\index{Send@{Send}!Network\+Coding\+::\+Transmission\+Block@{Network\+Coding\+::\+Transmission\+Block}}
+\subsubsection[{\texorpdfstring{Send(uint8\+\_\+t $\ast$const buffer, const uint16\+\_\+t buffersize)}{Send(uint8_t *const buffer, const uint16_t buffersize)}}]{\setlength{\rightskip}{0pt plus 5cm}bool Transmission\+Block\+::\+Send (
+\begin{DoxyParamCaption}
+\item[{uint8\+\_\+t $\ast$const}]{buffer, }
+\item[{const uint16\+\_\+t}]{buffersize}
+\end{DoxyParamCaption}
+)}\hypertarget{class_network_coding_1_1_transmission_block_a4a372836698727d1cd31e0e353198318}{}\label{class_network_coding_1_1_transmission_block_a4a372836698727d1cd31e0e353198318}
+
+
+Enqueue a packet into a transmission buffer of the relavent session. 
+
+\begin{DoxySeeAlso}{See also}
+\hyperlink{class_network_coding_1_1_transmission_session_ae248b2c48a54243ce1e47837337231df}{Network\+Coding\+::\+Transmission\+Session\+::\+Push\+Data\+Packet} 
+\end{DoxySeeAlso}
+
+\begin{DoxyParams}{Parameters}
+{\em buffer} & \+: Buffer for transmission. \\
+\hline
+{\em buffersize} & \+: Size of the buffer. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+true \+: Success 
+
+false \+: Failure 
+\end{DoxyReturn}
+
+\begin{DoxyEnumerate}
+\item Check if session is in connected state. \begin{DoxySeeAlso}{See also}
+\hyperlink{class_network_coding_1_1_transmission_session_aa12eab14f68b6e4dc5e2de25ff017282}{Network\+Coding\+::\+Transmission\+Session\+::m\+\_\+\+Is\+Connected}.
+\end{DoxySeeAlso}
+
+\item Put buffer into the m\+\_\+\+Original\+Packet\+Buffer. \begin{DoxySeeAlso}{See also}
+\hyperlink{class_network_coding_1_1_transmission_block_aeefe661df0123d02bb1fc463136d2fe5}{Network\+Coding\+::\+Transmission\+Block\+::m\+\_\+\+Original\+Packet\+Buffer}.
+\end{DoxySeeAlso}
+
+\item Prepare header. \begin{DoxySeeAlso}{See also}
+\hyperlink{struct_network_coding_1_1_header_1_1_data}{Network\+Coding\+::\+Header\+::\+Data}.
+\end{DoxySeeAlso}
+
+\item Enqueue the packet. \begin{DoxySeeAlso}{See also}
+\hyperlink{class_network_coding_1_1_transmission_session_ae248b2c48a54243ce1e47837337231df}{Network\+Coding\+::\+Transmission\+Session\+::\+Push\+Data\+Packet}.
+\end{DoxySeeAlso}
+
+\item Clear \hyperlink{class_network_coding_1_1_transmission_session_acc18d6b10a856b3dfda76c7b85899911}{Network\+Coding\+::\+Transmission\+Session\+::p\+\_\+\+Transmission\+Block} so that \hyperlink{class_network_coding_1_1_transmission_session}{Network\+Coding\+::\+Transmission\+Session} can arrange next block for transmission. \begin{DoxySeeAlso}{See also}
+\hyperlink{class_network_coding_1_1_transmission_session_acc18d6b10a856b3dfda76c7b85899911}{Network\+Coding\+::\+Transmission\+Session\+::p\+\_\+\+Transmission\+Block}.
+\end{DoxySeeAlso}
+
+\end{DoxyEnumerate}
+
+\subsection{Member Data Documentation}
+\index{Network\+Coding\+::\+Transmission\+Block@{Network\+Coding\+::\+Transmission\+Block}!m\+\_\+\+Block\+Sequence\+Number@{m\+\_\+\+Block\+Sequence\+Number}}
+\index{m\+\_\+\+Block\+Sequence\+Number@{m\+\_\+\+Block\+Sequence\+Number}!Network\+Coding\+::\+Transmission\+Block@{Network\+Coding\+::\+Transmission\+Block}}
+\subsubsection[{\texorpdfstring{m\+\_\+\+Block\+Sequence\+Number}{m_BlockSequenceNumber}}]{\setlength{\rightskip}{0pt plus 5cm}const uint16\+\_\+t Network\+Coding\+::\+Transmission\+Block\+::m\+\_\+\+Block\+Sequence\+Number}\hypertarget{class_network_coding_1_1_transmission_block_a54d1c096df401da6ca57636c91b3faca}{}\label{class_network_coding_1_1_transmission_block_a54d1c096df401da6ca57636c91b3faca}
+
+
+The sequence number of this block. Each block has unique sequence number. The sequence number is incremented by one in the next block. 
+
+\begin{DoxyWarning}{Warning}
+This member should be constant value. 
+\end{DoxyWarning}
+\index{Network\+Coding\+::\+Transmission\+Block@{Network\+Coding\+::\+Transmission\+Block}!m\+\_\+\+Block\+Size@{m\+\_\+\+Block\+Size}}
+\index{m\+\_\+\+Block\+Size@{m\+\_\+\+Block\+Size}!Network\+Coding\+::\+Transmission\+Block@{Network\+Coding\+::\+Transmission\+Block}}
+\subsubsection[{\texorpdfstring{m\+\_\+\+Block\+Size}{m_BlockSize}}]{\setlength{\rightskip}{0pt plus 5cm}const uint8\+\_\+t Network\+Coding\+::\+Transmission\+Block\+::m\+\_\+\+Block\+Size}\hypertarget{class_network_coding_1_1_transmission_block_a3fac24ea69bc7f68f297d72f0b3e0448}{}\label{class_network_coding_1_1_transmission_block_a3fac24ea69bc7f68f297d72f0b3e0448}
+
+
+Block size. 
+
+\begin{DoxySeeAlso}{See also}
+Network\+Coding\+::\+Parameter\+::\+B\+L\+O\+C\+K\+\_\+\+S\+I\+ZE. 
+\end{DoxySeeAlso}
+\begin{DoxyWarning}{Warning}
+This member should be constant value. 
+\end{DoxyWarning}
+\index{Network\+Coding\+::\+Transmission\+Block@{Network\+Coding\+::\+Transmission\+Block}!m\+\_\+\+Largest\+Original\+Packet\+Size@{m\+\_\+\+Largest\+Original\+Packet\+Size}}
+\index{m\+\_\+\+Largest\+Original\+Packet\+Size@{m\+\_\+\+Largest\+Original\+Packet\+Size}!Network\+Coding\+::\+Transmission\+Block@{Network\+Coding\+::\+Transmission\+Block}}
+\subsubsection[{\texorpdfstring{m\+\_\+\+Largest\+Original\+Packet\+Size}{m_LargestOriginalPacketSize}}]{\setlength{\rightskip}{0pt plus 5cm}uint16\+\_\+t Network\+Coding\+::\+Transmission\+Block\+::m\+\_\+\+Largest\+Original\+Packet\+Size}\hypertarget{class_network_coding_1_1_transmission_block_adcc79e6bfd7282430f95268ec86369a7}{}\label{class_network_coding_1_1_transmission_block_adcc79e6bfd7282430f95268ec86369a7}
+
+
+The largest packet size in this block, i.\+e., encoding packet size. 
+
+\begin{DoxyWarning}{Warning}
+m\+\_\+\+Largest\+Original\+Packet\+Size should be less than M\+A\+X\+I\+M\+U\+M\+\_\+\+B\+U\+F\+F\+E\+R\+\_\+\+S\+I\+ZE. 
+\end{DoxyWarning}
+\index{Network\+Coding\+::\+Transmission\+Block@{Network\+Coding\+::\+Transmission\+Block}!m\+\_\+\+Retransmission\+Redundancy@{m\+\_\+\+Retransmission\+Redundancy}}
+\index{m\+\_\+\+Retransmission\+Redundancy@{m\+\_\+\+Retransmission\+Redundancy}!Network\+Coding\+::\+Transmission\+Block@{Network\+Coding\+::\+Transmission\+Block}}
+\subsubsection[{\texorpdfstring{m\+\_\+\+Retransmission\+Redundancy}{m_RetransmissionRedundancy}}]{\setlength{\rightskip}{0pt plus 5cm}const uint16\+\_\+t Network\+Coding\+::\+Transmission\+Block\+::m\+\_\+\+Retransmission\+Redundancy}\hypertarget{class_network_coding_1_1_transmission_block_a1dc8966af67de1e8309b62e3f87854f2}{}\label{class_network_coding_1_1_transmission_block_a1dc8966af67de1e8309b62e3f87854f2}
+
+
+Maximum number of remedy packets. It is valid only when mode is B\+E\+S\+T\+\_\+\+E\+F\+F\+O\+R\+T\+\_\+\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+DE. 
+
+\begin{DoxySeeAlso}{See also}
+Network\+Coding\+::\+Parameter\+::\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+DE. 
+\end{DoxySeeAlso}
+\begin{DoxyWarning}{Warning}
+This member should be constant value. 
+\end{DoxyWarning}
+\index{Network\+Coding\+::\+Transmission\+Block@{Network\+Coding\+::\+Transmission\+Block}!m\+\_\+\+Transmission\+Mode@{m\+\_\+\+Transmission\+Mode}}
+\index{m\+\_\+\+Transmission\+Mode@{m\+\_\+\+Transmission\+Mode}!Network\+Coding\+::\+Transmission\+Block@{Network\+Coding\+::\+Transmission\+Block}}
+\subsubsection[{\texorpdfstring{m\+\_\+\+Transmission\+Mode}{m_TransmissionMode}}]{\setlength{\rightskip}{0pt plus 5cm}const uint8\+\_\+t Network\+Coding\+::\+Transmission\+Block\+::m\+\_\+\+Transmission\+Mode}\hypertarget{class_network_coding_1_1_transmission_block_a82c18d348f0a5660240e47ee9c9880b1}{}\label{class_network_coding_1_1_transmission_block_a82c18d348f0a5660240e47ee9c9880b1}
+
+
+Mode. 
+
+\begin{DoxySeeAlso}{See also}
+Network\+Coding\+::\+Parameter\+::\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+DE. 
+\end{DoxySeeAlso}
+\begin{DoxyWarning}{Warning}
+This member should be constant value. 
+\end{DoxyWarning}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/home/dujeonglee/\+Network\+Coding\+Rev/c\+\_\+cpp/tx.\+h\item 
+/home/dujeonglee/\+Network\+Coding\+Rev/c\+\_\+cpp/tx.\+cpp\end{DoxyCompactItemize}
