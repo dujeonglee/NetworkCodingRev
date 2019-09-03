@@ -616,21 +616,22 @@ uint16_t TransmissionSession::PopDataPacket()
     }
 }
 
-////////////////////////////////////////////////////////////
-/////////////// Transmission
-/* OK */
 Transmission::Transmission(const int32_t Socket) : c_Socket(Socket) {}
 
-/* OK */
 Transmission::~Transmission()
 {
+    /**
+     * @brief Free TransmissionSession objects
+     */
     m_Sessions.DoSomethingOnAllData([](TransmissionSession *&session) -> void { delete session; });
     m_Sessions.Clear();
 }
 
-/* OK */
 bool Transmission::Connect(const DataTypes::Address Addr, uint32_t ConnectionTimeout, const Parameter::TRANSMISSION_MODE TransmissionMode, const Parameter::BLOCK_SIZE BlockSize, const uint16_t RetransmissionRedundancy)
 {
+    /**
+     * @brief 1. Create session.
+     */
     TransmissionSession *newsession = nullptr;
     {
         std::unique_lock<std::mutex> lock(m_Lock);
@@ -638,10 +639,12 @@ bool Transmission::Connect(const DataTypes::Address Addr, uint32_t ConnectionTim
         TransmissionSession **const session = m_Sessions.GetPtr(key);
         if (session != nullptr)
         {
+            // Session already has been established.
             newsession = (*session);
         }
         else
         {
+            // Session is not established yet.
             try
             {
                 TEST_EXCEPTION(std::bad_alloc());
@@ -664,6 +667,9 @@ bool Transmission::Connect(const DataTypes::Address Addr, uint32_t ConnectionTim
             }
         }
     }
+    /**
+     * @brief 2. Trasnmit Sync packet to remote host.
+     */
     Header::Sync SyncPacket;
     SyncPacket.m_Type = Header::Common::HeaderType::SYNC;
     SyncPacket.m_CheckSum = 0;
@@ -674,6 +680,10 @@ bool Transmission::Connect(const DataTypes::Address Addr, uint32_t ConnectionTim
     {
         return false;
     }
+
+    /**
+     * @brief 3. Wait for sync ack from remote host for "ConnectionTimeout" ms. 
+     */
     while (!newsession->m_IsConnected && ConnectionTimeout > 0)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -681,8 +691,12 @@ bool Transmission::Connect(const DataTypes::Address Addr, uint32_t ConnectionTim
     }
     if (ConnectionTimeout == 0)
     {
+        // Sync ack has not been received from remote host.
         return false;
     }
+    /**
+     * @brief 4. Start periodically send ping with interval of PING_INTERVAL.
+     */
     newsession->m_LastPongTime = CLOCK::now().time_since_epoch().count();
     newsession->m_Timer.PeriodicTask(
         Parameter::PING_INTERVAL,
@@ -693,9 +707,11 @@ bool Transmission::Connect(const DataTypes::Address Addr, uint32_t ConnectionTim
     return true;
 }
 
-/* OK */
 bool Transmission::Send(const DataTypes::Address Addr, uint8_t *buffer, uint16_t buffersize)
 {
+    /**
+     * @brief 1. Find TransmissionSession object corresponding to given Addr.
+     */
     TransmissionSession *p_session = nullptr;
     {
         std::unique_lock<std::mutex> lock(m_Lock);
@@ -718,7 +734,7 @@ bool Transmission::Send(const DataTypes::Address Addr, uint8_t *buffer, uint16_t
     std::atomic<bool> TransmissionIsCompleted(false);
     std::atomic<bool> TransmissionResult(false);
     /**
-     * Block sending until there are availalbe congestion window for this packet.
+     * @brief 2. Wait until there is availble transmission slot, i.e., m_BytesUnacked + buffersize > m_CongestionWindow.
      */
     while (p_session->m_BytesUnacked + buffersize > p_session->m_CongestionWindow)
     {
@@ -729,6 +745,9 @@ bool Transmission::Send(const DataTypes::Address Addr, uint8_t *buffer, uint16_t
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
+    /**
+     * @brief 3. Schedule transmission, i.e., TransmissionBlock::Send, on tx_Timer.
+     */
     const uint32_t TransmissionIsScheduled = p_session->m_Timer.ImmediateTask(
         [buffer, buffersize, p_session, &TransmissionIsCompleted, &TransmissionResult]() -> void {
             // 1. Get Transmission Block

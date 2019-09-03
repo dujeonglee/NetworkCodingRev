@@ -8,5 +8,6 @@ var searchData=
   ['changesessionparameter',['ChangeSessionParameter',['../class_network_coding_1_1_transmission_session.html#a4a2f5696da8bd656d1b250d2319f1212',1,'NetworkCoding::TransmissionSession']]],
   ['changetransmissionmode',['ChangeTransmissionMode',['../class_network_coding_1_1_transmission_session.html#a99838e572cbc7b5876d59d767e399a4e',1,'NetworkCoding::TransmissionSession']]],
   ['checksum',['Checksum',['../class_network_coding_1_1_checksum.html',1,'NetworkCoding']]],
-  ['common',['Common',['../struct_network_coding_1_1_header_1_1_common.html',1,'NetworkCoding::Header']]]
+  ['common',['Common',['../struct_network_coding_1_1_header_1_1_common.html',1,'NetworkCoding::Header']]],
+  ['connect',['Connect',['../class_network_coding_1_1_transmission.html#acf7b8882079065561cf712db570f1a97',1,'NetworkCoding::Transmission']]]
 ];

@@ -63,7 +63,7 @@ public:
 
 /**
  * @brief Network coding session
- * @todo Implement socket bonding on multiple interfaces. { socket, m_RoundTripTime,  m_CongestionWindow, m_BytesUnacked }
+ * @todo Implement socket bonding on multiple interfaces. { socket, m_RoundTripTime, m_CongestionWindow, m_BytesUnacked }
  */
 class TransmissionSession
 {
@@ -183,29 +183,79 @@ public:
   uint16_t PopDataPacket();
 };
 
+/**
+ * @brief Network coding transmission
+ */
 class Transmission
 {
 private:
-  const int32_t c_Socket;
-  AVLTree<DataTypes::SessionKey, TransmissionSession *> m_Sessions;
-  std::mutex m_Lock;
+  const int32_t c_Socket;                                             ///< Socket descriptor used to transmit and receive the packet. It is used by TransmissionSession
+  AVLTree<DataTypes::SessionKey, TransmissionSession *> m_Sessions;   ///< Session map.
+  std::mutex m_Lock;                                                  ///< Mutex for this object.
 
 public:
+  /**
+   * @brief Construct a new Transmission object
+   * @param Socket : Socket descriptor to transmit and receive packets .
+   */
   Transmission(const int32_t Socket);
+  /**
+   * @brief Destroy the Transmission object
+   */
   ~Transmission();
 
 public:
+  /**
+   * @brief Connect to remote host.
+   * @param Addr : Remote host's address.
+   * @param ConnectionTimeout : Connection timeout.
+   * @param TransmissionMode : Transmission mode.
+   * @param BlockSize : Block size.
+   * @param RetransmissionRedundancy : Retransmission redundancy.
+   * @return true : Success
+   * @return false : Failure
+   */
   bool Connect(const DataTypes::Address Addr,
                uint32_t ConnectionTimeout,
                const Parameter::TRANSMISSION_MODE TransmissionMode,
                const Parameter::BLOCK_SIZE BlockSize,
                const uint16_t RetransmissionRedundancy = 0);
+  /**
+   * @brief Transmit a packet
+   * @param Addr : Receiving host's address.
+   * @param buffer : Packet buffer for transmission.
+   * @param buffersize : Packet size
+   * @return true : Success
+   * @return false : Failure
+   */
   bool Send(const DataTypes::Address Addr, uint8_t *const buffer, const uint16_t buffersize);
+  /**
+   * @brief Transmit all pending packets.
+   * @param Addr : Receiving host's address.
+   * @return true : Success
+   * @return false : Failure
+   */
   bool Flush(const DataTypes::Address Addr);
+  /**
+   * @brief Blocking caller of this function until submitted packets are all transmitted.
+   * @param Addr : Receiving host's address
+   */
   void WaitUntilTxIsCompleted(const DataTypes::Address Addr);
+  /**
+   * @brief Disconnect from a remote host.
+   * @param Addr : Host's address to disconnect.
+   */
   void Disconnect(const DataTypes::Address Addr);
 
 public:
+  /**
+   * @brief Rx packet handler.
+   * @param buffer : Packet buffer.
+   * @param size : Packet size.
+   * @param sender_addr : Remote host's ip address.
+   * @param sender_addr_len : Length of remote's host address.
+   * @todo Implementing Chaining Rx handlers.
+   */
   void RxHandler(uint8_t *const buffer, const uint16_t size, const sockaddr *const sender_addr, const uint32_t sender_addr_len);
 };
 } // namespace NetworkCoding

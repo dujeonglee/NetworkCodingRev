@@ -94,31 +94,251 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="title">NetworkCoding::Transmission Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
+
+<p>Network coding transmission.  
+ <a href="class_network_coding_1_1_transmission.html#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="tx_8h_source.html">tx.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a0088c71d39d15bcbdeab5be97ca9c521"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a0088c71d39d15bcbdeab5be97ca9c521"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>Transmission</b> (const int32_t Socket)</td></tr>
+<tr class="memitem:a0088c71d39d15bcbdeab5be97ca9c521"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_network_coding_1_1_transmission.html#a0088c71d39d15bcbdeab5be97ca9c521">Transmission</a> (const int32_t Socket)</td></tr>
+<tr class="memdesc:a0088c71d39d15bcbdeab5be97ca9c521"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct a new <a class="el" href="class_network_coding_1_1_transmission.html" title="Network coding transmission. ">Transmission</a> object.  <a href="#a0088c71d39d15bcbdeab5be97ca9c521">More...</a><br /></td></tr>
 <tr class="separator:a0088c71d39d15bcbdeab5be97ca9c521"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acf7b8882079065561cf712db570f1a97"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="acf7b8882079065561cf712db570f1a97"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>Connect</b> (const <a class="el" href="class_network_coding_1_1_data_types_1_1_address.html">DataTypes::Address</a> Addr, uint32_t ConnectionTimeout, const Parameter::TRANSMISSION_MODE TransmissionMode, const Parameter::BLOCK_SIZE BlockSize, const uint16_t RetransmissionRedundancy=0)</td></tr>
+<tr class="memitem:adcdc6012d99ddb1d0c3159d50984e146"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_network_coding_1_1_transmission.html#adcdc6012d99ddb1d0c3159d50984e146">~Transmission</a> ()</td></tr>
+<tr class="memdesc:adcdc6012d99ddb1d0c3159d50984e146"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destroy the <a class="el" href="class_network_coding_1_1_transmission.html" title="Network coding transmission. ">Transmission</a> object.  <a href="#adcdc6012d99ddb1d0c3159d50984e146">More...</a><br /></td></tr>
+<tr class="separator:adcdc6012d99ddb1d0c3159d50984e146"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acf7b8882079065561cf712db570f1a97"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_network_coding_1_1_transmission.html#acf7b8882079065561cf712db570f1a97">Connect</a> (const <a class="el" href="class_network_coding_1_1_data_types_1_1_address.html">DataTypes::Address</a> Addr, uint32_t ConnectionTimeout, const Parameter::TRANSMISSION_MODE TransmissionMode, const Parameter::BLOCK_SIZE BlockSize, const uint16_t RetransmissionRedundancy=0)</td></tr>
+<tr class="memdesc:acf7b8882079065561cf712db570f1a97"><td class="mdescLeft">&#160;</td><td class="mdescRight">Connect to remote host.  <a href="#acf7b8882079065561cf712db570f1a97">More...</a><br /></td></tr>
 <tr class="separator:acf7b8882079065561cf712db570f1a97"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a374d54400d1a31f7d85119670d896aa8"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_network_coding_1_1_transmission.html#a374d54400d1a31f7d85119670d896aa8">Send</a> (const <a class="el" href="class_network_coding_1_1_data_types_1_1_address.html">DataTypes::Address</a> Addr, uint8_t *const buffer, const uint16_t buffersize)</td></tr>
+<tr class="memdesc:a374d54400d1a31f7d85119670d896aa8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Transmit a packet.  <a href="#a374d54400d1a31f7d85119670d896aa8">More...</a><br /></td></tr>
 <tr class="separator:a374d54400d1a31f7d85119670d896aa8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4c843d9330d4c073e69ce82890012e6a"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a4c843d9330d4c073e69ce82890012e6a"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>Flush</b> (const <a class="el" href="class_network_coding_1_1_data_types_1_1_address.html">DataTypes::Address</a> Addr)</td></tr>
+<tr class="memitem:a4c843d9330d4c073e69ce82890012e6a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_network_coding_1_1_transmission.html#a4c843d9330d4c073e69ce82890012e6a">Flush</a> (const <a class="el" href="class_network_coding_1_1_data_types_1_1_address.html">DataTypes::Address</a> Addr)</td></tr>
+<tr class="memdesc:a4c843d9330d4c073e69ce82890012e6a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Transmit all pending packets.  <a href="#a4c843d9330d4c073e69ce82890012e6a">More...</a><br /></td></tr>
 <tr class="separator:a4c843d9330d4c073e69ce82890012e6a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3b9dae872646600c26c7dd2864205d25"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a3b9dae872646600c26c7dd2864205d25"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>WaitUntilTxIsCompleted</b> (const <a class="el" href="class_network_coding_1_1_data_types_1_1_address.html">DataTypes::Address</a> Addr)</td></tr>
+<tr class="memitem:a3b9dae872646600c26c7dd2864205d25"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_network_coding_1_1_transmission.html#a3b9dae872646600c26c7dd2864205d25">WaitUntilTxIsCompleted</a> (const <a class="el" href="class_network_coding_1_1_data_types_1_1_address.html">DataTypes::Address</a> Addr)</td></tr>
+<tr class="memdesc:a3b9dae872646600c26c7dd2864205d25"><td class="mdescLeft">&#160;</td><td class="mdescRight">Blocking caller of this function until submitted packets are all transmitted.  <a href="#a3b9dae872646600c26c7dd2864205d25">More...</a><br /></td></tr>
 <tr class="separator:a3b9dae872646600c26c7dd2864205d25"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5de9d315363eae64e7395c3d0ed6ae3b"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a5de9d315363eae64e7395c3d0ed6ae3b"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>Disconnect</b> (const <a class="el" href="class_network_coding_1_1_data_types_1_1_address.html">DataTypes::Address</a> Addr)</td></tr>
+<tr class="memitem:a5de9d315363eae64e7395c3d0ed6ae3b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_network_coding_1_1_transmission.html#a5de9d315363eae64e7395c3d0ed6ae3b">Disconnect</a> (const <a class="el" href="class_network_coding_1_1_data_types_1_1_address.html">DataTypes::Address</a> Addr)</td></tr>
+<tr class="memdesc:a5de9d315363eae64e7395c3d0ed6ae3b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Disconnect from a remote host.  <a href="#a5de9d315363eae64e7395c3d0ed6ae3b">More...</a><br /></td></tr>
 <tr class="separator:a5de9d315363eae64e7395c3d0ed6ae3b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab363fc5b8d61a9fee2ab0331c1d1938e"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ab363fc5b8d61a9fee2ab0331c1d1938e"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>RxHandler</b> (uint8_t *const buffer, const uint16_t size, const sockaddr *const sender_addr, const uint32_t sender_addr_len)</td></tr>
+<tr class="memitem:ab363fc5b8d61a9fee2ab0331c1d1938e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_network_coding_1_1_transmission.html#ab363fc5b8d61a9fee2ab0331c1d1938e">RxHandler</a> (uint8_t *const buffer, const uint16_t size, const sockaddr *const sender_addr, const uint32_t sender_addr_len)</td></tr>
+<tr class="memdesc:ab363fc5b8d61a9fee2ab0331c1d1938e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Rx packet handler.  <a href="#ab363fc5b8d61a9fee2ab0331c1d1938e">More...</a><br /></td></tr>
 <tr class="separator:ab363fc5b8d61a9fee2ab0331c1d1938e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Network coding transmission. </p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a class="anchor" id="a0088c71d39d15bcbdeab5be97ca9c521"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">Transmission::Transmission </td>
+          <td>(</td>
+          <td class="paramtype">const int32_t&#160;</td>
+          <td class="paramname"><em>Socket</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Construct a new <a class="el" href="class_network_coding_1_1_transmission.html" title="Network coding transmission. ">Transmission</a> object. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">Socket</td><td>: Socket descriptor to transmit and receive packets . </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="adcdc6012d99ddb1d0c3159d50984e146"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">Transmission::~Transmission </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Destroy the <a class="el" href="class_network_coding_1_1_transmission.html" title="Network coding transmission. ">Transmission</a> object. </p>
+<p>Free <a class="el" href="class_network_coding_1_1_transmission_session.html" title="Network coding session. ">TransmissionSession</a> objects</p>
+
+</div>
+</div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a class="anchor" id="acf7b8882079065561cf712db570f1a97"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool Transmission::Connect </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="class_network_coding_1_1_data_types_1_1_address.html">DataTypes::Address</a>&#160;</td>
+          <td class="paramname"><em>Addr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramname"><em>ConnectionTimeout</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const Parameter::TRANSMISSION_MODE&#160;</td>
+          <td class="paramname"><em>TransmissionMode</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const Parameter::BLOCK_SIZE&#160;</td>
+          <td class="paramname"><em>BlockSize</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const uint16_t&#160;</td>
+          <td class="paramname"><em>RetransmissionRedundancy</em> = <code>0</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Connect to remote host. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">Addr</td><td>: Remote host's address. </td></tr>
+    <tr><td class="paramname">ConnectionTimeout</td><td>: Connection timeout. </td></tr>
+    <tr><td class="paramname">TransmissionMode</td><td>: <a class="el" href="class_network_coding_1_1_transmission.html" title="Network coding transmission. ">Transmission</a> mode. </td></tr>
+    <tr><td class="paramname">BlockSize</td><td>: Block size. </td></tr>
+    <tr><td class="paramname">RetransmissionRedundancy</td><td>: Retransmission redundancy. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true : Success </dd>
+<dd>
+false : Failure </dd></dl>
+<ol type="1">
+<li>Create session.</li>
+<li>Trasnmit Sync packet to remote host.</li>
+<li>Wait for sync ack from remote host for "ConnectionTimeout" ms.</li>
+<li>Start periodically send ping with interval of PING_INTERVAL.</li>
+</ol>
+
+</div>
+</div>
+<a class="anchor" id="a5de9d315363eae64e7395c3d0ed6ae3b"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Transmission::Disconnect </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="class_network_coding_1_1_data_types_1_1_address.html">DataTypes::Address</a>&#160;</td>
+          <td class="paramname"><em>Addr</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Disconnect from a remote host. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">Addr</td><td>: Host's address to disconnect. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="a4c843d9330d4c073e69ce82890012e6a"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool Transmission::Flush </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="class_network_coding_1_1_data_types_1_1_address.html">DataTypes::Address</a>&#160;</td>
+          <td class="paramname"><em>Addr</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Transmit all pending packets. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">Addr</td><td>: Receiving host's address. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true : Success </dd>
+<dd>
+false : Failure </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="ab363fc5b8d61a9fee2ab0331c1d1938e"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Transmission::RxHandler </td>
+          <td>(</td>
+          <td class="paramtype">uint8_t *const&#160;</td>
+          <td class="paramname"><em>buffer</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const uint16_t&#160;</td>
+          <td class="paramname"><em>size</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const sockaddr *const&#160;</td>
+          <td class="paramname"><em>sender_addr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const uint32_t&#160;</td>
+          <td class="paramname"><em>sender_addr_len</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Rx packet handler. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">buffer</td><td>: Packet buffer. </td></tr>
+    <tr><td class="paramname">size</td><td>: Packet size. </td></tr>
+    <tr><td class="paramname">sender_addr</td><td>: Remote host's ip address. </td></tr>
+    <tr><td class="paramname">sender_addr_len</td><td>: Length of remote's host address. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="todo"><dt><b><a class="el" href="todo.html#_todo000005">Todo:</a></b></dt><dd>Implementing Chaining Rx handlers. </dd></dl>
+
+</div>
+</div>
 <a class="anchor" id="a374d54400d1a31f7d85119670d896aa8"></a>
 <div class="memitem">
 <div class="memproto">
@@ -148,7 +368,44 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>RxHandler</b> (uint8_
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Transmit a packet. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">Addr</td><td>: Receiving host's address. </td></tr>
+    <tr><td class="paramname">buffer</td><td>: Packet buffer for transmission. </td></tr>
+    <tr><td class="paramname">buffersize</td><td>: Packet size </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true : Success </dd>
+<dd>
+false : Failure </dd></dl>
 <p>Block sending until there are availalbe congestion window for this packet.</p>
+
+</div>
+</div>
+<a class="anchor" id="a3b9dae872646600c26c7dd2864205d25"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Transmission::WaitUntilTxIsCompleted </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="class_network_coding_1_1_data_types_1_1_address.html">DataTypes::Address</a>&#160;</td>
+          <td class="paramname"><em>Addr</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Blocking caller of this function until submitted packets are all transmitted. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">Addr</td><td>: Receiving host's address </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>

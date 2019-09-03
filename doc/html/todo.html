@@ -82,10 +82,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="textblock"><dl class="reflist">
 <dt><a class="anchor" id="_todo000001"></a>Member <a class="el" href="struct_network_coding_1_1_header_1_1_data.html#a21e3e58d1a143834d9c4490613d3c3ff">NetworkCoding::Header::Data::m_LastIndicator</a>  </dt>
 <dd>This is reserved for support of fragmentation.  </dd>
+<dt><a class="anchor" id="_todo000005"></a>Member <a class="el" href="class_network_coding_1_1_transmission.html#ab363fc5b8d61a9fee2ab0331c1d1938e">NetworkCoding::Transmission::RxHandler</a>  (uint8_t *const buffer, const uint16_t size, const sockaddr *const sender_addr, const uint32_t sender_addr_len)</dt>
+<dd>Implementing Chaining Rx handlers.  </dd>
 <dt><a class="anchor" id="_todo000004"></a>Class <a class="el" href="class_network_coding_1_1_transmission_session.html">NetworkCoding::TransmissionSession</a>  </dt>
 <dd>Implement socket bonding on multiple interfaces. { socket, m_RoundTripTime, m_CongestionWindow, m_BytesUnacked }  </dd>
 <dt><a class="anchor" id="_todo000003"></a>Member <a class="el" href="class_network_coding_1_1_transmission_session.html#a31f038cb688e2e95e40f63821baf34a8">NetworkCoding::TransmissionSession::ProcessDataAck</a>  (const uint8_t Rank, const uint8_t MaxRank, const uint8_t Loss, const uint16_t Sequence)</dt>
-<dd>Retransmission can be further optimized by using loss rate. E.g., we can immediately transmit encoded packet at the end of transmission without waiting the ack. </dd>
+<dd>Retransmission can be further optimized by using loss rate. E.g., we can immediately transmit encoded packets corersponding to loss ratio, i.e. (Block size * loss possibility) without waiting the ack. </dd>
 </dl>
 </div></div><!-- contents -->
 <!-- start footer part -->

@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['inv',['inv',['../class_network_coding_1_1_finite_field.html#a9bc9e49525ea45553459fcee844325c7',1,'NetworkCoding::FiniteField']]]
+  ['disconnect',['Disconnect',['../class_network_coding_1_1_transmission.html#a5de9d315363eae64e7395c3d0ed6ae3b',1,'NetworkCoding::Transmission']]]
 ];

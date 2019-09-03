@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['transmissionblock',['TransmissionBlock',['../class_network_coding_1_1_transmission_block.html#a77977a7fed4dbf38c23a31bacc5f5e96',1,'NetworkCoding::TransmissionBlock']]],
-  ['transmissionsession',['TransmissionSession',['../class_network_coding_1_1_transmission_session.html#a4ab773a704ec3740cbf222cad7e45262',1,'NetworkCoding::TransmissionSession']]]
+  ['retransmission',['Retransmission',['../class_network_coding_1_1_transmission_block.html#ad8d4de3ed6b6dda67a09afb1c7760ac3',1,'NetworkCoding::TransmissionBlock']]],
+  ['rxhandler',['RxHandler',['../class_network_coding_1_1_transmission.html#ab363fc5b8d61a9fee2ab0331c1d1938e',1,'NetworkCoding::Transmission']]]
 ];

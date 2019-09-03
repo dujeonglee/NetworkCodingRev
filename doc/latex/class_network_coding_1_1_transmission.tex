@@ -1,31 +1,172 @@
 \hypertarget{class_network_coding_1_1_transmission}{}\section{Network\+Coding\+:\+:Transmission Class Reference}
 \label{class_network_coding_1_1_transmission}\index{Network\+Coding\+::\+Transmission@{Network\+Coding\+::\+Transmission}}
+
+
+Network coding transmission.  
+
+
+
+
+{\ttfamily \#include $<$tx.\+h$>$}
+
 \subsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-{\bfseries Transmission} (const int32\+\_\+t Socket)\hypertarget{class_network_coding_1_1_transmission_a0088c71d39d15bcbdeab5be97ca9c521}{}\label{class_network_coding_1_1_transmission_a0088c71d39d15bcbdeab5be97ca9c521}
-
-\item 
-bool {\bfseries Connect} (const \hyperlink{class_network_coding_1_1_data_types_1_1_address}{Data\+Types\+::\+Address} Addr, uint32\+\_\+t Connection\+Timeout, const Parameter\+::\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+DE Transmission\+Mode, const Parameter\+::\+B\+L\+O\+C\+K\+\_\+\+S\+I\+ZE Block\+Size, const uint16\+\_\+t Retransmission\+Redundancy=0)\hypertarget{class_network_coding_1_1_transmission_acf7b8882079065561cf712db570f1a97}{}\label{class_network_coding_1_1_transmission_acf7b8882079065561cf712db570f1a97}
-
-\item 
+\hyperlink{class_network_coding_1_1_transmission_a0088c71d39d15bcbdeab5be97ca9c521}{Transmission} (const int32\+\_\+t Socket)
+\begin{DoxyCompactList}\small\item\em Construct a new \hyperlink{class_network_coding_1_1_transmission}{Transmission} object. \end{DoxyCompactList}\item 
+\hyperlink{class_network_coding_1_1_transmission_adcdc6012d99ddb1d0c3159d50984e146}{$\sim$\+Transmission} ()
+\begin{DoxyCompactList}\small\item\em Destroy the \hyperlink{class_network_coding_1_1_transmission}{Transmission} object. \end{DoxyCompactList}\item 
+bool \hyperlink{class_network_coding_1_1_transmission_acf7b8882079065561cf712db570f1a97}{Connect} (const \hyperlink{class_network_coding_1_1_data_types_1_1_address}{Data\+Types\+::\+Address} Addr, uint32\+\_\+t Connection\+Timeout, const Parameter\+::\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+DE Transmission\+Mode, const Parameter\+::\+B\+L\+O\+C\+K\+\_\+\+S\+I\+ZE Block\+Size, const uint16\+\_\+t Retransmission\+Redundancy=0)
+\begin{DoxyCompactList}\small\item\em Connect to remote host. \end{DoxyCompactList}\item 
 bool \hyperlink{class_network_coding_1_1_transmission_a374d54400d1a31f7d85119670d896aa8}{Send} (const \hyperlink{class_network_coding_1_1_data_types_1_1_address}{Data\+Types\+::\+Address} Addr, uint8\+\_\+t $\ast$const buffer, const uint16\+\_\+t buffersize)
-\item 
-bool {\bfseries Flush} (const \hyperlink{class_network_coding_1_1_data_types_1_1_address}{Data\+Types\+::\+Address} Addr)\hypertarget{class_network_coding_1_1_transmission_a4c843d9330d4c073e69ce82890012e6a}{}\label{class_network_coding_1_1_transmission_a4c843d9330d4c073e69ce82890012e6a}
+\begin{DoxyCompactList}\small\item\em Transmit a packet. \end{DoxyCompactList}\item 
+bool \hyperlink{class_network_coding_1_1_transmission_a4c843d9330d4c073e69ce82890012e6a}{Flush} (const \hyperlink{class_network_coding_1_1_data_types_1_1_address}{Data\+Types\+::\+Address} Addr)
+\begin{DoxyCompactList}\small\item\em Transmit all pending packets. \end{DoxyCompactList}\item 
+void \hyperlink{class_network_coding_1_1_transmission_a3b9dae872646600c26c7dd2864205d25}{Wait\+Until\+Tx\+Is\+Completed} (const \hyperlink{class_network_coding_1_1_data_types_1_1_address}{Data\+Types\+::\+Address} Addr)
+\begin{DoxyCompactList}\small\item\em Blocking caller of this function until submitted packets are all transmitted. \end{DoxyCompactList}\item 
+void \hyperlink{class_network_coding_1_1_transmission_a5de9d315363eae64e7395c3d0ed6ae3b}{Disconnect} (const \hyperlink{class_network_coding_1_1_data_types_1_1_address}{Data\+Types\+::\+Address} Addr)
+\begin{DoxyCompactList}\small\item\em Disconnect from a remote host. \end{DoxyCompactList}\item 
+void \hyperlink{class_network_coding_1_1_transmission_ab363fc5b8d61a9fee2ab0331c1d1938e}{Rx\+Handler} (uint8\+\_\+t $\ast$const buffer, const uint16\+\_\+t size, const sockaddr $\ast$const sender\+\_\+addr, const uint32\+\_\+t sender\+\_\+addr\+\_\+len)
+\begin{DoxyCompactList}\small\item\em Rx packet handler. \end{DoxyCompactList}\end{DoxyCompactItemize}
 
-\item 
-void {\bfseries Wait\+Until\+Tx\+Is\+Completed} (const \hyperlink{class_network_coding_1_1_data_types_1_1_address}{Data\+Types\+::\+Address} Addr)\hypertarget{class_network_coding_1_1_transmission_a3b9dae872646600c26c7dd2864205d25}{}\label{class_network_coding_1_1_transmission_a3b9dae872646600c26c7dd2864205d25}
 
-\item 
-void {\bfseries Disconnect} (const \hyperlink{class_network_coding_1_1_data_types_1_1_address}{Data\+Types\+::\+Address} Addr)\hypertarget{class_network_coding_1_1_transmission_a5de9d315363eae64e7395c3d0ed6ae3b}{}\label{class_network_coding_1_1_transmission_a5de9d315363eae64e7395c3d0ed6ae3b}
+\subsection{Detailed Description}
+Network coding transmission. 
 
-\item 
-void {\bfseries Rx\+Handler} (uint8\+\_\+t $\ast$const buffer, const uint16\+\_\+t size, const sockaddr $\ast$const sender\+\_\+addr, const uint32\+\_\+t sender\+\_\+addr\+\_\+len)\hypertarget{class_network_coding_1_1_transmission_ab363fc5b8d61a9fee2ab0331c1d1938e}{}\label{class_network_coding_1_1_transmission_ab363fc5b8d61a9fee2ab0331c1d1938e}
+\subsection{Constructor \& Destructor Documentation}
+\index{Network\+Coding\+::\+Transmission@{Network\+Coding\+::\+Transmission}!Transmission@{Transmission}}
+\index{Transmission@{Transmission}!Network\+Coding\+::\+Transmission@{Network\+Coding\+::\+Transmission}}
+\subsubsection[{\texorpdfstring{Transmission(const int32\+\_\+t Socket)}{Transmission(const int32_t Socket)}}]{\setlength{\rightskip}{0pt plus 5cm}Transmission\+::\+Transmission (
+\begin{DoxyParamCaption}
+\item[{const int32\+\_\+t}]{Socket}
+\end{DoxyParamCaption}
+)}\hypertarget{class_network_coding_1_1_transmission_a0088c71d39d15bcbdeab5be97ca9c521}{}\label{class_network_coding_1_1_transmission_a0088c71d39d15bcbdeab5be97ca9c521}
 
-\end{DoxyCompactItemize}
 
+Construct a new \hyperlink{class_network_coding_1_1_transmission}{Transmission} object. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em Socket} & \+: Socket descriptor to transmit and receive packets . \\
+\hline
+\end{DoxyParams}
+\index{Network\+Coding\+::\+Transmission@{Network\+Coding\+::\+Transmission}!````~Transmission@{$\sim$\+Transmission}}
+\index{````~Transmission@{$\sim$\+Transmission}!Network\+Coding\+::\+Transmission@{Network\+Coding\+::\+Transmission}}
+\subsubsection[{\texorpdfstring{$\sim$\+Transmission()}{~Transmission()}}]{\setlength{\rightskip}{0pt plus 5cm}Transmission\+::$\sim$\+Transmission (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}\hypertarget{class_network_coding_1_1_transmission_adcdc6012d99ddb1d0c3159d50984e146}{}\label{class_network_coding_1_1_transmission_adcdc6012d99ddb1d0c3159d50984e146}
+
+
+Destroy the \hyperlink{class_network_coding_1_1_transmission}{Transmission} object. 
+
+Free \hyperlink{class_network_coding_1_1_transmission_session}{Transmission\+Session} objects
 
 \subsection{Member Function Documentation}
+\index{Network\+Coding\+::\+Transmission@{Network\+Coding\+::\+Transmission}!Connect@{Connect}}
+\index{Connect@{Connect}!Network\+Coding\+::\+Transmission@{Network\+Coding\+::\+Transmission}}
+\subsubsection[{\texorpdfstring{Connect(const Data\+Types\+::\+Address Addr, uint32\+\_\+t Connection\+Timeout, const Parameter\+::\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+D\+E Transmission\+Mode, const Parameter\+::\+B\+L\+O\+C\+K\+\_\+\+S\+I\+Z\+E Block\+Size, const uint16\+\_\+t Retransmission\+Redundancy=0)}{Connect(const DataTypes::Address Addr, uint32_t ConnectionTimeout, const Parameter::TRANSMISSION_MODE TransmissionMode, const Parameter::BLOCK_SIZE BlockSize, const uint16_t RetransmissionRedundancy=0)}}]{\setlength{\rightskip}{0pt plus 5cm}bool Transmission\+::\+Connect (
+\begin{DoxyParamCaption}
+\item[{const {\bf Data\+Types\+::\+Address}}]{Addr, }
+\item[{uint32\+\_\+t}]{Connection\+Timeout, }
+\item[{const Parameter\+::\+T\+R\+A\+N\+S\+M\+I\+S\+S\+I\+O\+N\+\_\+\+M\+O\+DE}]{Transmission\+Mode, }
+\item[{const Parameter\+::\+B\+L\+O\+C\+K\+\_\+\+S\+I\+ZE}]{Block\+Size, }
+\item[{const uint16\+\_\+t}]{Retransmission\+Redundancy = {\ttfamily 0}}
+\end{DoxyParamCaption}
+)}\hypertarget{class_network_coding_1_1_transmission_acf7b8882079065561cf712db570f1a97}{}\label{class_network_coding_1_1_transmission_acf7b8882079065561cf712db570f1a97}
+
+
+Connect to remote host. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em Addr} & \+: Remote host\textquotesingle{}s address. \\
+\hline
+{\em Connection\+Timeout} & \+: Connection timeout. \\
+\hline
+{\em Transmission\+Mode} & \+: \hyperlink{class_network_coding_1_1_transmission}{Transmission} mode. \\
+\hline
+{\em Block\+Size} & \+: Block size. \\
+\hline
+{\em Retransmission\+Redundancy} & \+: Retransmission redundancy. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+true \+: Success 
+
+false \+: Failure 
+\end{DoxyReturn}
+
+\begin{DoxyEnumerate}
+\item Create session.
+\item Trasnmit Sync packet to remote host.
+\item Wait for sync ack from remote host for \char`\"{}\+Connection\+Timeout\char`\"{} ms.
+\item Start periodically send ping with interval of P\+I\+N\+G\+\_\+\+I\+N\+T\+E\+R\+V\+AL.
+\end{DoxyEnumerate}\index{Network\+Coding\+::\+Transmission@{Network\+Coding\+::\+Transmission}!Disconnect@{Disconnect}}
+\index{Disconnect@{Disconnect}!Network\+Coding\+::\+Transmission@{Network\+Coding\+::\+Transmission}}
+\subsubsection[{\texorpdfstring{Disconnect(const Data\+Types\+::\+Address Addr)}{Disconnect(const DataTypes::Address Addr)}}]{\setlength{\rightskip}{0pt plus 5cm}void Transmission\+::\+Disconnect (
+\begin{DoxyParamCaption}
+\item[{const {\bf Data\+Types\+::\+Address}}]{Addr}
+\end{DoxyParamCaption}
+)}\hypertarget{class_network_coding_1_1_transmission_a5de9d315363eae64e7395c3d0ed6ae3b}{}\label{class_network_coding_1_1_transmission_a5de9d315363eae64e7395c3d0ed6ae3b}
+
+
+Disconnect from a remote host. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em Addr} & \+: Host\textquotesingle{}s address to disconnect. \\
+\hline
+\end{DoxyParams}
+\index{Network\+Coding\+::\+Transmission@{Network\+Coding\+::\+Transmission}!Flush@{Flush}}
+\index{Flush@{Flush}!Network\+Coding\+::\+Transmission@{Network\+Coding\+::\+Transmission}}
+\subsubsection[{\texorpdfstring{Flush(const Data\+Types\+::\+Address Addr)}{Flush(const DataTypes::Address Addr)}}]{\setlength{\rightskip}{0pt plus 5cm}bool Transmission\+::\+Flush (
+\begin{DoxyParamCaption}
+\item[{const {\bf Data\+Types\+::\+Address}}]{Addr}
+\end{DoxyParamCaption}
+)}\hypertarget{class_network_coding_1_1_transmission_a4c843d9330d4c073e69ce82890012e6a}{}\label{class_network_coding_1_1_transmission_a4c843d9330d4c073e69ce82890012e6a}
+
+
+Transmit all pending packets. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em Addr} & \+: Receiving host\textquotesingle{}s address. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+true \+: Success 
+
+false \+: Failure 
+\end{DoxyReturn}
+\index{Network\+Coding\+::\+Transmission@{Network\+Coding\+::\+Transmission}!Rx\+Handler@{Rx\+Handler}}
+\index{Rx\+Handler@{Rx\+Handler}!Network\+Coding\+::\+Transmission@{Network\+Coding\+::\+Transmission}}
+\subsubsection[{\texorpdfstring{Rx\+Handler(uint8\+\_\+t $\ast$const buffer, const uint16\+\_\+t size, const sockaddr $\ast$const sender\+\_\+addr, const uint32\+\_\+t sender\+\_\+addr\+\_\+len)}{RxHandler(uint8_t *const buffer, const uint16_t size, const sockaddr *const sender_addr, const uint32_t sender_addr_len)}}]{\setlength{\rightskip}{0pt plus 5cm}void Transmission\+::\+Rx\+Handler (
+\begin{DoxyParamCaption}
+\item[{uint8\+\_\+t $\ast$const}]{buffer, }
+\item[{const uint16\+\_\+t}]{size, }
+\item[{const sockaddr $\ast$const}]{sender\+\_\+addr, }
+\item[{const uint32\+\_\+t}]{sender\+\_\+addr\+\_\+len}
+\end{DoxyParamCaption}
+)}\hypertarget{class_network_coding_1_1_transmission_ab363fc5b8d61a9fee2ab0331c1d1938e}{}\label{class_network_coding_1_1_transmission_ab363fc5b8d61a9fee2ab0331c1d1938e}
+
+
+Rx packet handler. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em buffer} & \+: Packet buffer. \\
+\hline
+{\em size} & \+: Packet size. \\
+\hline
+{\em sender\+\_\+addr} & \+: Remote host\textquotesingle{}s ip address. \\
+\hline
+{\em sender\+\_\+addr\+\_\+len} & \+: Length of remote\textquotesingle{}s host address. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyRefDesc}{Todo}
+\item[\hyperlink{todo__todo000005}{Todo}]Implementing Chaining Rx handlers. \end{DoxyRefDesc}
 \index{Network\+Coding\+::\+Transmission@{Network\+Coding\+::\+Transmission}!Send@{Send}}
 \index{Send@{Send}!Network\+Coding\+::\+Transmission@{Network\+Coding\+::\+Transmission}}
 \subsubsection[{\texorpdfstring{Send(const Data\+Types\+::\+Address Addr, uint8\+\_\+t $\ast$const buffer, const uint16\+\_\+t buffersize)}{Send(const DataTypes::Address Addr, uint8_t *const buffer, const uint16_t buffersize)}}]{\setlength{\rightskip}{0pt plus 5cm}bool Transmission\+::\+Send (
@@ -35,7 +176,41 @@ void {\bfseries Rx\+Handler} (uint8\+\_\+t $\ast$const buffer, const uint16\+\_\
 \item[{const uint16\+\_\+t}]{buffersize}
 \end{DoxyParamCaption}
 )}\hypertarget{class_network_coding_1_1_transmission_a374d54400d1a31f7d85119670d896aa8}{}\label{class_network_coding_1_1_transmission_a374d54400d1a31f7d85119670d896aa8}
-Block sending until there are availalbe congestion window for this packet.
+
+
+Transmit a packet. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em Addr} & \+: Receiving host\textquotesingle{}s address. \\
+\hline
+{\em buffer} & \+: Packet buffer for transmission. \\
+\hline
+{\em buffersize} & \+: Packet size \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+true \+: Success 
+
+false \+: Failure 
+\end{DoxyReturn}
+Block sending until there are availalbe congestion window for this packet.\index{Network\+Coding\+::\+Transmission@{Network\+Coding\+::\+Transmission}!Wait\+Until\+Tx\+Is\+Completed@{Wait\+Until\+Tx\+Is\+Completed}}
+\index{Wait\+Until\+Tx\+Is\+Completed@{Wait\+Until\+Tx\+Is\+Completed}!Network\+Coding\+::\+Transmission@{Network\+Coding\+::\+Transmission}}
+\subsubsection[{\texorpdfstring{Wait\+Until\+Tx\+Is\+Completed(const Data\+Types\+::\+Address Addr)}{WaitUntilTxIsCompleted(const DataTypes::Address Addr)}}]{\setlength{\rightskip}{0pt plus 5cm}void Transmission\+::\+Wait\+Until\+Tx\+Is\+Completed (
+\begin{DoxyParamCaption}
+\item[{const {\bf Data\+Types\+::\+Address}}]{Addr}
+\end{DoxyParamCaption}
+)}\hypertarget{class_network_coding_1_1_transmission_a3b9dae872646600c26c7dd2864205d25}{}\label{class_network_coding_1_1_transmission_a3b9dae872646600c26c7dd2864205d25}
+
+
+Blocking caller of this function until submitted packets are all transmitted. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em Addr} & \+: Receiving host\textquotesingle{}s address \\
+\hline
+\end{DoxyParams}
+
 
 The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
 \item 

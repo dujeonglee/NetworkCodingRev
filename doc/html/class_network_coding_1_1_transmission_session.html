@@ -108,7 +108,7 @@ Collaboration diagram for NetworkCoding::TransmissionSession:</div>
 <map name="_network_coding_1_1_transmission_session_coll__map" id="_network_coding_1_1_transmission_session_coll__map">
 <area shape="rect" id="node4" href="class_network_coding_1_1_transmission_block.html" title="Network coding block. " alt="" coords="725,35,924,76"/>
 <area shape="rect" id="node2" href="class_network_coding_1_1_data_types_1_1_address.html" title="NetworkCoding::DataTypes\l::Address" alt="" coords="13,5,197,47"/>
-<area shape="rect" id="node3" href="class_network_coding_1_1_transmission.html" title="NetworkCoding::Transmission" alt="" coords="5,71,204,98"/>
+<area shape="rect" id="node3" href="class_network_coding_1_1_transmission.html" title="Network coding transmission. " alt="" coords="5,71,204,98"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -177,7 +177,7 @@ Public Member Functions</h2></td></tr>
 Public Attributes</h2></td></tr>
 <tr class="memitem:a76808b9fb4d31f1c471ef313e50aff54"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a76808b9fb4d31f1c471ef313e50aff54"></a>
 <a class="el" href="class_network_coding_1_1_transmission.html">Transmission</a> *const&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_network_coding_1_1_transmission_session.html#a76808b9fb4d31f1c471ef313e50aff54">c_Transmission</a></td></tr>
-<tr class="memdesc:a76808b9fb4d31f1c471ef313e50aff54"><td class="mdescLeft">&#160;</td><td class="mdescRight">Pointer of the <a class="el" href="class_network_coding_1_1_transmission.html">Transmission</a> object that this session is associated. <br /></td></tr>
+<tr class="memdesc:a76808b9fb4d31f1c471ef313e50aff54"><td class="mdescLeft">&#160;</td><td class="mdescRight">Pointer of the <a class="el" href="class_network_coding_1_1_transmission.html" title="Network coding transmission. ">Transmission</a> object that this session is associated. <br /></td></tr>
 <tr class="separator:a76808b9fb4d31f1c471ef313e50aff54"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9d0373f0889c3f9ed0cead43c8cfefa9"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a9d0373f0889c3f9ed0cead43c8cfefa9"></a>
 const int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_network_coding_1_1_transmission_session.html#a9d0373f0889c3f9ed0cead43c8cfefa9">c_Socket</a></td></tr>
@@ -297,7 +297,7 @@ std::atomic&lt; uint32_t &gt;&#160;</td><td class="memItemRight" valign="bottom"
 <p>Construct a new <a class="el" href="class_network_coding_1_1_transmission_session.html" title="Network coding session. ">TransmissionSession</a> object. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">transmission</td><td>: Pointer of the <a class="el" href="class_network_coding_1_1_transmission.html">Transmission</a> object that this session is associated. </td></tr>
+    <tr><td class="paramname">transmission</td><td>: Pointer of the <a class="el" href="class_network_coding_1_1_transmission.html" title="Network coding transmission. ">Transmission</a> object that this session is associated. </td></tr>
     <tr><td class="paramname">Socket</td><td>: Socket descriptor for this session. </td></tr>
     <tr><td class="paramname">Addr</td><td>: Remote host's address. </td></tr>
   </table>
@@ -486,8 +486,13 @@ std::atomic&lt; uint32_t &gt;&#160;</td><td class="memItemRight" valign="bottom"
 
 <p>Dequeue a packet from m_TxQueue and transmit the packet. </p>
 <dl class="section return"><dt>Returns</dt><dd>uint16_t : Non-negative size of the transmitted packet. 0 on failure. </dd></dl>
-<p>Start retransmission timeout if the packet is FLAGS_END_OF_BLK.</p>
-<p>Schedule ack timeout for both original and network coding packets.</p>
+<ol type="1">
+<li>Dequeue a packet from m_TxQueue.</li>
+<li>Transmit the packet.</li>
+<li>Schedule next retransmission if the packet is the last original packet or network coding packet.</li>
+<li>Free the packet.</li>
+<li>Schedule ack timeout.</li>
+</ol>
 
 </div>
 </div>
@@ -537,7 +542,7 @@ std::atomic&lt; uint32_t &gt;&#160;</td><td class="memItemRight" valign="bottom"
   </table>
   </dd>
 </dl>
-<p>Proccess ack. It is serialized by m_Timer. </p><dl class="todo"><dt><b><a class="el" href="todo.html#_todo000003">Todo:</a></b></dt><dd>Retransmission can be further optimized by using loss rate. E.g., we can immediately transmit encoded packet at the end of transmission without waiting the ack. </dd></dl>
+<p>Proccess ack. It is serialized by m_Timer. </p><dl class="todo"><dt><b><a class="el" href="todo.html#_todo000003">Todo:</a></b></dt><dd>Retransmission can be further optimized by using loss rate. E.g., we can immediately transmit encoded packets corersponding to loss ratio, i.e. (Block size * loss possibility) without waiting the ack. </dd></dl>
 
 </div>
 </div>
@@ -587,6 +592,7 @@ std::atomic&lt; uint32_t &gt;&#160;</td><td class="memItemRight" valign="bottom"
   </table>
   </dd>
 </dl>
+<p>Process sync ack. Both end hosts synchronize their starting <a class="el" href="class_network_coding_1_1_transmission_block.html" title="Network coding block. ">TransmissionBlock</a>'s sequence number.</p>
 
 </div>
 </div>
@@ -636,7 +642,10 @@ std::atomic&lt; uint32_t &gt;&#160;</td><td class="memItemRight" valign="bottom"
   </table>
   </dd>
 </dl>
-<p>We do not count retransmission packets as unacked packet. Retransmission is transmitted regardless of m_BytesUnacked.</p>
+<ol type="1">
+<li>Increament m_BytesUnacked by packet size.</li>
+<li>Enqueue the packet on m_TxQueue.</li>
+</ol>
 
 </div>
 </div>

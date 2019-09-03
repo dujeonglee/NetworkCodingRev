@@ -286,9 +286,14 @@ Dequeue a packet from m\+\_\+\+Tx\+Queue and transmit the packet.
 \begin{DoxyReturn}{Returns}
 uint16\+\_\+t \+: Non-\/negative size of the transmitted packet. 0 on failure. 
 \end{DoxyReturn}
-Start retransmission timeout if the packet is F\+L\+A\+G\+S\+\_\+\+E\+N\+D\+\_\+\+O\+F\+\_\+\+B\+LK.
 
-Schedule ack timeout for both original and network coding packets.\index{Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}!Process\+Data\+Ack@{Process\+Data\+Ack}}
+\begin{DoxyEnumerate}
+\item Dequeue a packet from m\+\_\+\+Tx\+Queue.
+\item Transmit the packet.
+\item Schedule next retransmission if the packet is the last original packet or network coding packet.
+\item Free the packet.
+\item Schedule ack timeout.
+\end{DoxyEnumerate}\index{Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}!Process\+Data\+Ack@{Process\+Data\+Ack}}
 \index{Process\+Data\+Ack@{Process\+Data\+Ack}!Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}}
 \subsubsection[{\texorpdfstring{Process\+Data\+Ack(const uint8\+\_\+t Rank, const uint8\+\_\+t Max\+Rank, const uint8\+\_\+t Loss, const uint16\+\_\+t Sequence)}{ProcessDataAck(const uint8_t Rank, const uint8_t MaxRank, const uint8_t Loss, const uint16_t Sequence)}}]{\setlength{\rightskip}{0pt plus 5cm}void Transmission\+Session\+::\+Process\+Data\+Ack (
 \begin{DoxyParamCaption}
@@ -314,7 +319,7 @@ Process ack.
 \hline
 \end{DoxyParams}
 Proccess ack. It is serialized by m\+\_\+\+Timer. \begin{DoxyRefDesc}{Todo}
-\item[\hyperlink{todo__todo000003}{Todo}]Retransmission can be further optimized by using loss rate. E.\+g., we can immediately transmit encoded packet at the end of transmission without waiting the ack. \end{DoxyRefDesc}
+\item[\hyperlink{todo__todo000003}{Todo}]Retransmission can be further optimized by using loss rate. E.\+g., we can immediately transmit encoded packets corersponding to loss ratio, i.\+e. (Block size $\ast$ loss possibility) without waiting the ack. \end{DoxyRefDesc}
 \index{Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}!Process\+Pong@{Process\+Pong}}
 \index{Process\+Pong@{Process\+Pong}!Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}}
 \subsubsection[{\texorpdfstring{Process\+Pong(const uint16\+\_\+t Rtt)}{ProcessPong(const uint16_t Rtt)}}]{\setlength{\rightskip}{0pt plus 5cm}void Transmission\+Session\+::\+Process\+Pong (
@@ -347,7 +352,7 @@ Process ack sync.
 {\em sequence} & \+: The initial \hyperlink{class_network_coding_1_1_transmission_block}{Transmission\+Block}\textquotesingle{}s sequence number. \\
 \hline
 \end{DoxyParams}
-\index{Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}!Push\+Data\+Packet@{Push\+Data\+Packet}}
+Process sync ack. Both end hosts synchronize their starting \hyperlink{class_network_coding_1_1_transmission_block}{Transmission\+Block}\textquotesingle{}s sequence number.\index{Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}!Push\+Data\+Packet@{Push\+Data\+Packet}}
 \index{Push\+Data\+Packet@{Push\+Data\+Packet}!Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}}
 \subsubsection[{\texorpdfstring{Push\+Data\+Packet(uint8\+\_\+t $\ast$const buffer, const uint16\+\_\+t size, bool orig, Transmission\+Block $\ast$const block)}{PushDataPacket(uint8_t *const buffer, const uint16_t size, bool orig, TransmissionBlock *const block)}}]{\setlength{\rightskip}{0pt plus 5cm}void Transmission\+Session\+::\+Push\+Data\+Packet (
 \begin{DoxyParamCaption}
@@ -372,7 +377,11 @@ Enqueue a packet into m\+\_\+\+Tx\+Queue for transmission.
 {\em block} & \+: \hyperlink{class_network_coding_1_1_transmission_block}{Transmission\+Block} that this packet is associated. \\
 \hline
 \end{DoxyParams}
-We do not count retransmission packets as unacked packet. Retransmission is transmitted regardless of m\+\_\+\+Bytes\+Unacked.\index{Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}!Send\+Ping@{Send\+Ping}}
+
+\begin{DoxyEnumerate}
+\item Increament m\+\_\+\+Bytes\+Unacked by packet size.
+\item Enqueue the packet on m\+\_\+\+Tx\+Queue.
+\end{DoxyEnumerate}\index{Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}!Send\+Ping@{Send\+Ping}}
 \index{Send\+Ping@{Send\+Ping}!Network\+Coding\+::\+Transmission\+Session@{Network\+Coding\+::\+Transmission\+Session}}
 \subsubsection[{\texorpdfstring{Send\+Ping()}{SendPing()}}]{\setlength{\rightskip}{0pt plus 5cm}const bool Transmission\+Session\+::\+Send\+Ping (
 \begin{DoxyParamCaption}

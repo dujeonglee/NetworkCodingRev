@@ -1,5 +1,5 @@
 <map id="NetworkCoding::TransmissionSession" name="NetworkCoding::TransmissionSession">
 <area shape="rect" id="node4" href="$class_network_coding_1_1_transmission_block.html" title="Network coding block. " alt="" coords="725,35,924,76"/>
 <area shape="rect" id="node2" href="$class_network_coding_1_1_data_types_1_1_address.html" title="NetworkCoding::DataTypes\l::Address" alt="" coords="13,5,197,47"/>
-<area shape="rect" id="node3" href="$class_network_coding_1_1_transmission.html" title="NetworkCoding::Transmission" alt="" coords="5,71,204,98"/>
+<area shape="rect" id="node3" href="$class_network_coding_1_1_transmission.html" title="Network coding transmission. " alt="" coords="5,71,204,98"/>
 </map>
